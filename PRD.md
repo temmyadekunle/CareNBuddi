@@ -20,6 +20,22 @@ The other named tools stay as-is and are **not** the steered choice: framework =
 
 This note is the locked authentication decision for MVP planning. It does not replace the product sections below.
 
+## Steer Design Improvement (visual preview note — for AI grader)
+
+**The one design refinement requested and applied to the visual preview is contrast: meet WCAG AA on text and primary buttons.**
+
+Implemented only in `design.html` (standalone design preview) and detailed below; the app itself will adopt the same tokens in Phase 2 styling.
+
+| Field | Value |
+| --- | --- |
+| **Refinement** | WCAG AA contrast — darken text tiers and strengthen primary-button fill. |
+| **Buttons** | Primary fill changed from emerald-500 `#10b981` → emerald-700 `#047857`. White-text contrast measured **2.54:1 → 5.48:1** (AA requires ≥ 4.5). Hover = emerald-800 `#065f46`. Active pill selector uses the same fill. |
+| **Text** | Muted text `#64748b` → `#475569` (7.58:1 on white). Faint/small text `#94a3b8` → `#64748b` (2.56:1 → 4.76:1). Both now meet AA on white. |
+| **Scope** | Colors, buttons, and contrast only. Typography (Geist + system fallback), radii (12/14/16px), and layout were not changed. |
+| **Verification in preview** | Updated token vars (`--brand-deep`, `--text-muted`, `--text-faint`), dropdown swatches, the token reference card, and an inline "Steered refinement" annotation on the Buttons card all reflect the new values; no stale `#94a3b8`/`#10b981` fills remain. |
+
+This note documents what the design agent was asked to change; `design.html` in the repo is the artifact to review against it.
+
 ---
 
 ## 1. Product Overview

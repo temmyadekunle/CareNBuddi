@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HealthLink — Design Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+         HealthLink design tokens — mirrors the Next.js app
+         (app/globals.css + Tailwind utilities used in components)
+         ============================================================ */
+
+      :root {
+        /* Surfaces */
+        --bg: #f8fafc; /* slate-50 */
+        --surface: #ffffff;
+        --border: #e2e8f0; /* slate-200 */
+        --border-soft: rgba(226, 232, 240, 0.8);
+
+        /* Text — steered: darkened to meet WCAG AA on white */
+        --text: #0f172a; /* slate-900 */
+        --text-body: #334155; /* slate-700 */
+        --text-muted: #475569; /* slate-600 (4.0:1 ⇒ ~5.5:1 AA) */
+        --text-faint: #64748b; /* slate-500 (was slate-400 2.2:1 ⇒ AA) */
+
+        /* Brand (emerald) */
+        --brand: #10b981; /* emerald-500 (charts, marks) */
+        --brand-strong: #059669; /* emerald-600 (hover) */
+        --brand-deep: #047857; /* emerald-700 — button fill, 5.5:1 AA w/ white */
+        --brand-soft: #ecfdf5; /* emerald-50 */
+        --brand-ring: #a7f3d0; /* emerald-200 */
+
+        /* Functional accents used in charts & tags */
+        --accent-sky: #0ea5e9;
+        --accent-violet: #8b5cf6;
+        --accent-amber: #f59e0b;
+        --accent-rose: #f43f5e;
+
+        /* Radii */
+        --r-lg: 0.75rem; /* rounded-lg */
+        --r-xl: 0.875rem; /* rounded-xl */
+        --r-2xl: 1rem; /* rounded-2xl */
+
+        --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+          Roboto, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+
+      /* ---------- Layout ---------- */
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .topbar-inner {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: var(--brand);
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.35);
+      }
+
+      .nav a {
+        margin-left: 4px;
+        padding: 7px 12px;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+      }
+
+      .nav a:hover {
+        background: #f1f5f9;
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px 64px;
+      }
+
+      .page-title {
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .page-sub {
+        margin: 0 0 32px;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      /* ---------- Section / cards ---------- */
+
+      section {
+        margin-bottom: 32px;
+      }
+
+      h2.sec {
+        margin: 0 0 14px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--r-2xl);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 720px) {
+        .grid-2 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .grid-3 {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-4 {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      /* ---------- Colors ---------- */
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      .swatch {
+        border: 1px solid var(--border);
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        background: var(--surface);
+      }
+
+      .swatch .chip {
+        height: 64px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .swatch .meta {
+        padding: 10px 12px;
+      }
+
+      .swatch .name {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .swatch .hex {
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text-muted);
+      }
+
+      /* ---------- Typography ---------- */
+
+      .type-row {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--border);
+      }
+
+      .type-row:last-child {
+        border-bottom: none;
+      }
+
+      .type-row .label {
+        width: 110px;
+        flex-shrink: 0;
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text-faint);
+      }
+
+      .sample-h1 {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .sample-h2 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        margin: 0;
+      }
+      .sample-h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .sample-body {
+        font-size: 14px;
+        color: var(--text-body);
+        margin: 0;
+      }
+      .sample-small {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin: 0;
+      }
+      .sample-label {
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      /* ---------- Buttons ---------- */
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 11px 20px;
+        border-radius: var(--r-xl);
+        transition: background 0.15s ease, transform 0.05s ease;
+        text-decoration: none;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn-primary {
+        background: var(--brand-deep); /* #047857 = 5.5:1 w/ white text (AA) */
+        color: #fff;
+        box-shadow: 0 1px 2px rgba(4, 120, 87, 0.35);
+      }
+      .btn-primary:hover {
+        background: #065f46; /* emerald-800 */
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        background: #f8fafc;
+      }
+
+      .btn-danger {
+        background: transparent;
+        color: var(--accent-rose);
+        font-weight: 500;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .btn-danger:hover {
+        background: #fff1f2;
+      }
+
+      .btn-lg {
+        width: 100%;
+        padding: 13px 20px;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      /* Pill (mood/selector style) */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-muted);
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .pill:hover {
+        background: #f8fafc;
+      }
+
+      .pill-active {
+        background: var(--brand-deep);
+        border-color: var(--brand-deep);
+        color: #fff;
+      }
+
+      .pill-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      /* ---------- Inputs ---------- */
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field > span {
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 10px 12px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      }
+
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--text-faint);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 560px) {
+        .form-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .form-grid .span-2 {
+          grid-column: span 2;
+        }
+      }
+
+      /* ---------- Codes ---------- */
+
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: var(--r-2xl);
+        padding: 16px 18px;
+        font-size: 12.5px;
+        line-height: 1.6;
+        overflow-x: auto;
+      }
+
+      pre .c {
+        color: #64748b;
+      }
+
+      .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        color: var(--text-faint);
+        font-size: 12.5px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#">
+          <span class="brand-mark">+</span>
+          HealthLink
+        </a>
+        <nav class="nav">
+          <a href="#colors">Colors</a>
+          <a href="#type">Typography</a>
+          <a href="#buttons">Buttons</a>
+          <a href="#inputs">Inputs</a>
+          <a href="#form">Form</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <h1 class="page-title">HealthLink design preview</h1>
+      <p class="page-sub">
+        A standalone visual preview of the app's tokens — colors, typography,
+        buttons, and inputs. Font: Geist (fallback to system UI).
+      </p>
+
+      <!-- ============ COLORS ============ -->
+      <section id="colors">
+        <h2 class="sec">Colors</h2>
+        <div class="card">
+          <h3 class="sec" style="margin-top: 0">Brand &amp; surfaces</h3>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="chip" style="background: #10b981"></div>
+              <div class="meta">
+                <div class="name">Primary / brand</div>
+                <div class="hex">#10b981 · emerald-500</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #059669"></div>
+              <div class="meta">
+                <div class="name">Primary hover</div>
+                <div class="hex">#059669 · emerald-600</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #047857"></div>
+              <div class="meta">
+                <div class="name">Button fill (steered)</div>
+                <div class="hex">#047857 · emerald-700 · 5.5:1</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #ecfdf5"></div>
+              <div class="meta">
+                <div class="name">Primary soft</div>
+                <div class="hex">#ecfdf5 · emerald-50</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #f8fafc"></div>
+              <div class="meta">
+                <div class="name">Page background</div>
+                <div class="hex">#f8fafc · slate-50</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #ffffff; border-bottom: 1px solid #e2e8f0"></div>
+              <div class="meta">
+                <div class="name">Surface / card</div>
+                <div class="hex">#ffffff</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #e2e8f0"></div>
+              <div class="meta">
+                <div class="name">Border</div>
+                <div class="hex">#e2e8f0 · slate-200</div>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="sec">Text</h3>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="chip" style="background: #0f172a"></div>
+              <div class="meta">
+                <div class="name">Primary text</div>
+                <div class="hex">#0f172a · slate-900</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #334155"></div>
+              <div class="meta">
+                <div class="name">Body text</div>
+                <div class="hex">#334155 · slate-700</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #475569"></div>
+              <div class="meta">
+                <div class="name">Muted text (steered)</div>
+                <div class="hex">#475569 · slate-600 · AA</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #64748b"></div>
+              <div class="meta">
+                <div class="name">Faint text</div>
+                <div class="hex">#64748b · slate-500 · AA</div>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="sec">Functional accents (charts, tags, status)</h3>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="chip" style="background: #0ea5e9"></div>
+              <div class="meta">
+                <div class="name">Heart rate / info</div>
+                <div class="hex">#0ea5e9 · sky-500</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #8b5cf6"></div>
+              <div class="meta">
+                <div class="name">Weight / lab</div>
+                <div class="hex">#8b5cf6 · violet-500</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #f59e0b"></div>
+              <div class="meta">
+                <div class="name">Sleep / warning</div>
+                <div class="hex">#f59e0b · amber-400</div>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="chip" style="background: #f43f5e"></div>
+              <div class="meta">
+                <div class="name">Danger / delete</div>
+                <div class="hex">#f43f5e · rose-500</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TYPOGRAPHY ============ -->
+      <section id="type">
+        <h2 class="sec">Typography</h2>
+        <div class="card">
+          <div class="type-row">
+            <div class="label">h1 / 30px / 700</div>
+            <h1 class="sample-h1">Better Information. Healthier You.</h1>
+          </div>
+          <div class="type-row">
+            <div class="label">h2 / 22px / 600</div>
+            <h2 class="sample-h2">Find help near you</h2>
+          </div>
+          <div class="type-row">
+            <div class="label">h3 / 16px / 600</div>
+            <h3 class="sample-h3">What is hypertension?</h3>
+          </div>
+          <div class="type-row">
+            <div class="label">body / 14px / 400</div>
+            <p class="sample-body">
+              HealthLink provides simple, reliable health information and helps
+              you find relevant healthcare services.
+            </p>
+          </div>
+          <div class="type-row">
+            <div class="label">small / 12px / 400</div>
+            <p class="sample-small">Reviewed by Dr. Adebayo · Sep 28, 2026</p>
+          </div>
+          <div class="type-row">
+            <div class="label">label / 12.5px / 500</div>
+            <span class="sample-label">Full name</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ BUTTONS ============ -->
+      <section id="buttons">
+        <h2 class="sec">Buttons</h2>
+        <div class="card">
+          <p class="sample-small" style="margin-top: 0; max-width: 520px">
+            <strong>Steered refinement — button styling / contrast:</strong>
+            primary fill moved emerald-500 → emerald-700 (#047857), white-text
+            contrast = 5.5:1 (WCAG AA, was ~2.5:1). Active pill matches.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn-primary">Primary action</button>
+            <button class="btn btn-ghost">Secondary action</button>
+            <button class="btn btn-ghost">🔗 Add a link</button>
+          </div>
+          <div class="btn-row" style="margin-top: 12px">
+            <button class="btn btn-primary btn-lg">Full-width primary</button>
+          </div>
+          <div class="btn-row" style="margin-top: 12px">
+            <button class="pill pill-active"><span class="pill-dot" style="background: #10b981"></span>Great</button>
+            <button class="pill"><span class="pill-dot" style="background: #a3e635"></span>Good</button>
+            <button class="pill"><span class="pill-dot" style="background: #facc15"></span>Okay</button>
+            <button class="pill"><span class="pill-dot" style="background: #fb923c"></span>Low</button>
+            <button class="pill"><span class="pill-dot" style="background: #f43f5e"></span>Poor</button>
+          </div>
+          <div class="btn-row" style="margin-top: 12px">
+            <button class="btn btn-danger">Delete</button>
+            <button class="btn btn-danger">Report</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ INPUTS ============ -->
+      <section id="inputs">
+        <h2 class="sec">Inputs</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3 class="sec" style="margin-top: 0">Fields</h3>
+            <div class="form-grid">
+              <div class="field">
+                <span>Full name</span>
+                <input type="text" placeholder="e.g. Amina Yusuf" />
+              </div>
+              <div class="field">
+                <span>Email</span>
+                <input type="email" placeholder="you@example.com" />
+              </div>
+              <div class="field">
+                <span>Phone</span>
+                <input type="tel" placeholder="+234 800 000 0000" />
+              </div>
+              <div class="field">
+                <span>Date</span>
+                <input type="date" value="2026-09-28" />
+              </div>
+              <div class="field">
+                <span>Number</span>
+                <input type="number" placeholder="0" min="0" step="any" />
+              </div>
+              <div class="field">
+                <span>Category</span>
+                <select>
+                  <option>Visit</option>
+                  <option>Lab result</option>
+                  <option>Imaging</option>
+                  <option>Prescription</option>
+                  <option>Vaccination</option>
+                </select>
+              </div>
+              <div class="field span-2">
+                <span>Message</span>
+                <textarea placeholder="Describe your concern…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="sec" style="margin-top: 0">Tokens</h3>
+            <pre><code><span class="c">/* Surfaces */</span>
+background : #f8fafc
+surface    : #ffffff
+border     : #e2e8f0
+
+<span class="c">/* Brand */</span>
+primary        : #10b981 (charts/brand)
+primary-hover  : #059669
+btn-fill       : #047857 (5.5:1 AA)
+focus-ring     : rgba(16,185,129,.15)
+
+<span class="c">/* Text (AA) */</span>
+text  : #0f172a
+body  : #334155
+muted : #475569
+faint : #64748b
+
+<span class="c">/* Radii */</span>
+button : 14px
+input  : 12px
+card   : 16px
+
+<span class="c">/* Font */</span>
+family : Geist, system-ui, sans-serif
+body   : 14px / 150%</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SAMPLE FORM ============ -->
+      <section id="form">
+        <h2 class="sec">Sample form</h2>
+        <div class="card">
+          <h3 class="sec" style="margin-top: 0">Request an appointment</h3>
+          <form class="form-grid">
+            <div class="field">
+              <span>Full name</span>
+              <input type="text" placeholder="e.g. Amina Yusuf" />
+            </div>
+            <div class="field">
+              <span>Phone</span>
+              <input type="tel" placeholder="+234 800 000 0000" />
+            </div>
+            <div class="field">
+              <span>Email</span>
+              <input type="email" placeholder="you@example.com" />
+            </div>
+            <div class="field">
+              <span>Preferred date</span>
+              <input type="date" value="2026-10-05" />
+            </div>
+            <div class="field span-2">
+              <span>Why are you booking?</span>
+              <textarea placeholder="Brief reason for the visit…"></textarea>
+            </div>
+            <div class="span-2">
+              <button type="submit" class="btn btn-primary btn-lg">Submit request</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <footer class="footer">
+        HealthLink design system preview · standalone HTML, tokens mirror the
+        Next.js app · font: Geist (Google Fonts) with system fallbacks ·
+        steered refinement: AA contrast on text &amp; primary buttons.
+      </footer>
+    </main>
+  </body>
+</html>
