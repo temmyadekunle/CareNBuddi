@@ -2,8 +2,9 @@
 
 - **Product Name:** HealthLink
 - **Category:** Impact & Innovation
-- **Product Type:** Digital Health Navigation Platform
+- **Product Type:** Digital and mobile healthcare platform (health app + mobile clinic + healthcare network)
 - **Tagline:** Better Information. Healthier You.
+- **Positioning:** "HealthLink is a digital and mobile healthcare platform connecting people to reliable health information, preventive services and the right healthcare providers. Everything else — search, directory, mobile clinic, telehealth, AI, reminders — is a feature or service within that vision."
 
 ## Steer One Choice (tool decision note — for AI grader)
 
@@ -316,3 +317,66 @@ The user should be able to:
 HealthLink aims to become a trusted digital bridge between people, reliable health information, and appropriate healthcare services.
 
 The long-term vision is to make healthcare navigation simpler, more accessible, and easier to understand, particularly for people who may struggle to find reliable information or appropriate services.
+
+## 15. Product Ecosystem
+
+HealthLink is one platform composed of three connected layers. Users never need to think about the layers — they see one product.
+
+```
+HEALTHLINK
+   │
+   ├── HEALTH APP            (Information, Guidance, Health tools, Booking)
+   ├── MOBILE CLINIC         (Screening, Outreach, Wellness, Education)
+   └── HEALTHCARE NETWORK    (Hospitals, Labs, Pharmacies, Doctors)
+   │
+   └── USER / PATIENT
+```
+
+## 16. User Experience: Homepage & Navigation
+
+The homepage does not explain the ecosystem. It simply asks:
+
+> **How can we help you today?**
+
+and offers four main options:
+
+| Option | What it does |
+| --- | --- |
+| 🔎 **Understand My Health** | Learn about symptoms, conditions, prevention and wellness. |
+| 🏥 **Find Healthcare** | Find hospitals, clinics, laboratories, pharmacies and professionals. |
+| 🚐 **Book HealthLink Mobile Clinic** | Request a screening, outreach or wellness service. |
+| 📅 **Manage My Health** | Appointments, reminders, saved providers and health records where legally and technically appropriate. |
+
+App navigation: **Home | Explore | Find Care | Mobile Clinic | Profile**.
+
+- **Home:** "Good morning — how can we help you today?" + search bar and the four options above.
+- **Explore:** health categories — Women's Health, Men's Health, Mental Health, Children's Health, Nutrition, Sexual & Reproductive Health, Preventive Health, Chronic Conditions, First Aid.
+- **Find Care:** user selects what they need (Doctor, Hospital, Laboratory, Pharmacy, Mental-health support, Screening, Specialist) → location → results → provider profile → contact/book.
+- **Mobile Clinic:** services (BP screening, blood glucose screening, wellness checks, health education, community outreach, corporate wellness) → **Book a Visit**.
+- **Profile:** personal area (guest-first; account optional via magic link).
+
+## 17. Business Model
+
+HealthLink uses a **B2C, B2B and B2B2C model**:
+
+- **Individuals:** free health information + basic navigation; paid selected premium services.
+- **Healthcare providers:** pay for professional profiles, visibility, booking tools and business analytics.
+- **Companies:** pay for employee wellness programmes and mobile clinic visits.
+- **Communities:** pay/book health screening and outreach programmes.
+- **Partners:** pay or sponsor approved health campaigns and programmes, with clear disclosure.
+
+HealthLink is not dependent on one source of income and is not built on advertising alone.
+
+## 18. Phased Rollout
+
+Build and validate one layer at a time — never "app + mobile clinic + AI + network + blog" at once.
+
+1. **Phase 1 — Digital HealthLink (MVP):** health information, healthcare directory, search, basic navigation, provider profiles, contact/booking, emergency guidance. *Goal: prove people need and use HealthLink.*
+2. **Phase 2 — HealthLink Mobile Clinic:** BP/glucose screening, wellness checks, health education, community outreach, workplace health days, referral services. *Goal: take HealthLink from the phone into the community.*
+3. **Phase 3 — Healthcare Network:** partner hospitals, clinics, laboratories, pharmacies, doctors, mental-health professionals, HMOs/health organizations. *Goal: bridge people and providers.*
+4. **Phase 4 — Advanced:** telehealth, health reminders, personal health dashboard, AI-assisted navigation, WhatsApp integration, corporate wellness, multilingual support. *Only after the foundation works.*
+
+## 19. Content Attribution & Trust
+
+- Health content is written and reviewed by qualified **health educators and professionals**; attribution uses accurate credentials (e.g. health educator, mental health counsellor) — never invented clinician titles.
+- Sources are cited on topic pages, and pages clearly state when professional medical care is recommended.
