@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -40,7 +40,8 @@ function FindCareContent() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Find care</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Search hospitals, clinics, laboratories, pharmacies and professionals.
+          Search hospitals, clinics, PHCs, laboratories, pharmacies, diagnostic centres
+          and professionals — and contact them directly.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -52,15 +53,15 @@ function FindCareContent() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, service, city…"
-            className="w-full max-w-sm rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+            placeholder="Search name, service, cityâ€¦"
+            className="w-full max-w-sm rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
           />
           <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
             Location
             <select
               value={state}
               onChange={(e) => setState(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             >
               <option>All states</option>
               {ALL_STATES.map((s) => (
@@ -73,7 +74,7 @@ function FindCareContent() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             >
               <option>All categories</option>
               {ALL_CATEGORIES.map((c) => (

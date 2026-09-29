@@ -141,7 +141,7 @@ export const TOPICS: Topic[] = [
     ],
     categories: ["Hospital", "Clinic", "Laboratory", "Pharmacy", "Diagnostic centre"],
     source: "WHO malaria guidance (reviewed)",
-    reviewedBy: "Dr. Amina Bello",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
     reviewedOn: "2026-09-18",
   },
   {
@@ -187,7 +187,7 @@ export const TOPICS: Topic[] = [
     ],
     categories: ["Mental health service", "Clinic"],
     source: "WHO mental health guidance (reviewed)",
-    reviewedBy: "Dr. Chidi Nwosu",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
     reviewedOn: "2026-09-15",
   },
   {
@@ -230,7 +230,7 @@ export const TOPICS: Topic[] = [
     ],
     categories: ["Hospital", "Clinic", "Pharmacy"],
     source: "International Red Cross first-aid guidance (reviewed)",
-    reviewedBy: "Nurse Blessing Ojo",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
     reviewedOn: "2026-09-12",
   },
 ];
@@ -335,27 +335,41 @@ export const ALL_CATEGORIES: string[] = [
 ];
 
 export const HEALTH_CATEGORIES: string[] = [
+  "General Health",
   "Women's Health",
   "Men's Health",
   "Mental Health",
   "Children's Health",
   "Nutrition",
   "Sexual & Reproductive Health",
+  "Maternal Health",
   "Preventive Health",
   "Chronic Conditions",
   "First Aid",
+  "Oral Health",
+  "Eye Health",
+  "Healthy Ageing",
+  "Environmental Health",
+  "Occupational Health",
 ];
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  "General Health": "Everyday health, wellbeing, and staying well information.",
   "Women's Health": "Health concerns that uniquely or predominantly affect women.",
   "Men's Health": "Health concerns that uniquely or predominantly affect men.",
   "Mental Health": "Stress, anxiety, mood, sleep, and emotional wellbeing.",
   "Children's Health": "Growth, development, and common childhood conditions.",
   Nutrition: "Food, diet, and healthy eating basics.",
   "Sexual & Reproductive Health": "Safe, accurate information on SRH topics.",
+  "Maternal Health": "Care and wellbeing during pregnancy, birth, and after.",
   "Preventive Health": "Screening, vaccination, and staying well.",
   "Chronic Conditions": "Long-term conditions like hypertension and diabetes.",
   "First Aid": "Immediate care before professional help arrives.",
+  "Oral Health": "Teeth, gums, and everyday mouth care.",
+  "Eye Health": "Sight, vision care, and common eye conditions.",
+  "Healthy Ageing": "Staying well and independent in later life.",
+  "Environmental Health": "How air, water, climate, and surroundings affect health.",
+  "Occupational Health": "Workplace safety and work-related health risks.",
 };
 
 export const ALL_STATES: string[] = Array.from(

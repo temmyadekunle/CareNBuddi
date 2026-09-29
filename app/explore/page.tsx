@@ -58,7 +58,7 @@ function ExploreContent() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search topics, symptoms, conditions…"
-          className="mt-4 w-full max-w-xl rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+          className="mt-4 w-full max-w-xl rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
         />
         <div className="mt-3 flex flex-wrap gap-1.5">
           <CategoryPill active={category === "All"} onClick={() => setCategory("All")}>
@@ -82,7 +82,7 @@ function ExploreContent() {
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-colors hover:border-emerald-300"
+                  className="rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-colors hover:border-brand-300"
                 >
                   <h3 className="text-sm font-semibold text-slate-900">{c}</h3>
                   <p className="mt-1 text-sm text-slate-600">{CATEGORY_DESCRIPTIONS[c]}</p>
@@ -120,7 +120,7 @@ function CategoryPill({
       onClick={onClick}
       className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
         active
-          ? "bg-emerald-700 text-white"
+          ? "bg-brand-700 text-white"
           : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
       }`}
     >

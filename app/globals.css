@@ -10,6 +10,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* HealthLink Teal — primary */
+  --color-brand-50: #eef7f7;
+  --color-brand-100: #daeff0;
+  --color-brand-200: #c0e4e5;
+  --color-brand-300: #93d0d1;
+  --color-brand-400: #3fa9ab;
+  --color-brand-500: #0f8b8d;
+  --color-brand-600: #0d7476;
+  --color-brand-700: #0b6b6d; /* button fill + links — 6.3:1 AA with white */
+  --color-brand-800: #095355;
+  --color-brand-900: #0a4143;
+
+  /* Health Green — secondary / success */
+  --color-green-50: #edf7ed;
+  --color-green-100: #d7eed8;
+  --color-green-200: #b7e0b9;
+  --color-green-300: #8fce92;
+  --color-green-500: #4caf50;
+  --color-green-700: #2f7d33; /* 5.1:1 AA with white */
+  --color-green-800: #276b2a;
+  --color-green-900: #1e4d21;
+
+  /* Warm Coral — accent (used sparingly) */
+  --color-coral-50: #fdf0f6;
+  --color-coral-100: #f9dceb;
+  --color-coral-200: #f2bcd6;
+  --color-coral-500: #ec4899;
+  --color-coral-700: #be185d; /* 6.0:1 AA with white */
 }
 
 body {

@@ -7,6 +7,10 @@ export const KEYS = {
   journal: "healthlink:journal",
   records: "healthlink:records",
   reminders: "healthlink:reminders",
+  fitnessProfile: "healthlink:fitness-profile",
+  workouts: "healthlink:workouts",
+  weighIns: "healthlink:weigh-ins",
+  exerciseReminder: "healthlink:exercise-reminder",
 } as const;
 
 export function uid(): string {

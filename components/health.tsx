@@ -31,10 +31,10 @@ export function TopicCard({ topic, onSelect }: { topic: Topic; onSelect: (t: Top
   return (
     <button
       onClick={() => onSelect(topic)}
-      className="group rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-colors hover:border-emerald-300"
+      className="group rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-colors hover:border-brand-300"
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-900 group-hover:text-emerald-700">
+        <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-700">
           {topic.title}
         </h3>
         <span className="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
@@ -42,7 +42,7 @@ export function TopicCard({ topic, onSelect }: { topic: Topic; onSelect: (t: Top
         </span>
       </div>
       <p className="mt-1 text-sm text-slate-600">{topic.summary}</p>
-      <span className="mt-2 inline-block text-xs font-medium text-emerald-700">Read more →</span>
+      <span className="mt-2 inline-block text-xs font-medium text-brand-700">Read more →</span>
     </button>
   );
 }
@@ -55,7 +55,7 @@ export function TopicDetail({ topic, onBack }: { topic: Topic; onBack?: () => vo
           <button onClick={onBack} className="text-sm font-medium text-slate-500 hover:text-slate-700">
             ← Back
           </button>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+          <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700">
             Reviewed by {topic.reviewedBy} · {topic.reviewedOn}
           </span>
         </div>
@@ -101,7 +101,7 @@ export function TopicDetail({ topic, onBack }: { topic: Topic; onBack?: () => vo
         <p className="text-xs text-slate-400">Source: {topic.source}</p>
         <Link
           href={`/find-care?category=${encodeURIComponent(topic.categories[0] ?? "Hospital")}`}
-          className="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-800"
+          className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
         >
           Find Help Near Me →
         </Link>
@@ -135,7 +135,7 @@ export function ProviderCard({ provider }: { provider: Provider }) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         <a
           href={`tel:${provider.phone}`}
-          className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"
+          className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
         >
           Call {provider.phone}
         </a>
@@ -166,7 +166,7 @@ function BulletList({ items }: { items: string[] }) {
     <ul className="space-y-1.5">
       {items.map((item) => (
         <li key={item} className="flex gap-2 text-sm text-slate-700">
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
           {item}
         </li>
       ))}

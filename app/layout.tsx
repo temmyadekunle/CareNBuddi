@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "HealthLink",
   description:
-    "Your personal health dashboard — track journal entries, medical records, and reminders.",
+    "Your Personal Health Navigation System — learn about your health, check your numbers, find appropriate care, connect with providers and stay on track. Better Information. Healthier You.",
 };
 
 export default function RootLayout({
