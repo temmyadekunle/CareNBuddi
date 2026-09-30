@@ -97,3 +97,57 @@ export const DAY_NAMES = [
   "Friday",
   "Saturday",
 ];
+
+export type Role = "consumer" | "provider" | "admin";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: Role;
+  lang: string;
+  createdAt: string;
+}
+
+export type ProviderRequestStatus = "pending" | "approved" | "rejected";
+
+export interface ProviderRequest {
+  id: string;
+  name: string;
+  email: string;
+  facility: string;
+  category: string;
+  state: string;
+  lga: string;
+  address: string;
+  phone: string;
+  status: ProviderRequestStatus;
+  createdAt: string;
+}
+
+export type BookingStatus = "new" | "contacted" | "confirmed";
+
+export interface Booking {
+  id: string;
+  providerId: string | null;
+  userId: string | null;
+  name: string;
+  phone: string;
+  message: string;
+  date?: string;
+  status: BookingStatus;
+  createdAt: string;
+}
+
+export type ReportTarget = "topic" | "provider";
+
+export interface Report {
+  id: string;
+  targetType: ReportTarget;
+  targetId: string;
+  reason: string;
+  detail?: string;
+  status: "open" | "resolved";
+  createdAt: string;
+}

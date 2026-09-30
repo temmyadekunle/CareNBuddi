@@ -2,6 +2,16 @@
 
 import { useSyncExternalStore } from "react";
 import type { JournalEntry, MedicalRecord, Reminder } from "./types";
+import type { Booking, ProviderRequest, Report, User } from "./types";
+import type { Lang } from "./lang";
+import { PROVIDERS, PROVIDER_SEED_ID, TOPICS } from "./content";
+
+export interface Session {
+  userId: string | null;
+  lang: Lang;
+}
+
+export const seedSession: Session = { userId: null, lang: "en" };
 
 export const KEYS = {
   journal: "healthlink:journal",
@@ -11,6 +21,13 @@ export const KEYS = {
   workouts: "healthlink:workouts",
   weighIns: "healthlink:weigh-ins",
   exerciseReminder: "healthlink:exercise-reminder",
+  session: "healthlink:session",
+  users: "healthlink:users",
+  providers: "healthlink:providers",
+  topics: "healthlink:topics",
+  providerRequests: "healthlink:provider-requests",
+  bookings: "healthlink:bookings",
+  reports: "healthlink:reports",
 } as const;
 
 export function uid(): string {
@@ -219,5 +236,110 @@ export function useStoredCollection<T extends { id: string }>(
 
   return [items, update];
 }
+
+function readValue<T>(key: string, seed: T): T {
+  if (cache.has(key)) return cache.get(key) as T;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw) as T;
+      cache.set(key, parsed);
+      return parsed;
+    }
+  } catch {
+    // ignore malformed storage
+  }
+  cache.set(key, seed);
+  return seed;
+}
+
+function writeValue<T>(key: string, value: T) {
+  cache.set(key, value);
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage may be unavailable
+  }
+  notify(key);
+}
+
+export function useStoredValue<T>(
+  key: string,
+  seed: T,
+): [T, (next: T | ((prev: T) => T)) => void] {
+  const value = useSyncExternalStore(
+    (cb) => subscribe(key, cb),
+    () => readValue(key, seed),
+    () => seed,
+  );
+
+  const update = (next: T | ((prev: T) => T)) => {
+    const prev = readValue(key, seed);
+    const result = typeof next === "function" ? (next as (p: T) => T)(prev) : next;
+    writeValue(key, result);
+  };
+
+  return [value, update];
+}
+
+export function useSession(): [Session, (next: Session | ((prev: Session) => Session)) => void] {
+  return useStoredValue<Session>(KEYS.session, seedSession);
+}
+
+export type ContentItem = (typeof TOPICS)[number] & { id: string; status: "published" | "draft" };
+
+export const seedUsers: User[] = [
+  {
+    id: "u-admin", name: "HealthLink Admin", email: "admin@healthlink.ng", role: "admin",
+    lang: "en", createdAt: `2026-08-01T09:00:00.000Z`,
+  },
+  {
+    id: "u-provider", name: "Patience Ogunleye", email: "patience@provider.healthlink.ng", role: "provider",
+    phone: "+234 809 000 0025", lang: "en", createdAt: `2026-08-05T09:00:00.000Z`,
+  },
+  {
+    id: "u-consumer", name: "Demo Patient", email: "demo@user.healthlink.ng", role: "consumer",
+    phone: "+234 800 000 0000", lang: "en", createdAt: `2026-08-10T09:00:00.000Z`,
+  },
+];
+
+export const seedTopics: ContentItem[] = TOPICS.map((t) => ({
+  ...t,
+  id: t.slug,
+  status: "published" as const,
+}));
+
+export const seedProviders = PROVIDERS;
+
+export const seedProviderRequests: ProviderRequest[] = [
+  {
+    id: "req-1", name: "Dr. Ngozi Eze", email: "ngozi@sunriseeye.ng",
+    facility: "Sunrise Eye Clinic", category: "Clinic", state: "Lagos", lga: "Lagos Island",
+    address: "8 Broad Street, Lagos Island", phone: "+234 810 123 4567",
+    status: "pending", createdAt: `2026-09-25T09:00:00.000Z`,
+  },
+];
+
+export const seedBookings: Booking[] = [
+  {
+    id: "bk-1", providerId: PROVIDER_SEED_ID, userId: "u-consumer",
+    name: "Demo Patient", phone: "+234 800 000 0000",
+    message: "I would like a BP check and routine consult.", date: todayIso(),
+    status: "new", createdAt: todayIso(),
+  },
+  {
+    id: "bk-2", providerId: null, userId: null, name: "Amina Yusuf",
+    phone: "+234 802 333 4444", message: "Mobile clinic visit for my neighbourhood.",
+    status: "new", createdAt: daysAgo(1),
+  },
+];
+
+export const seedReports: Report[] = [
+  {
+    id: "rep-1", targetType: "provider", targetId: "lag-07",
+    reason: "Outdated contact details", detail: "Phone number is no longer reachable.",
+    status: "open", createdAt: daysAgo(2),
+  },
+];
 
 export { todayIso };

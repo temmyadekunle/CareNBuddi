@@ -1,55 +1,82 @@
 "use client";
 
 import Link from "next/link";
+import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { useT } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/ui";
 
 const TRACKERS = [
-  { icon: "🏃", title: "Exercise & weight", desc: "Set your weight goal, train daily, set reminders and track your weight-loss journey.", href: "/health/exercise", badge: "Open" },
-  { icon: "🗂️", title: "My Health Records", desc: "Screening history, appointments and key documents will appear here — kept private and secure.", href: "/profile" },
-  { icon: "⏰", title: "My Reminders", desc: "Set reminders for appointments, screening dates, medications and follow-ups.", href: "/profile" },
-  { icon: "🩺", title: "Prevention checklist", desc: "Your action list — BP checked, screening done, education completed. No medical labels, just progress.", href: "/services" },
-  { icon: "📚", title: "Recommended learning", desc: "Health education matched to your interests and health journey.", href: "/explore" },
+  { icon: "🏃", key: "hh_exercise", href: "/health/exercise", badge: "Open" },
+  { icon: "🗂️", key: "hh_journal", href: "/journal", badge: "Open" },
+  { icon: "📂", key: "hh_records", href: "/records", badge: "Open" },
+  { icon: "⏰", key: "hh_reminders", href: "/reminders", badge: "Open" },
+  { icon: "🩺", key: "h_check", dKey: "h_check_d", href: "/services", badge: "Open" },
+  { icon: "📚", key: "h_learn", dKey: "h_learn_d", href: "/explore", badge: "Open" },
 ];
 
 export default function HealthPage() {
+  const t = useT();
+  const [session] = useSession();
+  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const me = users.find((u) => u.id === session.userId);
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">My Health</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Your personal dashboard — record health information, follow your prevention
-          checklist, and keep appointments and reminders on track.
-        </p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {me ? `${t("hh_title")} · ${me.name.split(" ")[0]}` : t("hh_title")}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">{t("hh_sub")}</p>
+        </div>
+        <LangSwitcher />
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-700">
-          You are browsing as a <strong>guest</strong>. Creating an optional account lets
-          you record your health information and save providers and resources follow-up.
-        </p>
-        <Link
-          href="/profile"
-          className="mt-4 inline-block rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-        >
-          Go to my profile
-        </Link>
-      </div>
+      {!session.userId || !me ? (
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <p className="text-sm text-slate-700">{t("a_sub")}</p>
+          <Link
+            href="/account"
+            className="mt-4 inline-block rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+          >
+            {t("a_signin")} →
+          </Link>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-brand-100 bg-brand-50 p-5">
+          <p className="text-sm text-brand-900">
+            {t("a_welcome")} — <span className="font-semibold">{me.name}</span>{" "}
+            <span className="text-brand-700">({me.role})</span>
+          </p>
+          {me.role !== "consumer" && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href={me.role === "admin" ? "/admin" : "/provider"}
+                className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-800"
+              >
+                {me.role === "admin" ? t("ad_title") : t("pv_title")} →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {TRACKERS.map((t) => (
+        {TRACKERS.map((item) => (
           <Link
-            key={t.title}
-            href={t.href}
+            key={item.key}
+            href={item.href}
             className="group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-colors hover:border-brand-300"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-xl">
-              {t.icon}
+              {item.icon}
             </span>
             <h2 className="mt-3 text-sm font-semibold text-slate-900 group-hover:text-brand-700">
-              {t.title}
+              {t(item.key)}
             </h2>
-            <p className="mt-1 text-sm text-slate-600">{t.desc}</p>
+            <p className="mt-1 text-sm text-slate-600">{t(item.dKey ?? `${item.key}_d`, "") || ""}</p>
             <span className="mt-2 inline-block rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-              {"badge" in t ? t.badge : "Coming in the digital MVP"}
+              {item.badge}
             </span>
           </Link>
         ))}
@@ -65,7 +92,7 @@ export default function HealthPage() {
           href="/services"
           className="mt-3 inline-block rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
         >
-          Book a check →
+          {t("s_book")} →
         </Link>
       </div>
     </main>

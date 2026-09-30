@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { KEYS, seedBookings, uid, useSession, useStoredCollection } from "@/lib/storage";
+import { useT } from "@/lib/i18n";
+import type { Booking } from "@/lib/types";
 
 const CHECK_ITEMS = [
   { icon: "🫀", name: "Blood pressure", desc: "Quick, quiet BP checks with simple follow-up guidance." },
@@ -43,6 +46,9 @@ const SERVICES = [
 ];
 
 export default function ServicesPage() {
+  const t = useT();
+  const [session] = useSession();
+  const [, setBookings] = useStoredCollection(KEYS.bookings, seedBookings);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [service, setService] = useState(SERVICES[0].name);
@@ -52,6 +58,18 @@ export default function ServicesPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const booking: Booking = {
+      id: uid(),
+      providerId: null,
+      userId: session.userId,
+      name: name.trim() || "Guest",
+      phone: phone.trim(),
+      message: `${service} — ${area}`,
+      date: date || undefined,
+      status: "new",
+      createdAt: new Date().toISOString(),
+    };
+    setBookings((prev) => [...prev, booking]);
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -59,11 +77,8 @@ export default function ServicesPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Check your health and book preventive health services — including the
-          HealthLink Mobile Clinic.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("s_title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("s_sub")}</p>
       </div>
 
       {/* Check My Health */}
@@ -131,7 +146,7 @@ export default function ServicesPage() {
         <div className="mt-4">
           {submitted ? (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-              <p className="text-lg font-semibold text-green-900">Request received 🎉</p>
+              <p className="text-lg font-semibold text-green-900">{t("s_received")} 🎉</p>
               <p className="mx-auto mt-2 max-w-md text-sm text-green-800">
                 Thanks {name ? name.split(" ")[0] : ""}! A HealthLink team member will contact{" "}
                 {phone} to confirm your {service.toLowerCase()} visit
