@@ -1,7 +1,0 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
-  <rect width="400" height="240" rx="24" fill="#2563eb"/>
-  <circle cx="200" cy="104" r="46" fill="rgba(255,255,255,0.16)"/>
-  <text x="200" y="124" font-size="60" text-anchor="middle">🚴</text>
-  <text x="200" y="182" font-size="26" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="Geist, Arial, sans-serif">Cycling</text>
-  <text x="200" y="216" font-size="13" fill="rgba(255,255,255,0.85)" text-anchor="middle" font-family="Geist, Arial, sans-serif">Placeholder — replace by adding your photo</text>
-</svg>
