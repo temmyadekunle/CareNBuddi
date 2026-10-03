@@ -1,0 +1,6 @@
+import { PROVIDERS } from "@/lib/content";
+
+export function generateStaticParams() {
+  return PROVIDERS.map((p) => ({ id: p.id }));
+}
+
