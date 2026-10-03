@@ -28,18 +28,41 @@ export default function LandingPage() {
           Find Care directory with hospitals, PHCs, labs and pharmacies across Nigeria, chronic
           care journeys, health passports, community health days and more.
         </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           {[
-            ["Learn", "Plain-language health articles in your language."],
-            ["Check", "Track vitals, journal entries and reminders."],
-            ["Find Care", "Search verified facilities near you by state and LGA."],
-            ["Connect", "Book requests and follow referrals with providers."],
-          ].map(([title, desc]) => (
-            <div key={title} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-              <p className="mt-1 text-sm text-slate-600">{desc}</p>
+            ["🇳🇬", "Nigeria-first", "Built for Nigerian states & LGAs"],
+            ["🌍", "4 Languages", "English, Yoruba, Hausa, Igbo"],
+            ["🏥", "30+ Providers", "Hospitals, PHCs, labs, pharmacies"],
+            ["❤️", "Community-led", "Health days with real follow-up"],
+          ].map(([icon, title, desc]) => (
+            <div key={title} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+              <span className="text-2xl">{icon}</span>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{title}</p>
+              <p className="text-xs text-slate-500">{desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="px-4 py-12">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl font-semibold text-slate-900">One platform. Complete health navigation.</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["Learn", "Plain-language education, community screening days, and chronic care journeys that keep prevention front and centre."],
+              ["Access", "Find verified hospitals, PHCs, labs and pharmacies by state and LGA, compared by cost and verified."],
+              ["Connect", "Request visits, follow referrals, and stay in touch with the providers you trust."],
+              ["Respond", "Emergency guidance and a scannable health passport that works when seconds count."],
+            ].map(([title, desc], i) => (
+              <div key={title} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i === 0 ? "bg-brand-100 text-brand-700" : i === 1 ? "bg-emerald-100 text-emerald-800" : i === 2 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"}`}>
+                  {i + 1}
+                </span>
+                <h3 className="mt-3 text-sm font-semibold text-slate-900">{title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
