@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { LangSwitcher } from "@/components/ui";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "HealthLink — Better Information. Healthier You.",
+  description:
+    "HealthLink is a digital health platform for Nigeria. Learn about your health, check your numbers, find trusted care, and follow up — in English, Yoruba, Hausa and Igbo.",
+};
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +21,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <a href="#about" className="hover:text-slate-900">About</a>
             <a href="#team" className="hover:text-slate-900">Team</a>
             <a href="#download" className="hover:text-slate-900">Download</a>
+            <LangSwitcher compact />
           </nav>
         </div>
       </header>

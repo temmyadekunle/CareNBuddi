@@ -1,10 +1,11 @@
 import { Nav } from "@/components/nav";
+import { AppGuard } from "@/components/app-guard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Nav />
-      {children}
+      <AppGuard>{children}</AppGuard>
     </>
   );
 }
