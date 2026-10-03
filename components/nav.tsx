@@ -92,11 +92,11 @@ export function Nav() {
       <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/95 backdrop-blur md:bottom-6 md:rounded-b-[2rem]" aria-label="Mobile">
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 py-1.5">
           {[
-            { href: "/app", icon: "🏠", label: t("n_home") },
-            { href: "/find-care", icon: "🏥", label: t("n_find") },
-            { href: "/health", icon: "💚", label: t("n_health") },
-            { href: "/passport", icon: "🪪", label: t("n_passport", "Passport") },
-            { href: "/profile", icon: "👤", label: t("n_profile") },
+            { href: "/app", icon: <HomeIcon />, label: t("n_home") },
+            { href: "/find-care", icon: <HeartPulseIcon />, label: t("n_find") },
+            { href: "/health", icon: <ActivityIcon />, label: t("n_health") },
+            { href: "/passport", icon: <IdCardIcon />, label: t("n_passport", "Passport") },
+            { href: "/profile", icon: <UserIcon />, label: t("n_profile") },
           ].map((link) => {
             const active =
               link.href === "/app" ? pathname === "/app" : pathname.startsWith(link.href);
@@ -108,13 +108,49 @@ export function Nav() {
                   active ? "text-brand-700" : "text-slate-500"
                 }`}
               >
-                <span className="text-lg leading-none">{link.icon}</span>
-                {link.label}
+                {link.icon}
+                <span className="w-full truncate text-center">{link.label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
     </header>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" />
+    </svg>
+  );
+}
+function HeartPulseIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 21C7 16.5 3 13.3 3 9.5 3 7 5 5 7.5 5c1.7 0 3.2.9 4.5 2.5C13.3 5.9 14.8 5 16.5 5 19 5 21 7 21 9.5c0 3.8-4 7-9 11.5Z" /><path d="M3 12h4l2-3 4 6 2-3h6" />
+    </svg>
+  );
+}
+function ActivityIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M22 12h-4l-3 8L9 4l-3 8H2" />
+    </svg>
+  );
+}
+function IdCardIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8" cy="11" r="2" /><path d="M13 16c0-1.5 1.3-3 3-3s3 1.5 3 3" /><path d="M16 5v4" />
+    </svg>
+  );
+}
+function UserIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
   );
 }

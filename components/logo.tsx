@@ -4,7 +4,7 @@ export function LogoMark({ className }: { className?: string }) {
     <img
       src="/logo.jpeg"
       alt="HealthLink logo"
-      className={`shrink-0 object-contain ${className ?? ""}`}
+      className={`shrink-0 rounded-lg bg-white object-contain ring-1 ring-slate-200 ${className ?? ""}`}
       width={48}
       height={48}
     />

@@ -7,6 +7,7 @@ import { topicTitle, topicSummary } from "@/lib/content";
 import { matchTopic } from "@/components/health";
 import { KEYS, seedTopics, useStoredCollection } from "@/lib/storage";
 import { useT, useLang } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/ui";
 
 const ACTIONS = [
   {
@@ -61,6 +62,9 @@ export default function Home() {
           <p className="text-sm font-medium uppercase tracking-widest text-brand-700">
             {t("h_tagline")}
           </p>
+          <div className="mt-3 flex items-center justify-center">
+            <LangSwitcher />
+          </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {t("h_title")}
           </h1>
