@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PwaRegister } from "@/components/pwa-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +17,11 @@ export const metadata: Metadata = {
   title: "HealthLink",
   description:
     "Your Personal Health Navigation System — learn about your health, check your numbers, find appropriate care, connect with providers and stay on track. Better Information. Healthier You.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B6B6D",
 };
 
 export default function RootLayout({
@@ -28,6 +34,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-slate-50 text-slate-900">
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
