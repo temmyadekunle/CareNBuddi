@@ -1,4 +1,7 @@
 import type { Lang } from "./lang";
+import { yoTopicLocales } from "./locales/yo";
+import { haTopicLocales } from "./locales/ha";
+import { igTopicLocales } from "./locales/ig";
 
 export interface Faq {
   q: string;
@@ -8,6 +11,12 @@ export interface Faq {
 export interface TopicLocale {
   title?: string;
   summary?: string;
+  whatItIs?: string;
+  symptoms?: string[];
+  riskFactors?: string[];
+  prevention?: string[];
+  whenToSeekHelp?: string;
+  faqs?: Faq[];
 }
 
 export interface Topic {
@@ -63,12 +72,59 @@ export interface EmergencyContact {
   note: string;
 }
 
+export type CostTier = "low" | "mid" | "high";
+
+export const COST_TIER_LABELS: Record<CostTier, string> = {
+  low: "₦ lower cost",
+  mid: "₦₦ typical",
+  high: "₦₦₦ private",
+};
+
+export function providerCostTier(category: ProviderCategory): CostTier {
+  switch (category) {
+    case "Primary health centre":
+    case "Maternal health service":
+    case "Mental health service":
+    case "Pharmacy":
+      return "low";
+    case "Laboratory":
+    case "Diagnostic centre":
+      return "high";
+    default:
+      return "mid";
+  }
+}
+
 export function topicTitle(topic: Topic, lang: Lang): string {
   return topic.locale?.[lang]?.title ?? topic.title;
 }
 
 export function topicSummary(topic: Topic, lang: Lang): string {
   return topic.locale?.[lang]?.summary ?? topic.summary;
+}
+
+export function topicWhatItIs(topic: Topic, lang: Lang): string {
+  return topic.locale?.[lang]?.whatItIs ?? topic.whatItIs;
+}
+
+export function topicSymptoms(topic: Topic, lang: Lang): string[] {
+  return topic.locale?.[lang]?.symptoms ?? topic.symptoms;
+}
+
+export function topicRiskFactors(topic: Topic, lang: Lang): string[] {
+  return topic.locale?.[lang]?.riskFactors ?? topic.riskFactors;
+}
+
+export function topicPrevention(topic: Topic, lang: Lang): string[] {
+  return topic.locale?.[lang]?.prevention ?? topic.prevention;
+}
+
+export function topicWhenToSeekHelp(topic: Topic, lang: Lang): string {
+  return topic.locale?.[lang]?.whenToSeekHelp ?? topic.whenToSeekHelp;
+}
+
+export function topicFaqs(topic: Topic, lang: Lang): Faq[] {
+  return topic.locale?.[lang]?.faqs ?? topic.faqs;
 }
 
 export const PROVIDER_CATEGORY_LABELS: Record<Lang, Record<ProviderCategory, string>> = {
@@ -201,7 +257,7 @@ export function topicLanguageTitle(
   return map[lang]?.[value] ?? map.en[value] ?? value;
 }
 
-export const TOPICS: Topic[] = [
+const TOPIC_BASE: Topic[] = [
   {
     slug: "hypertension",
     title: "Hypertension (high blood pressure)",
@@ -447,7 +503,395 @@ export const TOPICS: Topic[] = [
     reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
     reviewedOn: "2026-09-12",
   },
+  {
+    slug: "type-2-diabetes",
+    title: "Type 2 diabetes",
+    summary:
+      "A condition where blood sugar stays too high, usually developing slowly in adults. It is common, preventable and very manageable.",
+    healthCategory: "Chronic Conditions",
+    whatItIs:
+      "Diabetes means your body struggles to keep blood sugar at a healthy level. In type 2 diabetes this happens gradually, often because of lifestyle and weight. The body still makes insulin but does not use it well. Without treatment, high sugar damages the heart, kidneys, eyes and nerves over time. With early detection, healthy eating and regular checks, most people live full, active lives.",
+    symptoms: [
+      "Feeling very thirsty and urinating often",
+      "Unusual tiredness and weakness",
+      "Blurred vision",
+      "Slow-healing wounds or frequent infections",
+      "Weight loss without trying (sometimes)",
+    ],
+    riskFactors: [
+      "Being overweight, especially around the waist",
+      "Family history of diabetes",
+      "Low physical activity",
+      "Unhealthy diet high in sugar and refined foods",
+      "High blood pressure",
+      "Age over 40",
+    ],
+    prevention: [
+      "Keep a healthy body weight",
+      "Move more — a brisk daily walk counts",
+      "Choose water over sugary drinks",
+      "Eat more vegetables, beans and whole grains",
+      "Get a blood sugar check when a professional recommends it",
+    ],
+    whenToSeekHelp:
+      "If you have risk factors or symptoms, ask for a blood sugar test. A professional will confirm the result and agree a plan. If you already have diabetes, do not stop your medicine without talking to your care team first.",
+    faqs: [
+      {
+        q: "Is type 2 diabetes caused by eating sugar?",
+        a: "Eating too much sugar does not directly cause it, but a high-sugar, high-calorie diet that leads to weight gain increases the risk.",
+      },
+      {
+        q: "Can type 2 diabetes ever go away?",
+        a: "Some people reach normal blood sugar through weight loss and lifestyle change. For others, medication continues to be needed. A professional should guide this.",
+      },
+    ],
+    categories: ["Hospital", "Clinic", "Laboratory", "Pharmacy", "Diagnostic centre"],
+    source: "WHO fact sheet on diabetes (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-22",
+  },
+  {
+    slug: "asthma",
+    title: "Asthma",
+    summary:
+      "A lung condition that narrows the airways, causing wheezing, cough and breathlessness. Attacks can usually be prevented and controlled.",
+    healthCategory: "Chronic Conditions",
+    whatItIs:
+      "Asthma affects the small airways in the lungs. They become sensitive and react to triggers such as dust, smoke, cold air or pollen, squeezing shut and making it hard to breathe. Asthma is common in children and young adults. It cannot be cured, but it can be very well controlled with the right medicine and by avoiding triggers, so most people live normally.",
+    symptoms: [
+      "Wheezing (a whistling sound when breathing out)",
+      "Cough, often worse at night or early morning",
+      "Shortness of breath",
+      "Tight feeling in the chest",
+      "Attacks triggered by dust, smoke, cold air or exercise",
+    ],
+    riskFactors: [
+      "Family history of asthma or allergies",
+      "Smoking or breathing tobacco smoke",
+      "Air pollution, dust and indoor smoke from cooking stoves",
+      "Frequent colds or allergies in childhood",
+    ],
+    prevention: [
+      "Avoid triggers — dust, smoke, strong perfumes, pollens",
+      "Do not smoke and keep your home smoke-free",
+      "Take your controller medicine exactly as prescribed",
+      "Know your rescue plan and keep your reliever inhaler close",
+      "Cover your mouth against cold dry air when needed",
+    ],
+    whenToSeekHelp:
+      "If you have been diagnosed with asthma, follow your written asthma action plan. Go to urgent care immediately if breathing becomes very difficult, lips turn blue, or your reliever is not helping.",
+    faqs: [
+      {
+        q: "Can a child grow out of asthma?",
+        a: "Symptoms improve for many children as they grow, but asthma can return in adulthood. Regular follow-up matters either way.",
+      },
+      {
+        q: "Is exercise safe with asthma?",
+        a: "Yes, with a plan. With good control most people can exercise; you may need your reliever inhaler before activity.",
+      },
+    ],
+    categories: ["Hospital", "Clinic", "Pharmacy"],
+    source: "WHO asthma guidance (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-21",
+  },
+  {
+    slug: "tuberculosis",
+    title: "Tuberculosis (TB)",
+    summary:
+      "A serious but treatable lung infection spread through the air. Early testing and completing treatment cure it completely.",
+    healthCategory: "Preventive Health",
+    whatItIs:
+      "TB is caused by a germ spread through the air when someone with TB in the lungs coughs, sneezes or talks. It usually affects the lungs and spreads easily in crowded homes. TB is curable with a full course of medicines taken exactly as prescribed. Stopping treatment early is dangerous — it can return in a stronger, drug-resistant form.",
+    symptoms: [
+      "Cough lasting more than three weeks",
+      "Coughing up blood or sputum",
+      "Night sweats and fever",
+      "Weight loss and loss of appetite",
+      "Chest pain and tiredness",
+    ],
+    riskFactors: [
+      "Close contact with someone who has active TB",
+      "Living or working in crowded conditions",
+      "Weakened immunity (e.g. HIV, malnutrition)",
+      "Smoking",
+      "Not completing a previous TB treatment",
+    ],
+    prevention: [
+      "If you have a persistent cough, get tested early",
+      "Cover your mouth when coughing and open windows at home",
+      "Avoid close contact with untreated TB cases",
+      "Complete the full TB treatment course if you start it",
+      "Keep overall health strong — good food and general care",
+    ],
+    whenToSeekHelp:
+      "Any cough lasting more than three weeks, weight loss, or night sweats should be tested for TB. Treatment is free or low-cost in government facilities. Never delay, and never stop treatment midway.",
+    faqs: [
+      {
+        q: "Can I get TB from touching someone?",
+        a: "No. TB spreads through the air when a person with TB in the lungs coughs or sneezes — not through touch or sharing food.",
+      },
+      {
+        q: "How long is TB treatment?",
+        a: "A standard course is usually 6 months. You feel better sooner, but you must finish every dose to cure the disease fully.",
+      },
+    ],
+    categories: ["Hospital", "Clinic", "Laboratory", "Diagnostic centre"],
+    source: "WHO TB fact sheet (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-19",
+  },
+  {
+    slug: "childhood-immunisation",
+    title: "Childhood immunisation",
+    summary:
+      "Vaccines protect children against dangerous diseases such as polio, measles, tetanus and TB. Vaccination at local PHCs is free or low-cost.",
+    healthCategory: "Children's Health",
+    whatItIs:
+      "Immunisation trains the child's immune system to fight serious infections before they cause harm. Nigerian children are scheduled for vaccines from birth (BCG, oral polio, hepatitis B), with follow-up doses during infancy and childhood. Completing every visit on time is one of the most powerful things a parent can do to protect a child.",
+    symptoms: [
+      "Most children have no serious reaction",
+      "Mild fever, soreness at the injection site, or fussiness",
+      "A small lump at the injection site can appear later",
+      "Severe reactions are very rare — seek care if they occur",
+    ],
+    riskFactors: [
+      "Not completing the full vaccine schedule",
+      "Missing booster doses",
+      "Delaying visits because the child was unwell earlier",
+      "Living far from the nearest health facility",
+    ],
+    prevention: [
+      "Follow the National Immunisation Schedule at your nearest PHC",
+      "Take the child's vaccination card to every visit",
+      "Ask the nurse about the next date before you leave",
+      "Keep the schedule even if the child has a mild cold",
+      "Report any missed dose so it can be planned before it is too late",
+    ],
+    whenToSeekHelp:
+      "If your child misses or delays a dose, visit your PHC as soon as possible — vaccines can usually still be given. Seek immediate care for any severe reaction such as high fever, difficulty breathing, or seizures.",
+    faqs: [
+      {
+        q: "Are vaccines safe?",
+        a: "Yes. Vaccines are tested carefully and monitored constantly. The benefits of preventing deadly childhood disease far outweigh the small risks.",
+      },
+      {
+        q: "Why does my child need so many visits?",
+        a: "Different diseases require vaccines at different ages for the best protection. Each visit is planned by the national schedule.",
+      },
+    ],
+    categories: ["Primary health centre", "Clinic", "Hospital"],
+    source: "Nigeria NPHCDA immunisation schedule guidance (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-17",
+  },
+  {
+    slug: "healthy-eating-and-nutrition",
+    title: "Healthy eating & nutrition",
+    summary:
+      "Simple, affordable food basics: what to eat, what to limit, and how small changes protect your heart, sugar, weight and energy.",
+    healthCategory: "Nutrition",
+    whatItIs:
+      "Good nutrition means getting the energy, protein and vitamins your body needs without going overboard on salt, sugar and unhealthy fats. You do not need expensive foods — local staples like beans, vegetables, fruits, fish and whole grains do the job. Small, consistent changes matter more than perfect diets, and healthy eating is the single most powerful way to prevent most chronic disease.",
+    symptoms: [
+      "Constant tiredness",
+      "Frequent illness or slow-healing wounds",
+      "Poor concentration",
+      "Unexpected weight gain that is hard to manage",
+      "Feeling full of energy only after sugary foods",
+    ],
+    riskFactors: [
+      "High intake of sugary drinks and sweets",
+      "Very salty meals (stock cubes, snacks, processed food)",
+      "Mostly refined foods like white bread and white rice",
+      "Skipping meals then overeating",
+    ],
+    prevention: [
+      "Eat vegetables and fruits with as many meals as possible",
+      "Choose beans, eggs, fish or chicken as affordable protein",
+      "Prefer whole grains — brown rice, oats, unpolished grains",
+      "Drink water instead of sugary drinks",
+      "Reduce salt and cook more at home",
+    ],
+    whenToSeekHelp:
+      "Speak with a health worker or nutritionist if you struggle with weight, fatigue, or a condition like diabetes or high blood pressure. Children who are not growing well should be seen early.",
+    faqs: [
+      {
+        q: "Is eating well too expensive?",
+        a: "No. Seasonal vegetables, beans, eggs and local fish are affordable and highly nutritious. Planning reduces waste and cost.",
+      },
+      {
+        q: "How often should I eat sugary foods?",
+        a: "Treat them as occasional pleasures, not daily habits. Water and fruit are better everyday choices.",
+      },
+    ],
+    categories: ["Clinic", "Hospital", "Primary health centre"],
+    source: "WHO healthy diet guidance (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-16",
+  },
+  {
+    slug: "antenatal-care",
+    title: "Antenatal (pregnancy) care",
+    summary:
+      "Routine check-ups during pregnancy that keep mother and baby safe. Skilled care at birth is the single biggest life-saver.",
+    healthCategory: "Maternal Health",
+    whatItIs:
+      "Antenatal care is the series of health visits a woman has while pregnant. Visits check blood pressure, anaemia, infections, the baby's growth and the general health of the mother, and they prepare the family for a safe birth. Simple dangers like high blood pressure can be caught early and managed. Rural and low-income families can access most of this care free or at low cost at PHCs.",
+    symptoms: [
+      "Swollen face, hands or severe headache (tell your midwife)",
+      "Vaginal bleeding at any stage",
+      "Severe abdominal pain",
+      "Reduced movement of the baby",
+      "Burning pain when passing urine or fever and lower abdominal pain",
+    ],
+    riskFactors: [
+      "No antenatal visits",
+      "Previous complicated pregnancy or repeated miscarriages",
+      "High blood pressure, diabetes or anaemia",
+      "Very young or older maternal age",
+      "Planning to birth at home without a skilled attendant",
+    ],
+    prevention: [
+      "Register with a midwife or PHC as soon as you know you are pregnant",
+      "Attend every scheduled antenatal visit",
+      "Take recommended iron and folate as directed",
+      "Sleep under a treated bed net during pregnancy",
+      "Plan to give birth in a facility with skilled care",
+    ],
+    whenToSeekHelp:
+      "Contact your midwife immediately for bleeding, severe headache, swollen face, painful urination, reduced baby movement, or fever. Never wait for the next scheduled visit with these signs.",
+    faqs: [
+      {
+        q: "When should the first antenatal visit happen?",
+        a: "As early as possible — ideally in the first three months, as soon as pregnancy is confirmed.",
+      },
+      {
+        q: "Is facility birth safer than home birth?",
+        a: "For most families, yes. Emergencies are rare but can be fatal in minutes; skilled birth attendants and facilities save lives.",
+      },
+    ],
+    categories: ["Maternal health service", "Primary health centre", "Hospital", "Clinic"],
+    source: "WHO antenatal care guidelines (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-14",
+  },
+  {
+    slug: "hand-hygiene-and-infection-prevention",
+    title: "Hygiene & stopping infections",
+    summary:
+      "Clean water, clean hands and clean homes prevent cholera, diarrhoea, typhoid and skin infections better than any medicine.",
+    healthCategory: "Environmental Health",
+    whatItIs:
+      "Most everyday infections travel by hand: germs move from surfaces, food or waste into the mouth. Simple habits — washing hands with soap, treating drinking water, covering food, and safely disposing of waste — break that chain. These actions cost little and prevent some of the most common and dangerous diseases in Nigeria, especially in children.",
+    symptoms: [
+      "Fever and stomach cramps",
+      "Watery diarrhoea or vomiting",
+      "Signs of dehydration: dry mouth, less urine, sunken eyes",
+      "Repeated skin or eye infections",
+      "Persistent cough with contact risk (cough hygiene matters)",
+    ],
+    riskFactors: [
+      "No reliable clean water supply",
+      "Washing hands without soap",
+      "Open defecation or unsafe waste disposal",
+      "Storing food uncovered",
+      "Crowded living conditions",
+    ],
+    prevention: [
+      "Wash hands with soap and water after the toilet and before food",
+      "Treat or boil drinking water if the supply is not trusted",
+      "Use and maintain a latrine or toilet",
+      "Cover food and store water in clean covered containers",
+      "Keep the front of the compound free of stagnant water",
+    ],
+    whenToSeekHelp:
+      "Seek help early for a child or adult with diarrhoea plus vomiting, reduced urine, sunken eyes, or very high fever — dehydration can worsen quickly. Cholera always needs professional care.",
+    faqs: [
+      {
+        q: "Is alcohol hand sanitiser enough?",
+        a: "Yes, when soap and water are not available. But ordinary soap and water is excellent and very cheap.",
+      },
+      {
+        q: "How long should I wash my hands?",
+        a: "Long enough to sing or hum a short tune — about 20 seconds, covering palms, backs, fingers and wrists.",
+      },
+    ],
+    categories: ["Primary health centre", "Clinic", "Hospital", "Laboratory"],
+    source: "WHO five moments of hand hygiene guidance (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-13",
+  },
+  {
+    slug: "eye-health",
+    title: "Eye health & vision",
+    summary:
+      "Most blindness and vision loss is preventable or treatable. Clear sight reviews, simple habits and early care protect sight.",
+    healthCategory: "Eye Health",
+    whatItIs:
+      "Eye problems are common but often ignored until they get serious. Even without symptoms, everyone should have a vision check periodically — children especially, because poor sight affects learning. Common Nigerian causes of poor vision include refractive errors (corrected with glasses), cataracts, glaucoma (the 'silent thief of sight'), and infections. Most are treatable when found early.",
+    symptoms: [
+      "Eye strain, squinting or frequent headaches",
+      "Blurred or double vision",
+      "Seeing halos around lights (possible glaucoma sign)",
+      "Eye pain, redness or discharge (possible infection)",
+      "Losing side (peripheral) vision without noticing",
+    ],
+    riskFactors: [
+      "Age over 40 (glaucoma and cataracts rise)",
+      "Diabetes or high blood pressure",
+      "Family history of eye disease",
+      "Working or reading in very poor light",
+      "Insecticide or chemical contact without eye protection",
+    ],
+    prevention: [
+      "Have periodic vision checks, even when sight feels fine",
+      "Wear protective eyewear when farming, welding or using chemicals",
+      "Rest eyes when reading or using screens — look far away every 20 minutes",
+      "Control blood sugar and blood pressure",
+      "Treat eye infections early rather than using traditional drops blindly",
+    ],
+    whenToSeekHelp:
+      "Get urgent care for sudden vision loss, severe eye pain, a foreign object in the eye, or chemical injury. Glaucoma can destroy sight without symptoms — routine checks catch it early.",
+    faqs: [
+      {
+        q: "Can I prevent needing glasses?",
+        a: "Not always — genetics plays a role. But you can prevent damage from neglect: treat infections and get regular checks.",
+      },
+      {
+        q: "Are traditional herbal eye drops safe?",
+        a: "Often not. Untested drops can damage the eye. Always use medicines prescribed by a trained eye professional.",
+      },
+    ],
+    categories: ["Hospital", "Clinic", "Diagnostic centre", "Laboratory"],
+    source: "WHO eye health and vision guidance (reviewed)",
+    reviewedBy: "Temitope Adekunle — Health Educator & Mental Health Counsellor",
+    reviewedOn: "2026-09-11",
+  },
 ];
+
+function mergeLocale(
+  slug: string,
+  lang: Lang,
+  map: Record<string, TopicLocale | undefined>,
+): TopicLocale | undefined {
+  return map[slug];
+}
+
+export const TOPICS: Topic[] = TOPIC_BASE.map((t) => {
+  const yo = mergeLocale(t.slug, "yo", yoTopicLocales);
+  const ha = mergeLocale(t.slug, "ha", haTopicLocales);
+  const ig = mergeLocale(t.slug, "ig", igTopicLocales);
+  return {
+    ...t,
+    locale: {
+      ...(t.locale ?? {}),
+      yo: yo ? { ...t.locale?.yo, ...yo } : t.locale?.yo,
+      ha: ha ? { ...t.locale?.ha, ...ha } : t.locale?.ha,
+      ig: ig ? { ...t.locale?.ig, ...ig } : t.locale?.ig,
+    },
+  };
+});
 
 export const PROVIDERS: Provider[] = [
   // ---- Lagos ----
@@ -684,6 +1128,355 @@ export const PROVIDERS: Provider[] = [
     verified: true, rating: 4.6,
     description: "Chartered physiotherapist supporting recovery and exercise-based rehabilitation.",
   },
+  // ---- Oyo ----
+  {
+    id: "oyo-01", name: "University College Hospital, Ibadan", category: "Hospital", lga: "Ibadan North",
+    city: "Ibadan, Oyo", state: "Oyo", address: "Queens Elizabeth Road, Agodi, Ibadan",
+    phone: "+234 810 111 0041", whatsapp: "+2348101110041", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity", "Imaging"],
+    verified: true, rating: 4.7, emergency: true,
+    description: "Large federal teaching hospital with full specialist and emergency services.",
+  },
+  {
+    id: "oyo-02", name: "Ring Road State Hospital, Ibadan", category: "Hospital", lga: "Ibadan South-East",
+    city: "Ibadan, Oyo", state: "Oyo", address: "Alakia Sekona Road, Ring Road, Ibadan",
+    phone: "+234 810 111 0042", whatsapp: "+2348101110042", hours: "Open 24 hours",
+    services: ["Emergency care", "Maternity", "Inpatient wards", "Laboratory"],
+    verified: true, rating: 4.3, emergency: true,
+    description: "State hospital serving central Ibadan with emergency and maternity care.",
+  },
+  {
+    id: "oyo-03", name: "Bodija Community Clinic", category: "Clinic", lga: "Ibadan North",
+    city: "Ibadan, Oyo", state: "Oyo", address: "16 Awolowo Avenue, Bodija, Ibadan",
+    phone: "+234 811 222 0043", whatsapp: "+2348112220043", hours: "Mon–Sat, 8am–8pm",
+    services: ["General consultation", "Malaria treatment", "BP checks", "Immunisation"],
+    verified: true, rating: 4.4,
+    description: "Neighbourhood clinic in Bodija for everyday consultations and check-ups.",
+  },
+  {
+    id: "oyo-04", name: "Oke Ado Health Centre", category: "Clinic", lga: "Ibadan South-West",
+    city: "Ibadan, Oyo", state: "Oyo", address: "7 Oke-Ado Road, Ibadan",
+    phone: "+234 811 222 0044", whatsapp: "+2348112220044", hours: "Mon–Sat, 8am–7pm",
+    services: ["General consultation", "Antenatal care", "Family planning"],
+    verified: true, rating: 4.1,
+    description: "Health centre offering primary care and reproductive health services.",
+  },
+  {
+    id: "oyo-05", name: "Oluyole Primary Health Centre", category: "Primary health centre", lga: "Ibadan South-West",
+    city: "Ibadan, Oyo", state: "Oyo", address: "Oluyole Road, Oke-Ado, Ibadan",
+    phone: "+234 812 333 0045", whatsapp: "+2348123330045", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Antenatal care", "Malaria RDT", "Referrals"],
+    verified: true,
+    description: "First-line PHC in Ibadan for vaccination and preventive care.",
+  },
+  {
+    id: "oyo-06", name: "Ogbomoso Primary Health Centre", category: "Primary health centre", lga: "Ogbomoso North",
+    city: "Ogbomoso, Oyo", state: "Oyo", address: "Oke-Ijeru Road, Ogbomoso",
+    phone: "+234 812 333 0046", whatsapp: "+2348123330046", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Malaria treatment", "First aid", "Family planning"],
+    verified: true,
+    description: "Community PHC serving the Ogbomoso township.",
+  },
+  {
+    id: "oyo-07", name: "Ibadan Reference Laboratory", category: "Laboratory", lga: "Ibadan North",
+    city: "Ibadan, Oyo", state: "Oyo", address: "30 Awolowo Road, Ibadan",
+    phone: "+234 813 444 0047", whatsapp: "+2348134440047", hours: "Mon–Sat, 7am–6pm",
+    services: ["Blood tests", "Malaria RDT", "Full blood count", "Urinalysis"],
+    verified: true, rating: 4.5,
+    description: "Independent laboratory with reliable same-day results.",
+  },
+  {
+    id: "oyo-08", name: "Agodi Diagnostic Centre", category: "Diagnostic centre", lga: "Ibadan North-East",
+    city: "Ibadan, Oyo", state: "Oyo", address: "Agodi Gate, Ibadan",
+    phone: "+234 814 555 0048", whatsapp: "+2348145550048", hours: "Mon–Fri, 7am–5pm; Sat 8am–2pm",
+    services: ["Ultrasound", "X-ray", "ECG", "Laboratory"],
+    verified: true, rating: 4.2,
+    description: "Imaging and laboratory centre serving Ibadan referral needs.",
+  },
+  {
+    id: "oyo-09", name: "Dr. Bolaji Adeleke — Family Physician", category: "Professional", lga: "Ibadan North",
+    city: "Ibadan, Oyo", state: "Oyo", address: "Suite 5, Dugbe Plaza, Ibadan",
+    phone: "+234 815 666 0049", whatsapp: "+2348156660049", hours: "Mon–Fri, 9am–5pm (by appointment)",
+    services: ["Family medicine", "Chronic disease care", "Health education"],
+    verified: true, rating: 4.8,
+    description: "Family physician for routine, preventive and chronic care in Ibadan.",
+  },
+  // ---- Osun ----
+  {
+    id: "osu-01", name: "Obafemi Awolowo University Teaching Hospital", category: "Hospital", lga: "Ife Central",
+    city: "Ile-Ife, Osun", state: "Osun", address: "Ile-Ife Health Complex, Ile-Ife",
+    phone: "+234 816 111 0051", whatsapp: "+2348161110051", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity", "Diagnostics"],
+    verified: true, rating: 4.6, emergency: true,
+    description: "Federal teaching hospital in Ile-Ife with full specialist services.",
+  },
+  {
+    id: "osu-02", name: "Ilesa General Hospital", category: "Hospital", lga: "Ilesa East",
+    city: "Ilesa, Osun", state: "Osun", address: "Irojo Road, Ilesa",
+    phone: "+234 816 111 0052", whatsapp: "+2348161110052", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Maternity"],
+    verified: true, rating: 4.1, emergency: true,
+    description: "General hospital covering emergency and inpatient needs of Ilesa.",
+  },
+  {
+    id: "osu-03", name: "Osogbo Central Clinic", category: "Clinic", lga: "Osogbo",
+    city: "Osogbo, Osun", state: "Osun", address: "Station Road, Osogbo",
+    phone: "+234 817 222 0053", whatsapp: "+2348172220053", hours: "Mon–Sat, 8am–7pm",
+    services: ["General consultation", "Malaria treatment", "BP checks", "Antenatal care"],
+    verified: true, rating: 4.3,
+    description: "Central Osogbo clinic for family and maternal health services.",
+  },
+  {
+    id: "osu-04", name: "Ife Primary Health Centre", category: "Primary health centre", lga: "Ife East",
+    city: "Ile-Ife, Osun", state: "Osun", address: "Moleniyi Street, Ile-Ife",
+    phone: "+234 818 333 0054", whatsapp: "+2348183330054", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Antenatal care", "Malaria RDT", "Health education"],
+    verified: true,
+    description: "PHC serving Ile-Ife with vaccination and prevention outreach.",
+  },
+  {
+    id: "osu-05", name: "Osogbo Primary Health Centre", category: "Primary health centre", lga: "Osogbo",
+    city: "Osogbo, Osun", state: "Osun", address: "Alekuwodo Quarters, Osogbo",
+    phone: "+234 818 333 0055", whatsapp: "+2348183330055", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Family planning", "First aid", "Referrals"],
+    verified: false,
+    description: "Community PHC providing essential primary care in Osogbo.",
+  },
+  {
+    id: "osu-06", name: "Osun State Diagnostic Centre", category: "Diagnostic centre", lga: "Osogbo",
+    city: "Osogbo, Osun", state: "Osun", address: "Abere Road, Osogbo",
+    phone: "+234 819 444 0056", whatsapp: "+2348194440056", hours: "Mon–Sat, 7am–5pm",
+    services: ["Ultrasound", "X-ray", "Laboratory", "ECG"],
+    verified: true, rating: 4.0,
+    description: "Diagnostic centre supporting Osogbo and environs.",
+  },
+  {
+    id: "osu-07", name: "Abere Medical Laboratory", category: "Laboratory", lga: "Osogbo",
+    city: "Osogbo, Osun", state: "Osun", address: "Abere Street, Osogbo",
+    phone: "+234 819 555 0057", whatsapp: "+2348195550057", hours: "Mon–Sat, 7am–5pm",
+    services: ["Blood tests", "Malaria RDT", "Urinalysis", "Pregnancy tests"],
+    verified: true, rating: 4.1,
+    description: "Reliable laboratory for common diagnostic tests in Osogbo.",
+  },
+  {
+    id: "osu-08", name: "Dr. Adesola Ogunwale — Paediatrician", category: "Professional", lga: "Ife Central",
+    city: "Ile-Ife, Osun", state: "Osun", address: "Suite 2, OAU Staff Quarters, Ile-Ife",
+    phone: "+234 819 666 0058", whatsapp: "+2348196660058", hours: "Tue–Fri, 9am–4pm (by appointment)",
+    services: ["Child health", "Immunisation", "Growth monitoring"],
+    verified: true, rating: 4.7,
+    description: "Paediatrician focused on child health and preventive care.",
+  },
+  // ---- Rivers ----
+  {
+    id: "riv-01", name: "University of Port Harcourt Teaching Hospital", category: "Hospital", lga: "Obio-Akpor",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "East-West Road, Alakahia, Port Harcourt",
+    phone: "+234 820 111 0061", whatsapp: "+2348201110061", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity", "Imaging"],
+    verified: true, rating: 4.6, emergency: true,
+    description: "Federal teaching hospital with complete specialist and emergency care.",
+  },
+  {
+    id: "riv-02", name: "Braithwaite Memorial Specialist Hospital", category: "Hospital", lga: "Port Harcourt",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "7 Hospital Road, Port Harcourt",
+    phone: "+234 820 111 0062", whatsapp: "+2348201110062", hours: "Open 24 hours",
+    services: ["Emergency care", "Maternity", "Surgery", "Laboratory"],
+    verified: true, rating: 4.4, emergency: true,
+    description: "Specialist hospital in central Port Harcourt with 24-hour emergency bay.",
+  },
+  {
+    id: "riv-03", name: "Mile 1 Clinic, Port Harcourt", category: "Clinic", lga: "Port Harcourt",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "13 Aba Road, Mile 1, Port Harcourt",
+    phone: "+234 821 222 0063", whatsapp: "+2348212220063", hours: "Mon–Sun, 8am–8pm",
+    services: ["General consultation", "Malaria treatment", "BP checks", "Vaccination"],
+    verified: true, rating: 4.2,
+    description: "Busy neighbourhood clinic along Aba Road for outpatient care.",
+  },
+  {
+    id: "riv-04", name: "Obio-Akpor Primary Health Centre", category: "Primary health centre", lga: "Obio-Akpor",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "Rumuokwuta, Obio-Akpor",
+    phone: "+234 822 333 0064", whatsapp: "+2348223330064", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Antenatal care", "Malaria RDT", "Referrals"],
+    verified: true,
+    description: "Community PHC providing vaccination and prevention services.",
+  },
+  {
+    id: "riv-05", name: "Ikwerre Primary Health Centre", category: "Primary health centre", lga: "Ikwerre",
+    city: "Isiokpo, Rivers", state: "Rivers", address: "Elele Road, Isiokpo",
+    phone: "+234 822 333 0065", whatsapp: "+2348223330065", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Family planning", "First aid"],
+    verified: false,
+    description: "Rural PHC serving the Ikwerre axis with essential primary care.",
+  },
+  {
+    id: "riv-06", name: "Trans-Amadi Medical Laboratory", category: "Laboratory", lga: "Obio-Akpor",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "26 Trans-Amadi Industrial Layout",
+    phone: "+234 823 444 0066", whatsapp: "+2348234440066", hours: "Mon–Sat, 7am–6pm",
+    services: ["Blood tests", "Malaria RDT", "Full blood count", "Urinalysis"],
+    verified: true, rating: 4.3,
+    description: "Industrial-area laboratory with timely results.",
+  },
+  {
+    id: "riv-07", name: "Port Harcourt Diagnostic Centre", category: "Diagnostic centre", lga: "Obio-Akpor",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "5 Woji Road, GRA Phase 2",
+    phone: "+234 824 555 0067", whatsapp: "+2348245550067", hours: "Mon–Fri, 7am–5pm; Sat 8am–2pm",
+    services: ["Ultrasound", "CT scan", "X-ray", "ECG"],
+    verified: true, rating: 4.5,
+    description: "Imaging centre in GRA with radiologist-reviewed reports.",
+  },
+  {
+    id: "riv-08", name: "Dr. Nkechi Williams — Gynaecologist", category: "Professional", lga: "Obio-Akpor",
+    city: "Port Harcourt, Rivers", state: "Rivers", address: "Suite 8, Pharmacy Road, GRA",
+    phone: "+234 825 666 0068", whatsapp: "+2348256660068", hours: "Tue–Sat, 9am–4pm (by appointment)",
+    services: ["Gynaecology", "Antenatal care", "Family planning"],
+    verified: true, rating: 4.8,
+    description: "Consultant gynaecologist for women's and maternal health in Port Harcourt.",
+  },
+  // ---- Abuja (FCT) ----
+  {
+    id: "abj-01", name: "National Hospital Abuja", category: "Hospital", lga: "Central",
+    city: "Abuja, FCT", state: "Abuja", address: "Plot 132, Central Business District, Abuja",
+    phone: "+234 826 111 0071", whatsapp: "+2348261110071", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity", "Imaging"],
+    verified: true, rating: 4.7, emergency: true,
+    description: "National referral hospital with full specialist and emergency services.",
+  },
+  {
+    id: "abj-02", name: "University of Abuja Teaching Hospital", category: "Hospital", lga: "Gwagwalada",
+    city: "Gwagwalada, Abuja", state: "Abuja", address: "Kubwa Expressway, Gwagwalada",
+    phone: "+234 826 111 0072", whatsapp: "+2348261110072", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity"],
+    verified: true, rating: 4.3, emergency: true,
+    description: "Teaching hospital serving the FCT and surrounding states.",
+  },
+  {
+    id: "abj-03", name: "Asokoro District Hospital", category: "Hospital", lga: "Asokoro",
+    city: "Asokoro, Abuja", state: "Abuja", address: "1 Yakubu Gowon Crescent, Asokoro",
+    phone: "+234 826 111 0073", whatsapp: "+2348261110073", hours: "Open 24 hours",
+    services: ["Emergency care", "Maternity", "Inpatient wards", "Laboratory"],
+    verified: true, rating: 4.5, emergency: true,
+    description: "District hospital in Asokoro with 24-hour emergency and maternity services.",
+  },
+  {
+    id: "abj-04", name: "Maitama Medical Centre", category: "Clinic", lga: "Maitama",
+    city: "Maitama, Abuja", state: "Abuja", address: "Samuel Ademulegun Street, Maitama",
+    phone: "+234 827 222 0074", whatsapp: "+2348272220074", hours: "Mon–Sun, 8am–8pm",
+    services: ["General consultation", "BP checks", "Malaria treatment", "Wellness checks"],
+    verified: true, rating: 4.4,
+    description: "Modern clinic in Maitama for general and preventive care.",
+  },
+  {
+    id: "abj-05", name: "Garki Primary Health Centre", category: "Primary health centre", lga: "Garki",
+    city: "Garki, Abuja", state: "Abuja", address: "Area 10, Garki I",
+    phone: "+234 828 333 0075", whatsapp: "+2348283330075", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Antenatal care", "Malaria RDT", "Referrals"],
+    verified: true,
+    description: "PHC in Area 10 Garki providing vaccination and maternal services.",
+  },
+  {
+    id: "abj-06", name: "Bwari Primary Health Centre", category: "Primary health centre", lga: "Bwari",
+    city: "Bwari, Abuja", state: "Abuja", address: "Kubwa-Karshi Road, Bwari",
+    phone: "+234 828 333 0076", whatsapp: "+2348283330076", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Family planning", "First aid"],
+    verified: true,
+    description: "First-line PHC serving the Bwari area council.",
+  },
+  {
+    id: "abj-07", name: "FCT Clinical Laboratory", category: "Laboratory", lga: "Wuse",
+    city: "Wuse, Abuja", state: "Abuja", address: "33 Aminu Kano Crescent, Wuse II",
+    phone: "+234 829 444 0077", whatsapp: "+2348294440077", hours: "Mon–Sat, 7am–6pm",
+    services: ["Blood tests", "Malaria RDT", "Full blood count", "Urinalysis"],
+    verified: true, rating: 4.4,
+    description: "Central laboratory in Wuse for routine and referral testing.",
+  },
+  {
+    id: "abj-08", name: "Wuse Radiology Centre", category: "Diagnostic centre", lga: "Wuse",
+    city: "Wuse, Abuja", state: "Abuja", address: "18 Adetokunbo Ademola Street, Wuse II",
+    phone: "+234 829 555 0078", whatsapp: "+2348295550078", hours: "Mon–Fri, 7am–5pm",
+    services: ["X-ray", "Ultrasound", "CT scan", "ECG"],
+    verified: true, rating: 4.6,
+    description: "Radiology centre with structured imaging reports.",
+  },
+  {
+    id: "abj-09", name: "Dr. Ibrahim Musa — Public Health Consultant", category: "Professional", lga: "Gwarinpa",
+    city: "Gwarinpa, Abuja", state: "Abuja", address: "Suite 4, 1212 Karu Estate, Gwarinpa",
+    phone: "+234 829 666 0079", whatsapp: "+2348296660079", hours: "Mon–Fri, 9am–5pm (by appointment)",
+    services: ["Preventive health", "Chronic disease care", "Health screening"],
+    verified: true, rating: 4.7,
+    description: "Public health physician specialising in prevention and screening.",
+  },
+  // ---- Ondo ----
+  {
+    id: "ond-01", name: "University of Medical Sciences Teaching Hospital", category: "Hospital", lga: "Owo",
+    city: "Owo, Ondo", state: "Ondo", address: "PMB 536, Owo",
+    phone: "+234 830 111 0081", whatsapp: "+2348301110081", hours: "Open 24 hours",
+    services: ["Emergency care", "Inpatient wards", "Surgery", "Maternity", "Imaging"],
+    verified: true, rating: 4.5, emergency: true,
+    description: "Teaching hospital serving Ondo State with full specialist care.",
+  },
+  {
+    id: "ond-02", name: "Akure General Hospital", category: "Hospital", lga: "Akure South",
+    city: "Akure, Ondo", state: "Ondo", address: "Adesuwa Road, Akure",
+    phone: "+234 830 111 0082", whatsapp: "+2348301110082", hours: "Open 24 hours",
+    services: ["Emergency care", "Maternity", "Inpatient wards", "Laboratory"],
+    verified: true, rating: 4.2, emergency: true,
+    description: "General hospital in the state capital with emergency and maternity units.",
+  },
+  {
+    id: "ond-03", name: "Akure Family Clinic", category: "Clinic", lga: "Akure South",
+    city: "Akure, Ondo", state: "Ondo", address: "Oba-Adesida Road, Akure",
+    phone: "+234 831 222 0083", whatsapp: "+2348312220083", hours: "Mon–Sat, 8am–8pm",
+    services: ["General consultation", "Malaria treatment", "BP checks", "Antenatal care"],
+    verified: true, rating: 4.3,
+    description: "Family clinic offering outpatient and maternal health services.",
+  },
+  {
+    id: "ond-04", name: "Owo Community Clinic", category: "Clinic", lga: "Owo",
+    city: "Owo, Ondo", state: "Ondo", address: "Isuada Market Road, Owo",
+    phone: "+234 831 222 0084", whatsapp: "+2348312220084", hours: "Mon–Sat, 8am–7pm",
+    services: ["General consultation", "Vaccination", "First aid"],
+    verified: false,
+    description: "Community clinic for routine care in Owo township.",
+  },
+  {
+    id: "ond-05", name: "Akure Primary Health Centre", category: "Primary health centre", lga: "Akure South",
+    city: "Akure, Ondo", state: "Ondo", address: "Oja-Gbemu, Akure",
+    phone: "+234 832 333 0085", whatsapp: "+2348323330085", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Antenatal care", "Malaria RDT", "Health education"],
+    verified: true,
+    description: "PHC in Akure providing vaccination and preventive care.",
+  },
+  {
+    id: "ond-06", name: "Ore Primary Health Centre", category: "Primary health centre", lga: "Odigbo",
+    city: "Ore, Ondo", state: "Ondo", address: "Ore-Ondo Road, Ore",
+    phone: "+234 832 333 0086", whatsapp: "+2348323330086", hours: "Mon–Fri, 8am–4pm",
+    services: ["Immunisation", "Family planning", "First aid", "Referrals"],
+    verified: true,
+    description: "Rural PHC on the Ore axis serving transit and farming communities.",
+  },
+  {
+    id: "ond-07", name: "Akure Medical Laboratories", category: "Laboratory", lga: "Akure South",
+    city: "Akure, Ondo", state: "Ondo", address: "Yaba Street, Oja-Oba, Akure",
+    phone: "+234 833 444 0087", whatsapp: "+2348334440087", hours: "Mon–Sat, 7am–5pm",
+    services: ["Blood tests", "Malaria RDT", "Urinalysis", "Pregnancy tests"],
+    verified: true, rating: 4.0,
+    description: "Trusted laboratory for common tests in central Akure.",
+  },
+  {
+    id: "ond-08", name: "Alagbaka Diagnostic Centre", category: "Diagnostic centre", lga: "Akure North",
+    city: "Akure, Ondo", state: "Ondo", address: "Alagbaka GRA, Akure",
+    phone: "+234 834 555 0088", whatsapp: "+2348345550088", hours: "Mon–Fri, 7am–5pm; Sat 8am–2pm",
+    services: ["Ultrasound", "X-ray", "ECG", "Laboratory"],
+    verified: true, rating: 4.1,
+    description: "Imaging and laboratory centre supporting Akure referrals.",
+  },
+  {
+    id: "ond-09", name: "Dr. Bunmi Adeyemi — Cardiologist", category: "Professional", lga: "Akure South",
+    city: "Akure, Ondo", state: "Ondo", address: "Suite 6, Oba-Ile Plaza, Akure",
+    phone: "+234 835 666 0089", whatsapp: "+2348356660089", hours: "Mon–Fri, 9am–5pm (by appointment)",
+    services: ["Cardiology consultation", "BP management", "ECG interpretation"],
+    verified: true, rating: 4.6,
+    description: "Consultant cardiologist for heart checks and blood pressure care.",
+  },
 ];
 
 export const EMERGENCY_CONTACTS: EmergencyContact[] = [
@@ -743,6 +1536,16 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   "Environmental Health": "How air, water, climate, and surroundings affect health.",
   "Occupational Health": "Workplace safety and work-related health risks.",
 };
+
+export const OPERATING_STATES: string[] = [
+  "Lagos",
+  "Ogun",
+  "Oyo",
+  "Osun",
+  "Rivers",
+  "Abuja",
+  "Ondo",
+];
 
 export const ALL_STATES: string[] = Array.from(
   new Set(PROVIDERS.map((p) => p.state)),

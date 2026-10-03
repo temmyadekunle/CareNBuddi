@@ -53,10 +53,7 @@ export default function AdminPage() {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">{t("ad_title")}</h1>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-          This area is restricted to the HealthLink team. Use the admin demo account to
-          explore content management, verification, users, analytics and reports.
-        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{t("ad_signin_req")}</p>
         <Link
           href="/account"
           className="mt-5 inline-block rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
@@ -107,15 +104,16 @@ function Overview() {
   const [requests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
   const [bookings] = useStoredCollection(KEYS.bookings, seedBookings);
   const [reports] = useStoredCollection(KEYS.reports, seedReports);
+  const t = useT();
 
   const cards = [
-    { label: "Users", icon: "👥", value: users.length },
-    { label: "Providers", icon: "🏥", value: providers.length },
-    { label: "Verified providers", icon: "✓", value: providers.filter((p) => p.verified).length },
-    { label: "Topics", icon: "📝", value: topics.length },
-    { label: "Pending verifications", icon: "🛡️", value: requests.filter((r) => r.status === "pending").length },
-    { label: "Bookings", icon: "📅", value: bookings.length },
-    { label: "Open reports", icon: "⚠️", value: reports.filter((r) => r.status === "open").length },
+    { label: t("ad_users"), icon: "👥", value: users.length },
+    { label: t("ad_providers"), icon: "🏥", value: providers.length },
+    { label: t("ad_verified_p"), icon: "✓", value: providers.filter((p) => p.verified).length },
+    { label: t("ad_topics"), icon: "📝", value: topics.length },
+    { label: t("ad_verify_pending"), icon: "🛡️", value: requests.filter((r) => r.status === "pending").length },
+    { label: t("ad_bookings"), icon: "📅", value: bookings.length },
+    { label: t("ad_reports_open"), icon: "⚠️", value: reports.filter((r) => r.status === "open").length },
   ];
 
   return (
@@ -133,6 +131,7 @@ function Overview() {
 }
 
 function ContentManager() {
+  const t = useT();
   const [topics, setTopics] = useStoredCollection(KEYS.topics, seedTopics);
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
@@ -142,7 +141,7 @@ function ContentManager() {
 
   const addDraft = () => {
     if (!slug.trim() || !title.trim()) {
-      setNotice("Slug and title are required.");
+      setNotice(t("ad_c_required"));
       return;
     }
     const base: ContentItem = (() => {
@@ -152,21 +151,21 @@ function ContentManager() {
         slug: slug.trim(),
         id: slug.trim(),
         title: title.trim(),
-        summary: summary.trim() || "Draft — add a summary before publishing.",
+        summary: summary.trim() || t("ad_c_draft_note"),
         healthCategory: category,
         locale: undefined,
-        whenToSeekHelp: "Coming soon.",
+        whenToSeekHelp: t("ad_c_empty_summary"),
       };
     })();
     if (topics.some((tp) => tp.id === base.id)) {
-      setNotice("A topic with this slug already exists.");
+      setNotice(t("ad_c_exists"));
       return;
     }
     setTopics((prev) => [...prev, { ...base, status: "draft" }] as ContentItem[]);
     setSlug("");
     setTitle("");
     setSummary("");
-    setNotice("Draft created — publish from the list below.");
+    setNotice(t("ad_c_created"));
   };
 
   const toggleStatus = (id: string, status: ContentItem["status"]) => {
@@ -177,11 +176,11 @@ function ContentManager() {
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">Add a topic (draft)</h2>
+      <h2 className="text-sm font-semibold text-slate-900">{t("ad_c_add")}</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <input placeholder="slug" value={slug} onChange={(e) => setSlug(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        <input placeholder="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input placeholder={t("ad_c_slug")} value={slug} onChange={(e) => setSlug(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input placeholder={t("ad_c_title")} value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input placeholder={t("ad_c_summary")} value={summary} onChange={(e) => setSummary(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
           {["General Health", "Women's Health", "Men's Health", "Mental Health", "Children's Health", "Nutrition", "Maternal Health", "Preventive Health", "Chronic Conditions", "First Aid"].map((c) => (
             <option key={c}>{c}</option>
@@ -190,7 +189,7 @@ function ContentManager() {
       </div>
       <div className="mt-3 flex items-center gap-3">
         <button onClick={addDraft} className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
-          Add draft
+          {t("ad_c_add_draft")}
         </button>
         {notice && <span className="text-sm text-slate-500">{notice}</span>}
       </div>
@@ -212,10 +211,10 @@ function ContentManager() {
                 onClick={() => toggleStatus(tp.id, tp.status === "published" ? "draft" : "published")}
                 className="rounded-lg border border-brand-700 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
               >
-                {tp.status === "published" ? "Unpublish" : "Publish"}
+                {tp.status === "published" ? t("ad_c_unpublish") : t("ad_c_publish")}
               </button>
               <button onClick={() => remove(tp.id)} className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-400 hover:text-red-600">
-                Delete
+                {t("ad_c_delete")}
               </button>
             </div>
           </div>
@@ -226,6 +225,7 @@ function ContentManager() {
 }
 
 function Verification() {
+  const t = useT();
   const [requests, setRequests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
   const [, setProviders] = useStoredCollection(KEYS.providers, seedProviders);
 
@@ -244,7 +244,7 @@ function Verification() {
         phone: req.phone,
         hours: "Mon–Sat, 8am–5pm",
         verified: true,
-        description: "Verified by HealthLink after document review.",
+        description: t("ad_v_approved_desc"),
         emergency: false,
       },
     ]);
@@ -258,7 +258,7 @@ function Verification() {
   return (
     <div className="space-y-3">
       {requests.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No registration requests.</p>
+        <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">{t("ad_v_none")}</p>
       ) : (
         requests.map((req) => (
           <div key={req.id} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
@@ -271,17 +271,17 @@ function Verification() {
                 <p className="text-xs text-slate-500">
                   {req.category} · {req.lga}, {req.state} ·{" "}
                   <span className={`rounded-full px-2 py-0.5 font-medium ${req.status === "pending" ? "bg-amber-100 text-amber-800" : req.status === "approved" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                    {req.status}
+                    {req.status === "pending" ? t("c_pending") : req.status === "approved" ? t("c_approved") : t("c_rejected")}
                   </span>
                 </p>
               </div>
               {req.status === "pending" && (
                 <div className="flex gap-2">
                   <button onClick={() => approve(req)} className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800">
-                    Verify & publish
+                    {t("ad_v_verify")}
                   </button>
                   <button onClick={() => reject(req.id)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                    Reject
+                    {t("ad_v_reject")}
                   </button>
                 </div>
               )}
@@ -294,6 +294,7 @@ function Verification() {
 }
 
 function UserManager() {
+  const t = useT();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
 
   const setRole = (id: string, role: User["role"]) => {
@@ -305,10 +306,10 @@ function UserManager() {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-            <th className="px-4 py-2 font-medium">Name</th>
-            <th className="px-4 py-2 font-medium">Email</th>
-            <th className="px-4 py-2 font-medium">Role</th>
-            <th className="px-4 py-2 font-medium">Signed in</th>
+            <th className="px-4 py-2 font-medium">{t("ad_u_name")}</th>
+            <th className="px-4 py-2 font-medium">{t("ad_u_email")}</th>
+            <th className="px-4 py-2 font-medium">{t("ad_u_role")}</th>
+            <th className="px-4 py-2 font-medium">{t("ad_u_joined")}</th>
           </tr>
         </thead>
         <tbody>
@@ -337,6 +338,7 @@ function UserManager() {
 }
 
 function Analytics() {
+  const t = useT();
   const [providers] = useStoredCollection(KEYS.providers, seedProviders);
   const [bookings] = useStoredCollection(KEYS.bookings, seedBookings);
   const [requests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
@@ -373,7 +375,7 @@ function Analytics() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card title="Providers by category">
+      <Card title={t("ad_a_cat")}>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={byCategory} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
@@ -386,7 +388,7 @@ function Analytics() {
           </ResponsiveContainer>
         </div>
       </Card>
-      <Card title="Providers by state">
+      <Card title={t("ad_a_state")}>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={byState} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
@@ -399,7 +401,7 @@ function Analytics() {
           </ResponsiveContainer>
         </div>
       </Card>
-      <Card title="Booking requests — last 14 days" wide>
+      <Card title={t("ad_a_bookings")} wide>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={bookingsByDay} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
@@ -407,14 +409,14 @@ function Analytics() {
               <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#64748b" }} interval={1} />
               <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="Requests" stroke="#0f8b8d" strokeWidth={2.5} dot={{ r: 3, fill: "#0f8b8d" }} />
+              <Line type="monotone" dataKey="Requests" name={t("ad_a_requests")} stroke="#0f8b8d" strokeWidth={2.5} dot={{ r: 3, fill: "#0f8b8d" }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
         <p className="mt-1 text-xs text-slate-400">
-          Registration pipeline: {requests.length} submitted,{" "}
-          {requests.filter((r) => r.status === "approved").length} approved,{" "}
-          {requests.filter((r) => r.status === "pending").length} pending.
+          {t("ad_a_pipeline")} {requests.length} {t("ad_a_submitted")},{" "}
+          {requests.filter((r) => r.status === "approved").length} {t("ad_a_approved")},{" "}
+          {requests.filter((r) => r.status === "pending").length} {t("ad_a_pending0")}.
         </p>
       </Card>
     </div>

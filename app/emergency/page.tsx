@@ -14,13 +14,8 @@ export default function EmergencyPage() {
       </div>
 
       <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <h2 className="text-base font-semibold text-red-900">
-          🚨 Call an emergency number immediately
-        </h2>
-        <p className="mt-1 text-sm text-red-800">
-          For unconsciousness, chest pain, difficulty breathing, severe bleeding, serious
-          burns, stroke signs, or any crisis — do not wait and do not rely on the app.
-        </p>
+        <h2 className="text-base font-semibold text-red-900">🚨 {t("em_call")}</h2>
+        <p className="mt-1 text-sm text-red-800">{t("em_call_d")}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {EMERGENCY_CONTACTS.map((c) => (
             <a
@@ -38,15 +33,15 @@ export default function EmergencyPage() {
 
       <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          While you get professional help
+          {t("em_while")}
         </h2>
         <ul className="mt-4 space-y-2.5">
           {[
-            "Keep yourself and the person safe — do not move them unless they are in danger.",
-            "If unconscious but breathing, place them in the recovery position.",
-            "For a burn, run cool tap water over it for at least 20 minutes — never use ice, butter or toothpaste.",
-            "For bleeding, press firmly on the wound with clean cloth.",
-            "For stroke signs (face drooping, arm weakness, slurred speech), get to emergency care fast.",
+            t("em_s1"),
+            t("em_s2"),
+            t("em_s3"),
+            t("em_s4"),
+            t("em_s5"),
           ].map((step) => (
             <li key={step} className="flex gap-2 text-sm text-slate-700">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
@@ -58,38 +53,32 @@ export default function EmergencyPage() {
           href="/explore?topic=first-aid"
           className="mt-4 inline-block text-sm font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-800"
         >
-          Read first aid basics →
+          {t("hd_read_more")} →
         </Link>
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          Find emergency-ready care
+          {t("em_find_care")}
         </h2>
-        <p className="mt-3 text-sm text-slate-600">
-          For non-life-threatening care, find a facility offering emergency availability
-          near you.
-        </p>
+        <p className="mt-3 text-sm text-slate-600">{t("em_find_d")}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/find-care?category=Hospital"
             className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
-            Find a hospital →
+            {t("em_find_hospital")} →
           </Link>
           <Link
             href="/find-care?category=Clinic"
             className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
-            Find a clinic
+            {t("em_find_clinic")}
           </Link>
         </div>
       </section>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
-        In a medical emergency, always contact emergency services first. HealthLink is
-        educational and navigational only.
-      </p>
+      <p className="mt-6 text-center text-xs text-slate-400">{t("em_footer")}</p>
     </main>
   );
 }

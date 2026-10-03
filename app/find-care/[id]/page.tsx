@@ -118,7 +118,7 @@ export default function ProviderProfilePage() {
 
       {provider.emergency && (
         <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900">
-          🚨 24-hour emergency service available at this facility.
+          🚨 {t("f_emergency")}
         </div>
       )}
 
@@ -141,7 +141,7 @@ export default function ProviderProfilePage() {
           <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-5 text-sm text-green-900">
             <p className="font-semibold">✓ {t("f_book_sent")}</p>
             <p className="mt-1 text-xs text-green-800">
-              Ref: {provider.name} · {date || "no preferred date"} · {phone}
+              {provider.name} · {date || t("f_form_date")} · {phone}
             </p>
           </div>
         ) : (
@@ -164,7 +164,7 @@ export default function ProviderProfilePage() {
               />
             </label>
             <label className="block sm:col-span-2">
-              <span className="text-xs font-medium text-slate-600">Message</span>
+              <span className="text-xs font-medium text-slate-600">{t("f_form_msg")}</span>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -174,7 +174,7 @@ export default function ProviderProfilePage() {
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-600">Preferred date</span>
+              <span className="text-xs font-medium text-slate-600">{t("f_form_date")}</span>
               <input
                 type="date"
                 value={date}

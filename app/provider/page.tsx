@@ -50,10 +50,7 @@ export default function ProviderPortalPage() {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">{t("pv_title")}</h1>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-          This area is for verified healthcare providers. Sign in with a provider or admin
-          demo account to continue.
-        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{t("pv_guard")}</p>
         <Link
           href="/account"
           className="mt-5 inline-block rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
@@ -133,7 +130,7 @@ export default function ProviderPortalPage() {
               <Field label={t("f_hours")} value={hours} onChange={setHours} />
               <Field label="Address" value={address} onChange={setAddress} />
               <label className="block sm:col-span-2">
-                <span className="text-xs font-medium text-slate-600">Services (comma separated)</span>
+                <span className="text-xs font-medium text-slate-600">{t("pv_services_label")}</span>
                 <input
                   value={servicesText}
                   onChange={(e) => setServicesText(e.target.value)}
@@ -141,7 +138,7 @@ export default function ProviderPortalPage() {
                 />
               </label>
               <label className="block sm:col-span-2">
-                <span className="text-xs font-medium text-slate-600">About this facility</span>
+                <span className="text-xs font-medium text-slate-600">{t("pv_about")}</span>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -180,7 +177,7 @@ export default function ProviderPortalPage() {
                         {b.name} · <span className="text-slate-500">{b.phone}</span>
                       </p>
                       <p className="text-xs text-slate-600">
-                        {b.message || "No message"}
+                        {b.message || t("pv_no_message")}
                         {b.date ? ` · ${b.date}` : ""}
                       </p>
                     </div>
@@ -201,7 +198,7 @@ export default function ProviderPortalPage() {
                           onClick={() => setBookingStatus(b.id, "confirmed")}
                           className="rounded-lg border border-brand-700 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
                         >
-                          Confirm
+                          {t("pv_confirm_done")}
                         </button>
                       )}
                     </div>

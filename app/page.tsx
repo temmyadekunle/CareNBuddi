@@ -59,7 +59,7 @@ export default function Home() {
       <section className="border-b border-slate-200/80 bg-white">
         <div className="mx-auto max-w-3xl px-4 py-14 text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-brand-700">
-            Better Information. Healthier You.
+            {t("h_tagline")}
           </p>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {t("h_title")}

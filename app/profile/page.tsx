@@ -65,19 +65,15 @@ export default function ProfilePage() {
       )}
 
       <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900">My requests</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{t("pr_requests")}</h2>
         <div className="mt-3 space-y-2">
           {myBookings.length === 0 ? (
             <p className="text-sm text-slate-500">
-              No booking requests yet.{" "}
+              {t("pr_no_requests")}{" "}
               <Link href="/find-care" className="font-medium text-brand-700 underline">
                 {t("f_title")}
               </Link>{" "}
-              or{" "}
-              <Link href="/services" className="font-medium text-brand-700 underline">
-                {t("s_title")}
-              </Link>{" "}
-              to get started.
+              {t("pr_get_started")}
             </p>
           ) : (
             myBookings.map((b) => (
@@ -87,7 +83,7 @@ export default function ProfilePage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-900">
-                    {b.providerId ? "Provider visit" : b.message.split("—")[0].trim()}
+                    {b.providerId ? t("pr_provider") : b.message.split("—")[0].trim()}
                   </p>
                   <p className="text-xs text-slate-500">
                     {b.date ?? new Date(b.createdAt).toISOString().slice(0, 10)}
@@ -103,10 +99,10 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Placeholder title="Appointments" desc="Upcoming visits and requests will appear here." />
-        <Placeholder title="Reminders" desc="Medication and screening reminders are planned." />
-        <Placeholder title="Saved providers" desc="Bookmark facilities and professionals you trust." />
-        <Placeholder title="Health records" desc="Records appear only where legally permitted." />
+        <Placeholder title={t("pr_appt")} desc={t("pr_appt_d")} />
+        <Placeholder title={t("pr_rem")} desc={t("pr_rem_d")} />
+        <Placeholder title={t("pr_saved")} desc={t("pr_saved_d")} />
+        <Placeholder title={t("pr_records")} desc={t("pr_records_d")} />
       </div>
 
       <p className="mt-6 text-center text-xs text-slate-400">
@@ -132,7 +128,7 @@ function Placeholder({ title, desc }: { title: string; desc: string }) {
       <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
       <p className="mt-1 text-sm text-slate-500">{desc}</p>
       <span className="mt-2 inline-block rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-        Coming soon
+        {useT()("pr_soon")}
       </span>
     </div>
   );

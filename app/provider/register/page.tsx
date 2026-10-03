@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PROVIDER_CATEGORIES } from "@/lib/content";
+import { OPERATING_STATES, PROVIDER_CATEGORIES } from "@/lib/content";
 import { KEYS, seedProviderRequests, uid, useStoredCollection } from "@/lib/storage";
 import type { ProviderRequest } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 
-const STATES = ["Lagos", "Ogun"];
+const STATES = OPERATING_STATES;
 
 export default function ProviderRegisterPage() {
   const t = useT();
@@ -48,17 +48,13 @@ export default function ProviderRegisterPage() {
         ← {t("pv_title")}
       </Link>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">{t("pv_register")}</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Providers register once; the HealthLink team verifies each facility before it appears
-        in Find Care as a verified provider.
-      </p>
+      <p className="mt-1 text-sm text-slate-500">{t("prg_lead")}</p>
 
       {submitted ? (
         <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
           <p className="text-lg font-semibold text-green-900">✓ {t("pv_pending")}</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-green-800">
-            {facility} has been submitted for review. You will be able to manage your requests
-            and profile from the provider portal once approved.
+            {t("prg_success_1").replace("{facility}", facility)} {t("prg_success_2")}
           </p>
           <Link
             href="/provider"
@@ -71,9 +67,9 @@ export default function ProviderRegisterPage() {
         <div className="mt-6 space-y-3 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <Field label={t("a_name")} value={name} onChange={setName} placeholder="e.g. Dr. Ngozi Eze" />
           <Field label={t("a_email")} value={email} onChange={setEmail} placeholder="you@facility.ng" />
-          <Field label="Facility name" value={facility} onChange={setFacility} />
+          <Field label={t("prg_facility")} value={facility} onChange={setFacility} />
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">Category</span>
+            <span className="text-xs font-medium text-slate-600">{t("prg_category")}</span>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -86,7 +82,7 @@ export default function ProviderRegisterPage() {
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="text-xs font-medium text-slate-600">State</span>
+              <span className="text-xs font-medium text-slate-600">{t("prg_state")}</span>
               <select
                 value={state}
                 onChange={(e) => setState(e.target.value)}
@@ -97,20 +93,17 @@ export default function ProviderRegisterPage() {
                 ))}
               </select>
             </label>
-            <Field label="LGA / area" value={lga} onChange={setLga} placeholder="e.g. Abeokuta South" />
+            <Field label={t("prg_lga")} value={lga} onChange={setLga} placeholder="e.g. Abeokuta South" />
           </div>
-          <Field label="Address" value={address} onChange={setAddress} />
+          <Field label={t("prg_address")} value={address} onChange={setAddress} />
           <Field label={t("a_phone")} value={phone} onChange={setPhone} placeholder="+234 ..." />
           <button
             onClick={submit}
             className="mt-2 w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
-            Submit for verification
+            {t("prg_submit")}
           </button>
-          <p className="text-xs text-slate-400">
-            Verification protects the community: only verified providers are shown with the
-            ✓ badge in Find Care.
-          </p>
+          <p className="text-xs text-slate-400">{t("prg_note")}</p>
         </div>
       )}
     </main>

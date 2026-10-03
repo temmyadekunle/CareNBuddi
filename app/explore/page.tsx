@@ -94,7 +94,7 @@ export default function ExplorePage() {
         <TopicDetail
           topic={selected}
           onBack={() => setSelected(null)}
-          report={() => report((selected as ContentItem).id, "Content accuracy or safety concern")}
+          report={() => report((selected as ContentItem).id, t("e_report_reason"))}
         />
       ) : (
         <>

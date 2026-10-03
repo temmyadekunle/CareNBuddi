@@ -7,42 +7,18 @@ import { useT } from "@/lib/i18n";
 import type { Booking } from "@/lib/types";
 
 const CHECK_ITEMS = [
-  { icon: "🫀", name: "Blood pressure", desc: "Quick, quiet BP checks with simple follow-up guidance." },
-  { icon: "🩸", name: "Blood glucose", desc: "Point-of-care glucose checks and lifestyle advice." },
-  { icon: "📋", name: "Wellness checks", desc: "Basic vitals and general wellbeing assessment." },
+  { icon: "🫀", nameKey: "sc_bp", descKey: "sc_bp_d" },
+  { icon: "🩸", nameKey: "sc_glu", descKey: "sc_glu_d" },
+  { icon: "📋", nameKey: "sc_well", descKey: "sc_well_d" },
 ];
 
 const SERVICES = [
-  {
-    icon: "🎓",
-    name: "Health education",
-    desc: "Plain-language sessions on prevention and healthy habits.",
-  },
-  {
-    icon: "🏘️",
-    name: "Community outreach",
-    desc: "Screening and awareness events in your neighbourhood.",
-  },
-  {
-    icon: "💼",
-    name: "Corporate wellness",
-    desc: "Workplace health days for teams and organisations.",
-  },
-  {
-    icon: "🚐",
-    name: "Mobile clinic visits",
-    desc: "Screening, outreach and wellness services delivered where you are.",
-  },
-  {
-    icon: "🔗",
-    name: "Referral services",
-    desc: "Guided connection to the right provider when appropriate.",
-  },
-  {
-    icon: "📢",
-    name: "Health campaigns",
-    desc: "Community screening days such as “Know Your Numbers”.",
-  },
+  { icon: "🎓", nameKey: "srv_education", descKey: "srv_education_d" },
+  { icon: "🏘️", nameKey: "srv_outreach", descKey: "srv_outreach_d" },
+  { icon: "💼", nameKey: "srv_corporate", descKey: "srv_corporate_d" },
+  { icon: "🚐", nameKey: "srv_mobile", descKey: "srv_mobile_d" },
+  { icon: "🔗", nameKey: "srv_referral", descKey: "srv_referral_d" },
+  { icon: "📢", nameKey: "srv_campaigns", descKey: "srv_campaigns_d" },
 ];
 
 export default function ServicesPage() {
@@ -51,7 +27,7 @@ export default function ServicesPage() {
   const [, setBookings] = useStoredCollection(KEYS.bookings, seedBookings);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [service, setService] = useState(SERVICES[0].name);
+  const [service, setService] = useState(SERVICES[0].nameKey);
   const [date, setDate] = useState("");
   const [area, setArea] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -64,7 +40,7 @@ export default function ServicesPage() {
       userId: session.userId,
       name: name.trim() || "Guest",
       phone: phone.trim(),
-      message: `${service} — ${area}`,
+      message: `${t(service)} — ${area}`,
       date: date || undefined,
       status: "new",
       createdAt: new Date().toISOString(),
@@ -74,6 +50,12 @@ export default function ServicesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const successText = t("s_success")
+    .replace("{name}", name.split(" ")[0] || "")
+    .replace("{phone}", phone)
+    .replace("{service}", t(service).toLowerCase())
+    .replace("{date}", date ? ` on ${date}` : "");
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6">
@@ -81,47 +63,42 @@ export default function ServicesPage() {
         <p className="mt-1 text-sm text-slate-500">{t("s_sub")}</p>
       </div>
 
-      {/* Check My Health */}
       <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">
               <Link href="/health" className="underline decoration-slate-200 underline-offset-2 hover:text-brand-700">
-                Check My Health
+                {t("s_check_head")}
               </Link>
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Regular checks catch problems early. Start with your numbers, then stay on
-              track with reminders and follow-up.
-            </p>
+            <p className="mt-1 text-sm text-slate-600">{t("h_check_d")}</p>
           </div>
           <Link
             href="/health"
             className="rounded-lg bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100"
           >
-            Open my health page →
+            {t("s_open_health")} →
           </Link>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {CHECK_ITEMS.map((s) => (
-            <div key={s.name} className="rounded-xl bg-slate-50 p-4">
+            <div key={s.nameKey} className="rounded-xl bg-slate-50 p-4">
               <span className="text-xl">{s.icon}</span>
-              <h3 className="mt-2 text-sm font-semibold text-slate-900">{s.name}</h3>
-              <p className="mt-1 text-xs text-slate-600">{s.desc}</p>
+              <h3 className="mt-2 text-sm font-semibold text-slate-900">{t(s.nameKey)}</h3>
+              <p className="mt-1 text-xs text-slate-600">{t(s.descKey)}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Services catalog */}
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          Health services we provide
+          {t("s_we_provide")}
         </h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((s, i) => (
             <div
-              key={s.name}
+              key={s.nameKey}
               className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
             >
               <span
@@ -131,27 +108,22 @@ export default function ServicesPage() {
               >
                 {s.icon}
               </span>
-              <h3 className="mt-3 text-sm font-semibold text-slate-900">{s.name}</h3>
-              <p className="mt-1 text-sm text-slate-600">{s.desc}</p>
+              <h3 className="mt-3 text-sm font-semibold text-slate-900">{t(s.nameKey)}</h3>
+              <p className="mt-1 text-sm text-slate-600">{t(s.descKey)}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Booking form */}
       <section className="mt-8">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          Book a service or visit
+          {t("s_book")}
         </h2>
         <div className="mt-4">
           {submitted ? (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
               <p className="text-lg font-semibold text-green-900">{t("s_received")} 🎉</p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-green-800">
-                Thanks {name ? name.split(" ")[0] : ""}! A HealthLink team member will contact{" "}
-                {phone} to confirm your {service.toLowerCase()} visit
-                {date ? ` on ${date}` : ""}. We confirm each booking by phone and text.
-              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-green-800">{successText}</p>
               <button
                 onClick={() => {
                   setSubmitted(false);
@@ -162,26 +134,20 @@ export default function ServicesPage() {
                 }}
                 className="mt-4 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
               >
-                Book another visit
+                {t("s_book_another")}
               </button>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-              <p className="text-sm text-slate-600">
-                Request a screening, outreach, wellness or mobile-clinic service for
-                yourself, your family, your workplace or your community. No payment is
-                required to make a request — a team member confirms details by phone.
-              </p>
+              <p className="text-sm text-slate-600">{t("s_intro")}</p>
               <form
                 onSubmit={submit}
                 className="h-fit rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
               >
-                <h3 className="mb-4 text-sm font-semibold text-slate-900">
-                  Request a service or clinic visit
-                </h3>
+                <h3 className="mb-4 text-sm font-semibold text-slate-900">{t("s_form_head")}</h3>
                 <div className="space-y-3">
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">Full name</span>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("a_name")}</span>
                     <input
                       type="text"
                       required
@@ -192,7 +158,7 @@ export default function ServicesPage() {
                     />
                   </label>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">Phone</span>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("a_phone")}</span>
                     <input
                       type="tel"
                       required
@@ -203,19 +169,21 @@ export default function ServicesPage() {
                     />
                   </label>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">Service</span>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_service")}</span>
                     <select
                       value={service}
                       onChange={(e) => setService(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                     >
                       {SERVICES.map((s) => (
-                        <option key={s.name}>{s.name}</option>
+                        <option key={s.nameKey} value={s.nameKey}>
+                          {t(s.nameKey)}
+                        </option>
                       ))}
                     </select>
                   </label>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">Preferred date</span>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_date")}</span>
                     <input
                       type="date"
                       required
@@ -225,9 +193,7 @@ export default function ServicesPage() {
                     />
                   </label>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">
-                      Area / community / workplace
-                    </span>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_area")}</span>
                     <input
                       type="text"
                       required
@@ -242,12 +208,9 @@ export default function ServicesPage() {
                   type="submit"
                   className="mt-4 w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
                 >
-                  Request a service
+                  {t("s_submit")}
                 </button>
-                <p className="mt-2 text-xs text-slate-400">
-                  No payment is required to make a request. A team member confirms
-                  eligibility, pricing, and details by phone.
-                </p>
+                <p className="mt-2 text-xs text-slate-400">{t("s_free_note")}</p>
               </form>
             </div>
           )}

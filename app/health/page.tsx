@@ -6,12 +6,14 @@ import { useT } from "@/lib/i18n";
 import { LangSwitcher } from "@/components/ui";
 
 const TRACKERS = [
-  { icon: "🏃", key: "hh_exercise", href: "/health/exercise", badge: "Open" },
-  { icon: "🗂️", key: "hh_journal", href: "/journal", badge: "Open" },
-  { icon: "📂", key: "hh_records", href: "/records", badge: "Open" },
-  { icon: "⏰", key: "hh_reminders", href: "/reminders", badge: "Open" },
-  { icon: "🩺", key: "h_check", dKey: "h_check_d", href: "/services", badge: "Open" },
-  { icon: "📚", key: "h_learn", dKey: "h_learn_d", href: "/explore", badge: "Open" },
+  { icon: "🏃", key: "hh_exercise", href: "/health/exercise", badge: "hh_open" },
+  { icon: "🗂️", key: "hh_journal", href: "/journal", badge: "hh_open" },
+  { icon: "📂", key: "hh_records", href: "/records", badge: "hh_open" },
+  { icon: "⏰", key: "hh_reminders", href: "/reminders", badge: "hh_open" },
+  { icon: "🩺", key: "h_check", dKey: "h_check_d", href: "/services", badge: "hh_open" },
+  { icon: "📚", key: "h_learn", dKey: "h_learn_d", href: "/explore", badge: "hh_open" },
+  { icon: "🫀", key: "n_chronic", dKey: "n_chronic_d", href: "/health/chronic", badge: "hh_open" },
+  { icon: "🗓️", key: "n_journey", dKey: "n_journey_d", href: "/health/journey", badge: "hh_open" },
 ];
 
 export default function HealthPage() {
@@ -76,18 +78,30 @@ export default function HealthPage() {
             </h2>
             <p className="mt-1 text-sm text-slate-600">{t(item.dKey ?? `${item.key}_d`, "") || ""}</p>
             <span className="mt-2 inline-block rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-              {item.badge}
+              {t(item.badge)}
             </span>
           </Link>
         ))}
       </div>
 
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { href: "/care-circle", icon: "👨‍👩‍👧", key: "n_carecircle", dKey: "n_carecircle_d" },
+          { href: "/health-days", icon: "🎪", key: "n_healthdays", dKey: "n_healthdays_d" },
+          { href: "/worker", icon: "🦺", key: "n_worker", dKey: "n_worker_d" },
+          { href: "/ask", icon: "💬", key: "n_ask", dKey: "n_ask_d" },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-colors hover:border-brand-300">
+            <span className="text-xl">{item.icon}</span>
+            <h2 className="mt-2 text-sm font-semibold text-slate-900">{t(item.key)}</h2>
+            <p className="mt-1 text-xs text-slate-600">{t(item.dKey)}</p>
+          </Link>
+        ))}
+      </div>
+
       <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-5">
-        <h2 className="text-sm font-semibold text-brand-900">Know your numbers</h2>
-        <p className="mt-1 text-sm text-brand-800">
-          Start a HealthLink Community Health Day or book a mobile clinic visit to check
-          your blood pressure and blood glucose with professional oversight.
-        </p>
+        <h2 className="text-sm font-semibold text-brand-900">{t("hh_know")}</h2>
+        <p className="mt-1 text-sm text-brand-800">{t("hh_know_d")}</p>
         <Link
           href="/services"
           className="mt-3 inline-block rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"

@@ -23,6 +23,8 @@ export function Nav() {
     { href: "/find-care", label: t("n_find") },
     { href: "/services", label: t("n_services") },
     { href: "/health", label: t("n_health") },
+    { href: "/passport", label: t("n_passport", "Passport") },
+    { href: "/ask", label: t("n_ask", "Ask") },
     { href: "/profile", label: t("n_profile") },
   ];
 

@@ -5,11 +5,22 @@ import {
   directionsUrl,
   whatsappUrl,
   PROVIDER_CATEGORY_LABELS,
+  providerCostTier,
+  COST_TIER_LABELS,
   type Provider,
   type Topic,
 } from "@/lib/content";
 import { useT, useLang } from "@/lib/i18n";
-import { topicTitle, topicSummary } from "@/lib/content";
+import {
+  topicTitle,
+  topicSummary,
+  topicWhatItIs,
+  topicSymptoms,
+  topicRiskFactors,
+  topicPrevention,
+  topicWhenToSeekHelp,
+  topicFaqs,
+} from "@/lib/content";
 
 export const CATEGORY_STYLES: Record<string, string> = {
   Hospital: "bg-sky-50 text-sky-700",
@@ -34,6 +45,7 @@ export function matchProvider(p: Provider, q: string): boolean {
 }
 
 export function TopicCard({ topic, onSelect }: { topic: Topic; onSelect: (t: Topic) => void }) {
+  const t = useT();
   const lang = useLang();
   const title = topicTitle(topic, lang);
   const summary = topicSummary(topic, lang);
@@ -49,31 +61,32 @@ export function TopicCard({ topic, onSelect }: { topic: Topic; onSelect: (t: Top
         </span>
       </div>
       <p className="mt-1 text-sm text-slate-600">{summary}</p>
-      <span className="mt-2 inline-block text-xs font-medium text-brand-700">Read more →</span>
+      <span className="mt-2 inline-block text-xs font-medium text-brand-700">{t("hd_read_more")} →</span>
     </button>
   );
 }
 
 export function TopicDetail({ topic, onBack, report }: { topic: Topic; onBack?: () => void; report?: (t: Topic) => void }) {
   const lang = useLang();
+  const t = useT();
   const title = topicTitle(topic, lang);
   return (
     <article className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
       {onBack && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button onClick={onBack} className="text-sm font-medium text-slate-500 hover:text-slate-700">
-            ← Back
+            ← {t("c_back")}
           </button>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700">
-              Reviewed by {topic.reviewedBy} · {topic.reviewedOn}
+              {t("hd_reviewed")} {topic.reviewedBy} · {topic.reviewedOn}
             </span>
             {report && (
               <button
                 onClick={() => report(topic)}
                 className="rounded-full border border-slate-200 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 hover:border-amber-300 hover:text-amber-700"
               >
-                ⚠ Report
+                ⚠ {t("hd_report")}
               </button>
             )}
           </div>
@@ -84,30 +97,30 @@ export function TopicDetail({ topic, onBack, report }: { topic: Topic; onBack?: 
       <p className="mt-2 text-sm text-slate-600">{topicSummary(topic, lang)}</p>
 
       <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <strong>When to seek professional help:</strong> {topic.whenToSeekHelp}
+        <strong>{t("hd_when")}:</strong> {topicWhenToSeekHelp(topic, lang)}
       </div>
 
       <div className="mt-6 space-y-6">
-        <DetailBlock title="What it is">
-          <p className="text-sm text-slate-700">{topic.whatItIs}</p>
+        <DetailBlock title={t("hd_what")}>
+          <p className="text-sm text-slate-700">{topicWhatItIs(topic, lang)}</p>
         </DetailBlock>
-        <DetailBlock title="Common signs and symptoms">
-          <BulletList items={topic.symptoms} />
+        <DetailBlock title={t("hd_symptoms")}>
+          <BulletList items={topicSymptoms(topic, lang)} />
         </DetailBlock>
-        <DetailBlock title="Risk factors">
-          <BulletList items={topic.riskFactors} />
+        <DetailBlock title={t("hd_risk")}>
+          <BulletList items={topicRiskFactors(topic, lang)} />
         </DetailBlock>
-        <DetailBlock title="Prevention">
-          <BulletList items={topic.prevention} />
+        <DetailBlock title={t("hd_prevention")}>
+          <BulletList items={topicPrevention(topic, lang)} />
         </DetailBlock>
       </div>
 
       <details open className="mt-6 border-t border-slate-100 pt-5">
         <summary className="cursor-pointer text-sm font-semibold text-slate-900">
-          Frequently asked questions
+          {t("hd_faqs")}
         </summary>
         <div className="mt-3 space-y-3">
-          {topic.faqs.map((f) => (
+          {topicFaqs(topic, lang).map((f) => (
             <div key={f.q} className="rounded-xl bg-slate-50 px-4 py-3">
               <p className="text-sm font-medium text-slate-900">{f.q}</p>
               <p className="mt-1 text-sm text-slate-600">{f.a}</p>
@@ -117,16 +130,22 @@ export function TopicDetail({ topic, onBack, report }: { topic: Topic; onBack?: 
       </details>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
-        <p className="text-xs text-slate-400">Source: {topic.source}</p>
+        <p className="text-xs text-slate-400">{t("hd_source")} {topic.source}</p>
         <Link
           href={`/find-care?category=${encodeURIComponent(topic.categories[0] ?? "Hospital")}`}
           className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
         >
-          Find Help Near Me →
+          {t("hd_find_help")} →
         </Link>
       </div>
     </article>
   );
+}
+
+function CostBadge({ category }: { category: Provider["category"] }) {
+  const tier = providerCostTier(category);
+  const style = tier === "low" ? "bg-emerald-50 text-emerald-800" : tier === "high" ? "bg-rose-50 text-rose-800" : "bg-amber-50 text-amber-800";
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${style}`}>{COST_TIER_LABELS[tier]}</span>;
 }
 
 export function ProviderCard({ provider }: { provider: Provider }) {
@@ -162,6 +181,7 @@ export function ProviderCard({ provider }: { provider: Provider }) {
             {t("f_open_24")}
           </span>
         )}
+        <CostBadge category={provider.category} />
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         {provider.services.slice(0, 4).map((s) => (
