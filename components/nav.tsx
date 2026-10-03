@@ -36,7 +36,7 @@ export function Nav() {
         </Link>
         <div className="flex items-center gap-2">
           <nav
-            className="hidden items-center gap-0.5 overflow-x-auto md:flex"
+            className="hidden"
             aria-label="Primary"
           >
             {consumerLinks.map((link) => {
@@ -89,7 +89,7 @@ export function Nav() {
           )}
         </div>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur md:hidden" aria-label="Mobile">
+      <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/95 backdrop-blur md:bottom-6 md:rounded-b-[2rem]" aria-label="Mobile">
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 py-1.5">
           {[
             { href: "/app", icon: "🏠", label: t("n_home") },
