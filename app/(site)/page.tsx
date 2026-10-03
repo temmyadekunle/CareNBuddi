@@ -50,9 +50,9 @@ export default function LandingPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Learn", "Plain-language education, community screening days, and chronic care journeys that keep prevention front and centre."],
-              ["Access", "Find verified hospitals, PHCs, labs and pharmacies by state and LGA, compared by cost and verified."],
-              ["Connect", "Request visits, follow referrals, and stay in touch with the providers you trust."],
-              ["Respond", "Emergency guidance and a scannable health passport that works when seconds count."],
+              ["Track", "Daily journal, chronic care journeys, weight and exercise — your health, on record."],
+              ["Find care", "Verified hospitals, PHCs, labs and pharmacies by state and LGA, compared by affordability."],
+              ["Connect & protect", "Care circle, emergency card on your passport, and follow-up with health workers you trust."],
             ].map(([title, desc], i) => (
               <div key={title} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i === 0 ? "bg-brand-100 text-brand-700" : i === 1 ? "bg-emerald-100 text-emerald-800" : i === 2 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"}`}>

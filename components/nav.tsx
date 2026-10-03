@@ -36,7 +36,7 @@ export function Nav() {
         </Link>
         <div className="flex items-center gap-2">
           <nav
-            className="flex items-center gap-0.5 overflow-x-auto"
+            className="hidden items-center gap-0.5 overflow-x-auto md:flex"
             aria-label="Primary"
           >
             {consumerLinks.map((link) => {
@@ -89,6 +89,32 @@ export function Nav() {
           )}
         </div>
       </div>
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur md:hidden" aria-label="Mobile">
+        <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 py-1.5">
+          {[
+            { href: "/app", icon: "🏠", label: t("n_home") },
+            { href: "/find-care", icon: "🏥", label: t("n_find") },
+            { href: "/health", icon: "💚", label: t("n_health") },
+            { href: "/passport", icon: "🪪", label: t("n_passport", "Passport") },
+            { href: "/profile", icon: "👤", label: t("n_profile") },
+          ].map((link) => {
+            const active =
+              link.href === "/app" ? pathname === "/app" : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] font-medium ${
+                  active ? "text-brand-700" : "text-slate-500"
+                }`}
+              >
+                <span className="text-lg leading-none">{link.icon}</span>
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </header>
   );
 }

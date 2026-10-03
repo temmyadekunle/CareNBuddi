@@ -6,6 +6,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       <Nav />
       <AppGuard>{children}</AppGuard>
+      <div className="h-20 md:hidden" />
     </>
   );
 }
