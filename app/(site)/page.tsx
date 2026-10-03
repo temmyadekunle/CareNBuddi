@@ -66,6 +66,50 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section id="features" className="px-4 py-14">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl font-semibold text-slate-900">Inside the app, step by step</h2>
+          <div className="mt-8 flex flex-col items-center gap-8 lg:flex-row lg:items-start">
+            <div className="w-72 shrink-0 rounded-[2.5rem] border-4 border-slate-900 bg-white p-3 shadow-xl">
+              <div className="rounded-[2rem] bg-slate-50 p-4 text-center">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-brand-700">Better Information. Healthier You.</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">How can we help you today?</p>
+                <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-[11px] text-slate-400">🔎 Search health topics…</div>
+                <div className="mt-3 space-y-2 text-left">
+                  {[["📚", "Learn about health"], ["💚", "Check your health"], ["🏥", "Find care near you"], ["📅", "Connect with a provider"]].map(([i, l]) => (
+                    <div key={l} className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-2.5">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-sm">{i}</span>
+                      <span className="text-[11px] font-semibold text-slate-800">{l}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex justify-around border-t border-slate-100 pt-2 text-[9px] text-slate-500">
+                  <span>🏠 Home</span><span>🏥 Care</span><span>💚 Health</span><span>🪪 ID</span><span>👤 Me</span>
+                </div>
+              </div>
+            </div>
+
+            <ol className="space-y-4">
+              {[
+                ["Home", "Search any condition and jump straight to plain-language articles — no login needed. Bottom tabs take you anywhere in two taps."],
+                ["Find Care", "Search hospitals, PHCs, labs and pharmacies by state and LGA, filter by cost (₦–₦₦₦), then call, WhatsApp or request a visit."],
+                ["Health", "Your daily journal, records, reminders, exercise & weight journey, chronic-care programs and a merged health-timeline."],
+                ["Passport", "Emergency card with blood group, allergies, meds and a QR code a health worker can scan on the spot."],
+                ["Ask", "An educational navigator that answers where to go, what to check, and how to use the app — never a substitute for a doctor."],
+              ].map(([title, desc], i) => (
+                <li key={title} className="flex gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">{i + 1}</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
       <section id="team" className="bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-2xl font-semibold text-slate-900">Meet the team</h2>
