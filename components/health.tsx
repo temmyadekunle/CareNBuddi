@@ -5,6 +5,7 @@ import {
   directionsUrl,
   whatsappUrl,
   PROVIDER_CATEGORY_LABELS,
+  HEALTH_CATEGORY_LABELS,
   providerCostTier,
   COST_TIER_LABELS,
   type Provider,
@@ -57,7 +58,7 @@ export function TopicCard({ topic, onSelect }: { topic: Topic; onSelect: (t: Top
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-700">{title}</h3>
         <span className="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-          {topic.healthCategory}
+          {HEALTH_CATEGORY_LABELS[lang]?.[topic.healthCategory] ?? topic.healthCategory}
         </span>
       </div>
       <p className="mt-1 text-sm text-slate-600">{summary}</p>

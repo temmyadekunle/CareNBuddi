@@ -18,7 +18,7 @@ export function Nav() {
   const isStaff = role === "provider" || role === "admin";
 
   const consumerLinks = [
-    { href: "/", label: t("n_home") },
+    { href: "/app", label: t("n_home") },
     { href: "/explore", label: t("n_explore") },
     { href: "/find-care", label: t("n_find") },
     { href: "/services", label: t("n_services") },
@@ -31,7 +31,7 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" aria-label="HealthLink home">
+        <Link href="/app" aria-label="HealthLink home">
           <Logo />
         </Link>
         <div className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export function Nav() {
           >
             {consumerLinks.map((link) => {
               const active =
-                link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+                link.href === "/app" ? pathname === "/app" : pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}

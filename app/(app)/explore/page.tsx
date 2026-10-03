@@ -108,7 +108,8 @@ export default function ExplorePage() {
                 >
                   <h3 className="text-sm font-semibold text-slate-900">{label}</h3>
                   <p className="mt-1 text-sm text-slate-600">
-                    {CATEGORY_DESCRIPTIONS[catKey(label)]}
+                    {CATEGORY_DESCRIPTIONS[lang]?.[catKey(label)] ??
+                      CATEGORY_DESCRIPTIONS.en[catKey(label)]}
                   </p>
                 </button>
               ))}
