@@ -89,7 +89,7 @@ export function Nav() {
           )}
         </div>
       </div>
-      <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/95 backdrop-blur md:bottom-6 md:rounded-b-[2rem]" aria-label="Mobile">
+      <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[420px] -translate-x-1/2 border-t border-slate-200/80 bg-white/95 backdrop-blur md:bottom-6 md:rounded-b-[28px]" aria-label="Mobile">
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 py-1.5">
           {[
             { href: "/app", icon: <HomeIcon />, label: t("n_home") },
