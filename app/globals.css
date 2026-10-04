@@ -46,3 +46,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+#app-shell main {
+  max-width: 100% !important;
+}
+
+#app-shell header > div {
+  max-width: 100% !important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+#app-shell {
+  overflow-x: hidden;
+}
