@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { AppDownload, InstallSteps } from "@/components/app-download";
+
 export default function LandingPage() {
   return (
     <main>
@@ -11,9 +14,12 @@ export default function LandingPage() {
           of your wellbeing journey, all in your language.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
-          <a href="#download" className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-800">
+          <Link
+            href="/app"
+            className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-800"
+          >
             Get the app
-          </a>
+          </Link>
           <a href="#about" className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:border-brand-300">
             Learn more
           </a>
@@ -132,18 +138,13 @@ export default function LandingPage() {
       </section>
 
       <section id="download" className="mx-auto max-w-5xl px-4 py-12 text-center">
-        <h2 className="text-2xl font-semibold text-slate-900">Download the HealthLink app</h2>
+        <h2 className="text-2xl font-semibold text-slate-900">Get the HealthLink app</h2>
         <p className="mt-2 text-slate-600">
-          The full HealthLink experience lives in our mobile app. Available on Android and iOS.
+          HealthLink runs in your browser and installs to your home screen like any app. Open it
+          once, add it to your phone, and it keeps working when you lose signal.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <a href="#" className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800">
-            Google Play
-          </a>
-          <a href="#" className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800">
-            App Store
-          </a>
-        </div>
+        <AppDownload />
+        <InstallSteps />
       </section>
     </main>
   );
