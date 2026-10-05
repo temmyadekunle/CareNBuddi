@@ -198,3 +198,42 @@ body {
 .safe-bottom {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
+/* ---------- marketing site ---------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Only hide revealed content once JS has confirmed it can reveal it again,
+   so the landing page is fully readable without JavaScript. */
+.has-reveal .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 600ms ease,
+    transform 600ms ease;
+}
+
+.has-reveal .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-700);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .has-reveal .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

@@ -1,34 +1,59 @@
-import Link from "next/link";
-import { Logo } from "@/components/logo";
-import { LangSwitcher } from "@/components/ui";
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteNav } from "@/components/marketing/site-nav";
+
+const TITLE = "HealthLink — Healthcare, connected.";
+const DESCRIPTION =
+  "HealthLink connects you to the care you need. Find healthcare providers near you, book appointments, keep your health information organised and stay connected — in English, Yoruba, Hausa and Igbo.";
 
 export const metadata: Metadata = {
-  title: "HealthLink — Better Information. Healthier You.",
-  description:
-    "HealthLink is a digital health platform for Nigeria. Learn about your health, check your numbers, find trusted care, and follow up — in English, Yoruba, Hausa and Igbo.",
+  metadataBase: new URL("https://healthlink.folababy02.workers.dev"),
+  title: {
+    default: TITLE,
+    template: "%s | HealthLink",
+  },
+  description: DESCRIPTION,
+  applicationName: "HealthLink",
+  keywords: [
+    "healthcare Nigeria",
+    "find a hospital",
+    "book an appointment",
+    "health records",
+    "health reminders",
+    "online doctor Nigeria",
+    "HealthLink app",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "HealthLink",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "en_NG",
+  },
+  twitter: {
+    card: "summary",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png", sizes: "48x48" },
+      { url: "/apple-touch-icon.png", sizes: "180x180" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" aria-label="HealthLink home">
-            <Logo />
-          </Link>
-          <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
-            <a href="#about" className="hover:text-slate-900">About</a>
-            <a href="#team" className="hover:text-slate-900">Team</a>
-            <a href="#download" className="hover:text-slate-900">Download</a>
-            <LangSwitcher compact />
-          </nav>
-        </div>
-      </header>
+    <div className="flex min-h-full flex-col bg-white">
+      <SiteNav />
       <div className="flex-1">{children}</div>
-      <footer className="border-t border-slate-200/80 bg-white py-6 text-center text-xs text-slate-500">
-        © 2026 HealthLink — Better Information. Healthier You.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
