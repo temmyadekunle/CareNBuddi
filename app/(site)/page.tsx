@@ -111,6 +111,24 @@ const PROVIDER_POINTS = [
   "Give patients a clearer, simpler experience",
 ];
 
+const FEATURE_PHOTOS = [
+  {
+    image: "preventiveCareLagos",
+    title: "Check-ins you can rely on",
+    body: "Log blood pressure, weight and blood sugar, then see how they are trending over time.",
+  },
+  {
+    image: "diagnosisExplained",
+    title: "Results you can actually read",
+    body: "Keep results, notes and prescriptions together instead of folded into a paper file.",
+  },
+  {
+    image: "digitalRecords",
+    title: "Your health, in your hands",
+    body: "Records, appointments and reminders in one place, on the phone you already own.",
+  },
+] as const;
+
 const PRINCIPLES = [
   {
     title: "Simple",
@@ -144,7 +162,7 @@ export default function LandingPage() {
   return (
     <main id="top">
       {/* ---------------------------------------------------------- hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white px-4 pb-28 pt-12 sm:px-6 sm:pb-32 sm:pt-16">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-100/50 blur-3xl"
@@ -182,21 +200,16 @@ export default function LandingPage() {
           </div>
 
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <div className="relative z-10 mx-auto w-full max-w-[280px] lg:max-w-[300px]">
+            <MarketingImage
+              image={MARKETING_IMAGES.lagosConsultation}
+              sizes="(max-width: 1024px) 92vw, 560px"
+              className="w-full rounded-3xl object-cover shadow-xl"
+              priority
+            />
+            <div className="absolute -bottom-14 left-0 w-[44%] max-w-[168px] sm:-bottom-16 sm:left-6">
               <PhoneMockup screen="home" label="" />
             </div>
-            <div className="absolute -left-2 top-6 z-20 hidden w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-lg sm:block lg:-left-8 lg:w-48">
-              <MarketingImage
-                image={MARKETING_IMAGES.careConsultation}
-                sizes="192px"
-                className="h-28 w-full rounded-xl object-cover"
-                priority
-              />
-              <p className="mt-2 text-[11px] font-semibold leading-tight text-slate-900">
-                Care that fits your life
-              </p>
-            </div>
-            <div className="absolute -bottom-6 right-0 z-20 hidden w-32 sm:block lg:-right-4 lg:w-40">
+            <div className="absolute -right-2 -top-10 hidden w-32 sm:block lg:-right-6 lg:w-40">
               <ConnectedArt className="w-full" />
             </div>
           </div>
@@ -278,6 +291,24 @@ export default function LandingPage() {
             </Reveal>
           ))}
         </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURE_PHOTOS.map((item, i) => (
+            <Reveal key={item.title} delay={i * 80}>
+              <figure className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <MarketingImage
+                  image={MARKETING_IMAGES[item.image]}
+                  sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 380px"
+                  className="aspect-[4/3] w-full object-cover"
+                />
+                <figcaption className="p-5">
+                  <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{item.body}</p>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
+        </div>
       </Section>
 
       {/* -------------------------------------------------- for patients */}
@@ -317,9 +348,9 @@ export default function LandingPage() {
           </Reveal>
           <Reveal delay={80}>
             <MarketingImage
-              image={MARKETING_IMAGES.patientExperience}
-              sizes="(max-width: 1024px) 92vw, 560px"
-              className="w-full rounded-3xl object-cover shadow-lg"
+              image={MARKETING_IMAGES.patientConsultation}
+              sizes="(max-width: 1024px) 92vw, 520px"
+              className="mx-auto w-full max-w-md rounded-3xl object-cover shadow-lg"
             />
           </Reveal>
         </div>
@@ -335,9 +366,9 @@ export default function LandingPage() {
         <div className="mt-10 grid items-center gap-10 lg:grid-cols-2">
           <Reveal className="order-2 lg:order-1">
             <MarketingImage
-              image={MARKETING_IMAGES.providerTeam}
-              sizes="(max-width: 1024px) 92vw, 560px"
-              className="w-full rounded-3xl object-cover shadow-lg"
+              image={MARKETING_IMAGES.providerWithTablet}
+              sizes="(max-width: 1024px) 92vw, 520px"
+              className="mx-auto w-full max-w-md rounded-3xl object-cover shadow-lg"
             />
           </Reveal>
           <Reveal delay={80} className="order-1 lg:order-2">
@@ -516,7 +547,7 @@ export default function LandingPage() {
       {/* --------------------------------------------------- final cta */}
       <section className="relative overflow-hidden bg-brand-900 px-4 py-20 sm:px-6">
         <MarketingImage
-          image={MARKETING_IMAGES.corridorCare}
+          image={MARKETING_IMAGES.careCorridor}
           sizes="(max-width: 1024px) 100vw, 1200px"
           className="absolute inset-0 h-full w-full object-cover opacity-20"
           decorative

@@ -2,8 +2,18 @@
  * Central registry of every photograph used on the marketing site.
  *
  * All images are free-to-use Pexels photos (Pexels License: free to use,
- * attribution appreciated but not required). Swap any entry for a local file by
- * pointing `local` at a path inside /public and replacing `src`.
+ * attribution appreciated but not required). The footer carries the credit
+ * line. To add photographer names, open each photo's Pexels page — the site
+ * blocks scraping, so names cannot be read automatically.
+ *
+ * The set is deliberately Nigeria- and Africa-led: the hero and the preventive
+ * care image were photographed in Lagos, and the provider, patient and records
+ * images all show Black clinicians and patients.
+ *
+ * Every entry is tied to a feature that actually exists in the app. Images for
+ * features we have not built are kept at the bottom of this file, unused, so
+ * they are ready if those modules ship — they must not appear on the marketing
+ * site until then.
  */
 
 export type MarketingImage = {
@@ -12,7 +22,7 @@ export type MarketingImage = {
   srcSet: string;
   sizes: string;
   alt: string;
-  /** Intrinsic aspect ratio, used to reserve space and avoid layout shift. */
+  /** Intrinsic dimensions, used to reserve space and avoid layout shift. */
   width: number;
   height: number;
   credit: string;
@@ -21,27 +31,36 @@ export type MarketingImage = {
 
 const WIDTHS = [480, 768, 1080, 1440];
 
-function pexels(photoId: number) {
-  return (width: number) =>
-    `https://images.pexels.com/photos/${photoId}/pexels-photo-${photoId}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+function pexelsUrl(photoId: number, width: number, ratio?: number, focus?: string) {
+  const base = `https://images.pexels.com/photos/${photoId}/pexels-photo-${photoId}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+  if (!ratio) return base;
+  const crop = focus ? `&crop=${focus}` : "";
+  return `${base}&h=${Math.round(width / ratio)}&fit=crop${crop}`;
 }
 
+/**
+ * @param ratio  Optional display aspect ratio. When set, the CDN crops to it
+ *               so we never download a 3:2 original for a 3:4 slot.
+ * @param focus  imgix focal point, e.g. "faces" to keep heads in frame.
+ */
 function image(opts: {
   photoId: number;
   alt: string;
   width: number;
   height: number;
-  credit: string;
+  credit?: string;
+  ratio?: number;
+  focus?: string;
 }): MarketingImage {
-  const remote = pexels(opts.photoId);
+  const url = (w: number) => pexelsUrl(opts.photoId, w, opts.ratio, opts.focus);
   return {
-    src: remote,
-    srcSet: WIDTHS.map((w) => `${remote(w)} ${w}w`).join(", "),
+    src: url,
+    srcSet: WIDTHS.map((w) => `${url(w)} ${w}w`).join(", "),
     sizes: "(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 620px",
     alt: opts.alt,
     width: opts.width,
     height: opts.height,
-    credit: opts.credit,
+    credit: opts.credit ?? "Pexels",
     source: `https://www.pexels.com/photo/${opts.photoId}/`,
   };
 }
@@ -70,67 +89,71 @@ function localBrandImage(opts: {
 }
 
 export const MARKETING_IMAGES = {
-  /** Hero: clinician speaking with a patient in a clinic corridor. */
-  careConsultation: image({
-    photoId: 6303645,
-    alt: "A healthcare professional explaining a diagnosis to a patient during a clinic consultation",
-    width: 1400,
-    height: 933,
-    credit: "Klaus Nielsen / Pexels",
+  /** Hero: a doctor consulting with a patient during a clinic visit in Lagos. */
+  lagosConsultation: image({
+    photoId: 30677597,
+    alt: "A doctor consulting with a patient during a clinic visit in Lagos",
+    width: 2000,
+    height: 1333,
+    ratio: 1.25,
+    focus: "faces",
   }),
 
-  /** For Patients: a patient talking with a doctor in a hospital hallway. */
-  patientExperience: image({
-    photoId: 6303659,
-    alt: "A patient talking with a doctor in a hospital hallway",
-    width: 1400,
-    height: 973,
-    credit: "Klaus Nielsen / Pexels",
+  /** For Patients: a patient talking with her doctor during a consultation. */
+  patientConsultation: image({
+    photoId: 4266930,
+    alt: "A patient talking with her doctor during a consultation",
+    width: 2000,
+    height: 3000,
+    ratio: 0.78,
+    focus: "faces",
   }),
 
-  /** For Providers: a diverse clinical team. */
-  providerTeam: image({
-    photoId: 6129507,
-    alt: "A diverse team of doctors and nurses standing together in a hospital",
-    width: 1400,
-    height: 933,
-    credit: "RDNE Stock project / Pexels",
+  /** For Providers: a doctor working on a tablet, for the provider directory. */
+  providerWithTablet: image({
+    photoId: 19957218,
+    alt: "A doctor using a tablet while working with patients",
+    width: 2000,
+    height: 3000,
+    ratio: 0.78,
+    focus: "faces",
   }),
 
-  /** Portrait crop: a nurse speaking with a patient. */
-  nurseWithPatient: image({
-    photoId: 6303647,
-    alt: "A nurse speaking with a patient in a hospital corridor",
-    width: 1400,
-    height: 2100,
-    credit: "Klaus Nielsen / Pexels",
+  /** Feature: logging and tracking vitals, photographed in Lagos. */
+  preventiveCareLagos: image({
+    photoId: 30688589,
+    alt: "A healthcare professional checking a patient's blood pressure in Lagos",
+    width: 2000,
+    height: 1333,
+    ratio: 1.2,
   }),
 
-  /** Final CTA: a nurse walking with a patient through a corridor. */
-  corridorCare: image({
+  /** Feature: a doctor explaining a diagnosis and results to a patient. */
+  diagnosisExplained: image({
+    photoId: 6303652,
+    alt: "A doctor explaining a diagnosis to a patient in a hospital",
+    width: 2000,
+    height: 1333,
+    ratio: 1.2,
+  }),
+
+  /** Feature: digital health records on a tablet. */
+  digitalRecords: image({
+    photoId: 5452188,
+    alt: "A doctor using a tablet computer to review health records",
+    width: 2000,
+    height: 3000,
+    ratio: 0.78,
+    focus: "faces",
+  }),
+
+  /** Final CTA background: a care worker walking with a patient. */
+  careCorridor: image({
     photoId: 33932453,
-    alt: "A nurse walking alongside a patient in a hospital corridor",
-    width: 1400,
-    height: 935,
+    alt: "A care worker walking alongside a patient in a hospital corridor",
+    width: 2000,
+    height: 1333,
     credit: "Wellington Tavares / Pexels",
-  }),
-
-  /** Mobile usage: a person holding a phone. */
-  phoneInHand: image({
-    photoId: 9429449,
-    alt: "A person holding a smartphone",
-    width: 1400,
-    height: 933,
-    credit: "Pexels",
-  }),
-
-  /** Care in progress: a nurse taking a sample from a patient. */
-  careInProgress: image({
-    photoId: 6129680,
-    alt: "A nurse in scrubs caring for a patient in a hospital ward",
-    width: 1400,
-    height: 933,
-    credit: "RDNE Stock project / Pexels",
   }),
 
   /**
@@ -143,6 +166,30 @@ export const MARKETING_IMAGES = {
     alt: "The founder of HealthLink",
     width: 853,
     height: 1280,
+  }),
+
+  /* ---------------------------------------------------------------------
+   * Held back on purpose — do not add these to the page yet.
+   *
+   * HealthLink has no online consultation and no mental health module, so
+   * showing a telehealth or counselling photo would advertise a feature that
+   * does not exist. Keep them here for when those modules ship.
+   * ------------------------------------------------------------------- */
+
+  /** Reserved for a future online consultation feature. */
+  telehealthConsultation: image({
+    photoId: 18252405,
+    alt: "A doctor sitting with a smartphone and tablet for a remote consultation",
+    width: 2000,
+    height: 1333,
+  }),
+
+  /** Reserved for a future mental health feature. */
+  counsellingSession: image({
+    photoId: 5699447,
+    alt: "A person having a private conversation with a mental health professional",
+    width: 2000,
+    height: 1333,
   }),
 } satisfies Record<string, MarketingImage>;
 
