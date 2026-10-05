@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, useStoredCollection, KEYS, seedUsers } from "@/lib/storage";
+import { useT } from "@/lib/i18n";
+import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { Button, Card, Screen } from "@/components/app-ui";
+import { LockIcon } from "@/components/icons";
 
 const PRIVATE_PATHS = [
   "/journal",
@@ -13,6 +16,7 @@ const PRIVATE_PATHS = [
   "/health/chronic",
   "/health/journey",
   "/health/exercise",
+  "/appointments",
   "/profile",
 ];
 
@@ -27,28 +31,73 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   const isPrivate = PRIVATE_PATHS.some((p) => pathname.startsWith(p));
   const isStaff = STAFF_PATHS.some((p) => pathname.startsWith(p));
 
-  if ((isPrivate || isStaff) && !session.userId) {
-    return <GateCard title="Sign in to continue" body="This area keeps your personal health information. Sign in or create a free account to use it." />;
-  }
   if (isStaff && me && me.role === "consumer") {
-    return <GateCard title="Staff access only" body="This area is for HealthLink providers and admins. Sign in with a provider or admin account." />;
+    return (
+      <GateCard
+        title={useGateStrings().staffTitle}
+        body={useGateStrings().staffBody}
+        href="/profile"
+        linkLabel="Back to profile"
+      />
+    );
   }
+
+  if ((isPrivate || isStaff) && !session.userId) {
+    return (
+      <GateCard
+        title={useGateStrings().signInTitle}
+        body={useGateStrings().signInBody}
+        href="/auth/sign-in"
+        linkLabel={useGateStrings().signInCta}
+      />
+    );
+  }
+
   return <>{children}</>;
 }
 
-function GateCard({ title, body }: { title: string; body: string }) {
+function useGateStrings() {
+  const t = useT();
+  return {
+    signInTitle: t("gate_signin_title", "Sign in to continue"),
+    signInBody: t(
+      "gate_signin_body",
+      "This part of the app keeps your personal health information. Sign in to see your records.",
+    ),
+    signInCta: t("gate_signin_cta", "Sign in"),
+    staffTitle: t("gate_staff_title", "Staff access only"),
+    staffBody: t("gate_staff_body", "This area is for HealthLink providers and staff."),
+    backToProfile: t("gate_back_profile", "Back to profile"),
+  };
+}
+
+function GateCard({
+  title,
+  body,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  body: string;
+  href: string;
+  linkLabel: string;
+}) {
+  const t = useT();
   return (
-    <main className="mx-auto max-w-md px-4 py-16 text-center">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-        <p className="mt-2 text-sm text-slate-600">{body}</p>
-        <Link
-          href="/account"
-          className="mt-5 inline-block rounded-xl bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
-        >
-          Sign in / Create account →
+    <Screen>
+      <Card className="mt-6 flex flex-col items-center gap-3 py-10 text-center">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+          <LockIcon className="h-6 w-6" />
+        </span>
+        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <p className="max-w-[18rem] text-sm text-slate-500">{body}</p>
+        <Link href={href} className="mt-2 w-full max-w-[16rem]">
+          <Button full>{linkLabel}</Button>
         </Link>
-      </div>
-    </main>
+        <Link href="/app" className="text-xs font-semibold text-slate-500">
+          {t("gate_continue_guest", "Continue as guest")}
+        </Link>
+      </Card>
+    </Screen>
   );
 }

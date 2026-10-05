@@ -2,27 +2,59 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { KEYS, seedBookings, uid, useSession, useStoredCollection } from "@/lib/storage";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Screen,
+  SectionHeader,
+  inputClass,
+  useToast,
+} from "@/components/app-ui";
+import {
+  ActivityIcon,
+  BookIcon,
+  CalendarIcon,
+  CameraIcon,
+  ChartIcon,
+  CheckIcon as CheckGlyph,
+  HeartPulseIcon,
+  PinIcon,
+  StethoscopeIcon,
+  WalletIcon,
+} from "@/components/icons";
 import { useT } from "@/lib/i18n";
+import { KEYS, seedBookings, uid, useSession, useStoredCollection } from "@/lib/storage";
 import type { Booking } from "@/lib/types";
+import type { ReactNode } from "react";
 
-const CHECK_ITEMS = [
-  { icon: "🫀", nameKey: "sc_bp", descKey: "sc_bp_d" },
-  { icon: "🩸", nameKey: "sc_glu", descKey: "sc_glu_d" },
-  { icon: "📋", nameKey: "sc_well", descKey: "sc_well_d" },
+interface ServiceDef {
+  key: string;
+  nameKey: string;
+  descKey: string;
+  icon: ReactNode;
+  tone: string;
+}
+
+const CHECK_ITEMS: ServiceDef[] = [
+  { key: "bp", nameKey: "sc_bp", descKey: "sc_bp_d", icon: <HeartPulseIcon className="h-5 w-5" />, tone: "bg-brand-50 text-brand-700" },
+  { key: "glucose", nameKey: "sc_glu", descKey: "sc_glu_d", icon: <ActivityIcon className="h-5 w-5" />, tone: "bg-green-50 text-green-700" },
+  { key: "wellness", nameKey: "sc_well", descKey: "sc_well_d", icon: <StethoscopeIcon className="h-5 w-5" />, tone: "bg-coral-50 text-coral-600" },
 ];
 
-const SERVICES = [
-  { icon: "🎓", nameKey: "srv_education", descKey: "srv_education_d" },
-  { icon: "🏘️", nameKey: "srv_outreach", descKey: "srv_outreach_d" },
-  { icon: "💼", nameKey: "srv_corporate", descKey: "srv_corporate_d" },
-  { icon: "🚐", nameKey: "srv_mobile", descKey: "srv_mobile_d" },
-  { icon: "🔗", nameKey: "srv_referral", descKey: "srv_referral_d" },
-  { icon: "📢", nameKey: "srv_campaigns", descKey: "srv_campaigns_d" },
+const SERVICES: ServiceDef[] = [
+  { key: "education", nameKey: "srv_education", descKey: "srv_education_d", icon: <BookIcon className="h-5 w-5" />, tone: "bg-brand-50 text-brand-700" },
+  { key: "outreach", nameKey: "srv_outreach", descKey: "srv_outreach_d", icon: <PinIcon className="h-5 w-5" />, tone: "bg-green-50 text-green-700" },
+  { key: "corporate", nameKey: "srv_corporate", descKey: "srv_corporate_d", icon: <WalletIcon className="h-5 w-5" />, tone: "bg-coral-50 text-coral-600" },
+  { key: "mobile", nameKey: "srv_mobile", descKey: "srv_mobile_d", icon: <CameraIcon className="h-5 w-5" />, tone: "bg-brand-50 text-brand-700" },
+  { key: "referral", nameKey: "srv_referral", descKey: "srv_referral_d", icon: <StethoscopeIcon className="h-5 w-5" />, tone: "bg-green-50 text-green-700" },
+  { key: "campaigns", nameKey: "srv_campaigns", descKey: "srv_campaigns_d", icon: <ChartIcon className="h-5 w-5" />, tone: "bg-coral-50 text-coral-600" },
 ];
 
 export default function ServicesPage() {
   const t = useT();
+  const { push } = useToast();
   const [session] = useSession();
   const [, setBookings] = useStoredCollection(KEYS.bookings, seedBookings);
   const [name, setName] = useState("");
@@ -40,182 +72,168 @@ export default function ServicesPage() {
       userId: session.userId,
       name: name.trim() || "Guest",
       phone: phone.trim(),
-      message: `${t(service)} — ${area}`,
+      message: `${t(service, "Service")} · ${area}`,
       date: date || undefined,
       status: "new",
       createdAt: new Date().toISOString(),
     };
     setBookings((prev) => [...prev, booking]);
     setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    push(t("s_received", "Request received"), "success");
   };
 
-  const successText = t("s_success")
+  const successText = t("s_success", "Thanks {name} — we will call {phone} about {service}{date}.")
     .replace("{name}", name.split(" ")[0] || "")
     .replace("{phone}", phone)
     .replace("{service}", t(service).toLowerCase())
-    .replace("{date}", date ? ` on ${date}` : "");
+    .replace("{date}", date ? ` ${t("s_on", "on")} ${date}` : "");
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("s_title")}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("s_sub")}</p>
-      </div>
+    <Screen>
+      <SectionHeader title={t("s_title", "Services")} subtitle={t("s_sub", "")} />
 
-      <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">
-              <Link href="/health" className="underline decoration-slate-200 underline-offset-2 hover:text-brand-700">
-                {t("s_check_head")}
-              </Link>
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">{t("h_check_d")}</p>
+      <Card className="mt-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-slate-900">{t("s_check_head", "Check your health")}</h2>
+            <p className="mt-1 text-xs text-slate-500">{t("h_check_d", "Screening, clinics, and your personal health dashboard.")}</p>
           </div>
-          <Link
-            href="/health"
-            className="rounded-lg bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100"
-          >
-            {t("s_open_health")} →
+          <Link href="/health" className="shrink-0">
+            <Button tone="secondary" className="min-h-9 px-3 text-xs">
+              {t("s_open_health", "Open")}
+            </Button>
           </Link>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {CHECK_ITEMS.map((s) => (
-            <div key={s.nameKey} className="rounded-xl bg-slate-50 p-4">
-              <span className="text-xl">{s.icon}</span>
-              <h3 className="mt-2 text-sm font-semibold text-slate-900">{t(s.nameKey)}</h3>
-              <p className="mt-1 text-xs text-slate-600">{t(s.descKey)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          {t("s_we_provide")}
-        </h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {SERVICES.map((s, i) => (
-            <div
-              key={s.nameKey}
-              className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
-            >
-              <span
-                className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl ${
-                  i % 3 === 2 ? "bg-coral-50" : i % 3 === 1 ? "bg-green-50" : "bg-brand-50"
-                }`}
-              >
+        <div className="mt-3 space-y-2">
+          {CHECK_ITEMS.map((s) => (
+            <div key={s.key} className="flex items-start gap-3 rounded-xl bg-slate-50 p-3">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${s.tone}`}>
                 {s.icon}
               </span>
-              <h3 className="mt-3 text-sm font-semibold text-slate-900">{t(s.nameKey)}</h3>
-              <p className="mt-1 text-sm text-slate-600">{t(s.descKey)}</p>
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-slate-900">{t(s.nameKey, "")}</h3>
+                <p className="mt-0.5 text-xs text-slate-600">{t(s.descKey, "")}</p>
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-          {t("s_book")}
-        </h2>
-        <div className="mt-4">
-          {submitted ? (
-            <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-              <p className="text-lg font-semibold text-green-900">{t("s_received")} 🎉</p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-green-800">{successText}</p>
-              <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setName("");
-                  setPhone("");
-                  setDate("");
-                  setArea("");
-                }}
-                className="mt-4 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
-              >
-                {t("s_book_another")}
-              </button>
+      <h2 className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        {t("s_we_provide", "What we provide")}
+      </h2>
+      <div className="mt-2 space-y-2.5">
+        {SERVICES.map((s) => (
+          <Card key={s.key}>
+            <div className="flex items-start gap-3">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.tone}`}>
+                {s.icon}
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900">{t(s.nameKey, "")}</h3>
+                <p className="mt-0.5 text-xs text-slate-600">{t(s.descKey, "")}</p>
+              </div>
             </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-              <p className="text-sm text-slate-600">{t("s_intro")}</p>
-              <form
-                onSubmit={submit}
-                className="h-fit rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-              >
-                <h3 className="mb-4 text-sm font-semibold text-slate-900">{t("s_form_head")}</h3>
-                <div className="space-y-3">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("a_name")}</span>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Amina Yusuf"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("a_phone")}</span>
-                    <input
-                      type="tel"
-                      required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+234 800 000 0000"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_service")}</span>
-                    <select
-                      value={service}
-                      onChange={(e) => setService(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                    >
-                      {SERVICES.map((s) => (
-                        <option key={s.nameKey} value={s.nameKey}>
-                          {t(s.nameKey)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_date")}</span>
-                    <input
-                      type="date"
-                      required
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-slate-600">{t("s_area")}</span>
-                    <input
-                      type="text"
-                      required
-                      value={area}
-                      onChange={(e) => setArea(e.target.value)}
-                      placeholder="e.g. Ikeja, Lagos"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                    />
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  className="mt-4 w-full rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-                >
-                  {t("s_submit")}
-                </button>
-                <p className="mt-2 text-xs text-slate-400">{t("s_free_note")}</p>
-              </form>
-            </div>
-          )}
-        </div>
-      </section>
-    </main>
+          </Card>
+        ))}
+      </div>
+
+      <h2 className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        {t("s_book", "Book a service")}
+      </h2>
+
+      {submitted ? (
+        <Card className="mt-2 border-emerald-200 bg-emerald-50 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white">
+            <CheckGlyph className="h-6 w-6" />
+          </span>
+          <p className="mt-3 text-base font-semibold text-emerald-900">{t("s_received", "Request received")}</p>
+          <p className="mt-1.5 text-sm text-emerald-800">{successText}</p>
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setSubmitted(false);
+              setName("");
+              setPhone("");
+              setDate("");
+              setArea("");
+            }}
+          >
+            {t("s_book_another", "Book another")}
+          </Button>
+        </Card>
+      ) : (
+        <>
+          <p className="mt-2 text-sm text-slate-600">{t("s_intro", "")}</p>
+          <Card className="mt-2">
+            <form onSubmit={submit} className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-900">{t("s_form_head", "Request details")}</h3>
+              <Field label={t("a_name", "Full name")}>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t("s_ph_name", "e.g. Amina Yusuf")}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label={t("a_phone", "Phone")}>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+234 800 000 0000"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label={t("s_service", "Service")}>
+                <select value={service} onChange={(e) => setService(e.target.value)} className={inputClass}>
+                  {SERVICES.map((s) => (
+                    <option key={s.key} value={s.nameKey}>
+                      {t(s.nameKey, "")}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label={t("s_date", "Date")}>
+                  <input
+                    type="date"
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label={t("s_area", "Area")}>
+                  <input
+                    type="text"
+                    required
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    placeholder={t("s_ph_area", "e.g. Ikeja, Lagos")}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <Button full type="submit">
+                <CalendarIcon className="h-4 w-4" />
+                {t("s_submit", "Send request")}
+              </Button>
+              <p className="flex items-center gap-1 text-[11px] text-slate-400">
+                <Badge tone="slate">
+                  <CheckGlyph className="h-3 w-3" />
+                  {t("s_free_note", "")}
+                </Badge>
+              </p>
+            </form>
+          </Card>
+        </>
+      )}
+    </Screen>
   );
 }

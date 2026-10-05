@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  Badge,
+  BottomSheet,
+  Button,
+  Card,
+  Field,
+  Screen,
+  SectionHeader,
+  inputClass,
+  useToast,
+} from "@/components/app-ui";
+import { EditIcon, EmergencyIcon, HeartPulseIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
-import { useStoredValue } from "@/lib/storage";
+import { KEYS, useStoredValue } from "@/lib/storage";
 
 interface Passport {
   name: string;
@@ -19,26 +31,50 @@ interface Passport {
 }
 
 const emptyPassport: Passport = {
-  name: "", bloodGroup: "", allergies: "", medications: "", conditions: "",
-  history: "", immunizations: "", emergencyContact: "", emergencyPhone: "", hmo: "",
+  name: "",
+  bloodGroup: "",
+  allergies: "",
+  medications: "",
+  conditions: "",
+  history: "",
+  immunizations: "",
+  emergencyContact: "",
+  emergencyPhone: "",
+  hmo: "",
 };
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function PassportPage() {
   const t = useT();
-  const [p, setP] = useStoredValue<Passport>("healthlink:passport", emptyPassport);
-  const [editing, setEditing] = useState(false);
+  const { push } = useToast();
+  const [p, setP] = useStoredValue<Passport>(KEYS.passport, emptyPassport);
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Passport>(p);
 
-  const startEdit = () => { setDraft(p); setEditing(true); };
-  const save = () => { setP(draft); setEditing(false); };
+  const startEdit = () => {
+    setDraft(p);
+    setOpen(true);
+  };
+
+  const save = () => {
+    setP(draft);
+    setOpen(false);
+    push(t("pp_saved", "Passport updated"), "success");
+  };
 
   const qrPayload = JSON.stringify({
-    name: p.name, bloodGroup: p.bloodGroup, allergies: p.allergies,
-    medications: p.medications, conditions: p.conditions,
-    emergencyContact: p.emergencyContact, emergencyPhone: p.emergencyPhone, hmo: p.hmo,
+    name: p.name,
+    bloodGroup: p.bloodGroup,
+    allergies: p.allergies,
+    medications: p.medications,
+    conditions: p.conditions,
+    emergencyContact: p.emergencyContact,
+    emergencyPhone: p.emergencyPhone,
+    hmo: p.hmo,
   });
+
+  const dash = t("pp_none", "Not set");
 
   const fields: { key: keyof Passport; label: string }[] = [
     { key: "name", label: t("pp_name", "Full name") },
@@ -53,85 +89,111 @@ export default function PassportPage() {
     { key: "emergencyPhone", label: t("pp_ecp", "Emergency phone") },
   ];
 
+  const cardRows = [
+    { label: t("pp_blood", "Blood group"), value: p.bloodGroup },
+    { label: t("pp_allergies", "Allergies"), value: p.allergies },
+    { label: t("pp_meds", "Current medications"), value: p.medications },
+    { label: t("pp_conditions", "Chronic conditions"), value: p.conditions },
+    {
+      label: t("pp_ec", "Emergency contact"),
+      value: `${p.emergencyContact} ${p.emergencyPhone}`.trim(),
+    },
+  ];
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("pp_title", "Health Passport")}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t("pp_sub", "One profile. One health history. Wherever you go.")}</p>
+    <Screen>
+      <SectionHeader
+        title={t("pp_title", "Health Passport")}
+        subtitle={t("pp_sub", "One profile. One health history. Wherever you go.")}
+      />
 
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">{t("pp_details", "Your details")}</h2>
-            {!editing && (
-              <button onClick={startEdit} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-brand-300">
-                {t("pp_edit", "Edit")}
-              </button>
-            )}
-          </div>
+      <Button tone="secondary" full className="mt-3" onClick={startEdit}>
+        <EditIcon className="h-4 w-4" />
+        {t("pp_edit", "Edit details")}
+      </Button>
 
-          {editing ? (
-            <div className="mt-4 space-y-3">
-              {fields.map((f) => (
-                <label key={f.key} className="block">
-                  <span className="text-xs font-medium text-slate-500">{f.label}</span>
-                  {f.key === "bloodGroup" ? (
-                    <select
-                      value={draft.bloodGroup}
-                      onChange={(e) => setDraft({ ...draft, bloodGroup: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      <option value="">—</option>
-                      {BLOOD_GROUPS.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                  ) : (
-                    <input
-                      value={draft[f.key]}
-                      onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    />
-                  )}
-                </label>
-              ))}
-              <div className="flex gap-2 pt-1">
-                <button onClick={save} className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">
-                  {t("pp_save", "Save")}
-                </button>
-                <button onClick={() => setEditing(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600">
-                  {t("pp_cancel", "Cancel")}
-                </button>
-              </div>
+      <Card className="mt-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-900">{t("pp_details", "Your details")}</h2>
+          <Badge tone="slate">{`${fields.filter((f) => p[f.key]).length}/${fields.length}`}</Badge>
+        </div>
+        <dl className="mt-3 space-y-2">
+          {fields.map((f) => (
+            <div key={f.key} className="flex items-baseline justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+              <dt className="shrink-0 text-xs text-slate-500">{f.label}</dt>
+              <dd className="truncate text-right text-sm font-medium text-slate-900">{p[f.key] || dash}</dd>
             </div>
-          ) : (
-            <dl className="mt-4 space-y-2">
-              {fields.map((f) => (
-                <div key={f.key} className="flex justify-between gap-4 text-sm">
-                  <dt className="text-slate-500">{f.label}</dt>
-                  <dd className="text-right font-medium text-slate-800">{p[f.key] || "—"}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </section>
+          ))}
+        </dl>
+      </Card>
 
-        <section className="rounded-2xl border border-rose-200/70 bg-white p-6 shadow-sm">
+      <Card className="mt-3 border-rose-200/70">
+        <div className="flex items-center gap-1.5">
+          <EmergencyIcon className="h-4 w-4 text-rose-600" />
           <h2 className="text-sm font-semibold text-slate-900">{t("pp_card", "Emergency card")}</h2>
-          <p className="mt-1 text-xs text-slate-500">{t("pp_card_d", "Show this to a healthcare worker in an emergency.")}</p>
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
-            <p className="text-lg font-bold text-slate-900">{p.name || "—"}</p>
-            <dl className="mt-2 space-y-1 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-600">{t("pp_blood", "Blood group")}</dt><dd className="font-semibold">{p.bloodGroup || "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-600">{t("pp_allergies", "Allergies")}</dt><dd className="font-semibold">{p.allergies || "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-600">{t("pp_meds", "Current medications")}</dt><dd className="font-semibold">{p.medications || "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-600">{t("pp_conditions", "Chronic conditions")}</dt><dd className="font-semibold">{p.conditions || "—"}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-600">{t("pp_ec", "Emergency contact")}</dt><dd className="font-semibold">{p.emergencyContact} {p.emergencyPhone}</dd></div>
-            </dl>
-          </div>
-          <div className="mt-4 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
-            <QRCodeSVG value={qrPayload} size={160} />
-            <p className="text-xs text-slate-500">{t("pp_scan", "Scan with a HealthLink worker app")}</p>
-          </div>
-        </section>
-      </div>
-    </main>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">{t("pp_card_d", "Show this to a healthcare worker in an emergency.")}</p>
+
+        <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
+          <p className="flex items-center gap-1.5 text-base font-bold text-slate-900">
+            <HeartPulseIcon className="h-4 w-4 text-rose-600" />
+            {p.name || dash}
+          </p>
+          <dl className="mt-2 space-y-1.5">
+            {cardRows.map((r) => (
+              <div key={r.label} className="flex items-baseline justify-between gap-3">
+                <dt className="shrink-0 text-xs text-slate-600">{r.label}</dt>
+                <dd className="truncate text-right text-sm font-semibold text-slate-900">{r.value || dash}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <div className="mt-3 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
+          <QRCodeSVG value={qrPayload} size={150} />
+          <p className="text-center text-xs text-slate-500">{t("pp_scan", "Scan with a HealthLink worker app")}</p>
+        </div>
+      </Card>
+
+      <BottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t("pp_details", "Your details")}
+        footer={
+          <Button full onClick={save}>
+            {t("pp_save", "Save")}
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          {fields.map((f) =>
+            f.key === "bloodGroup" ? (
+              <Field key={f.key} label={f.label}>
+                <select
+                  value={draft.bloodGroup}
+                  onChange={(e) => setDraft({ ...draft, bloodGroup: e.target.value })}
+                  className={inputClass}
+                >
+                  <option value="">{dash}</option>
+                  {BLOOD_GROUPS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <Field key={f.key} label={f.label}>
+                <input
+                  value={draft[f.key]}
+                  onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+            ),
+          )}
+        </div>
+      </BottomSheet>
+    </Screen>
   );
 }

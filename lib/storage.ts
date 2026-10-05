@@ -21,6 +21,8 @@ export const KEYS = {
   workouts: "healthlink:workouts",
   weighIns: "healthlink:weigh-ins",
   exerciseReminder: "healthlink:exercise-reminder",
+  careCircle: "healthlink:care-circle",
+  passport: "healthlink:passport",
   session: "healthlink:session",
   users: "healthlink:users",
   providers: "healthlink:providers",
@@ -168,9 +170,39 @@ export const seedReminders: Reminder[] = [
 
 const listeners = new Map<string, Set<() => void>>();
 const cache = new Map<string, unknown>();
+const changeListeners = new Set<(key: string) => void>();
 
 function notify(key: string) {
   listeners.get(key)?.forEach((cb) => cb());
+  changeListeners.forEach((cb) => cb(key));
+}
+
+/** Notified whenever any stored collection or value is written. */
+export function onLocalChange(cb: (key: string) => void): () => void {
+  changeListeners.add(cb);
+  return () => {
+    changeListeners.delete(cb);
+  };
+}
+
+export function readLocal<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? null : (JSON.parse(raw) as T);
+  } catch {
+    return null;
+  }
+}
+
+/** Writes straight to storage (used by cloud sync) and refreshes subscribers. */
+export function writeLocal<T>(key: string, value: T) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    cache.delete(key);
+    notify(key);
+  } catch {
+    // storage may be unavailable
+  }
 }
 
 function subscribe(key: string, cb: () => void): () => void {

@@ -3,15 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  Badge,
+  BottomSheet,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Screen,
+  SectionHeader,
+  Switch,
+  inputClass,
+  useToast,
+} from "@/components/app-ui";
+import { MeasurementTile, Ring, Sparkline } from "@/components/health-charts";
+import { ActivityIcon, BellIcon, ChevronLeftIcon, ClockIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { ExerciseImage, ExerciseVideo } from "@/components/exercise-media";
 import {
   EXERCISES,
   bmiCategory,
@@ -21,7 +27,8 @@ import {
   seedWorkouts,
   type ExerciseDef,
 } from "@/lib/exercise";
-import { ExerciseImage, ExerciseVideo } from "@/components/exercise-media";
+import { fullDate } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { KEYS, daysAgo, todayIso, uid, useStoredCollection } from "@/lib/storage";
 
 const today = todayIso();
@@ -30,18 +37,13 @@ function isoOf(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function fmtDate(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
 export default function ExercisePage() {
+  const t = useT();
+  const { push } = useToast();
   const [profiles, setProfiles] = useStoredCollection(KEYS.fitnessProfile, [seedFitnessProfile]);
   const [weighIns, setWeighIns] = useStoredCollection(KEYS.weighIns, seedWeighIns);
   const [workouts, setWorkouts] = useStoredCollection(KEYS.workouts, seedWorkouts);
@@ -50,6 +52,8 @@ export default function ExercisePage() {
   const profile = profiles[0] ?? seedFitnessProfile;
   const reminder = reminders[0] ?? seedExerciseReminder;
 
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
   const [height, setHeight] = useState(String(profile.heightCm || ""));
   const [startW, setStartW] = useState(String(profile.startWeightKg || ""));
   const [goalW, setGoalW] = useState(String(profile.goalWeightKg || ""));
@@ -76,9 +80,7 @@ export default function ExercisePage() {
   const todayWorkouts = workouts.filter((w) => w.date === today);
   const doneToday = todayWorkouts.length > 0;
   const weekAgo = daysAgo(7);
-  const weekMinutes = workouts
-    .filter((w) => w.date >= weekAgo)
-    .reduce((sum, w) => sum + w.durationMin, 0);
+  const weekMinutes = workouts.filter((w) => w.date >= weekAgo).reduce((sum, w) => sum + w.durationMin, 0);
 
   const workoutDates = new Set(workouts.map((w) => w.date));
   let streak = 0;
@@ -94,11 +96,13 @@ export default function ExercisePage() {
     const s = Number(startW);
     const g = Number(goalW);
     if (!h || !s || !g || h <= 0 || s <= 0 || g <= 0) {
-      setWarn("Please enter height, start weight and goal weight in cm / kg.");
+      setWarn(t("exx_warn", "Please enter height, start weight and goal weight in cm / kg."));
       return;
     }
     setWarn("");
     setProfiles([{ id: "profile", heightCm: h, startWeightKg: s, goalWeightKg: g }]);
+    setGoalOpen(false);
+    push(t("exx_goal_saved", "Goal saved"), "success");
   };
 
   const saveTodayWeight = () => {
@@ -106,292 +110,232 @@ export default function ExercisePage() {
     if (!w || w <= 0) return;
     setWeighIns((prev) => [...prev.filter((e) => e.date !== today), { id: uid(), date: today, weightKg: w }]);
     setTodayW("");
+    push(t("exx_weight_saved", "Weight recorded"), "success");
   };
 
   const addWorkout = (ex: ExerciseDef, dur?: number) => {
     const duration = dur ?? Number(durationMin);
     const useDuration = duration > 0 ? duration : ex.typicalMin;
-    setWorkouts((prev) => [...prev, { id: uid(), date: today, slug: ex.slug, durationMin: useDuration, note: note || undefined }]);
+    setWorkouts((prev) => [
+      ...prev,
+      { id: uid(), date: today, slug: ex.slug, durationMin: useDuration, note: note || undefined },
+    ]);
     setNote("");
+    setLogOpen(false);
+    push(t("exx_workout_logged", "Workout logged"), "success");
   };
 
-  const removeWorkout = (id: string) => {
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
-  };
+  const removeWorkout = (id: string) => setWorkouts((prev) => prev.filter((w) => w.id !== id));
 
-  const toggleReminder = () => {
-    setReminders([{ id: "reminder", enabled: !reminder.enabled, time: reminder.time }]);
-  };
+  const toggleReminder = () => setReminders([{ id: "reminder", enabled: !reminder.enabled, time: reminder.time }]);
 
-  const setReminderTime = (time: string) => {
+  const setReminderTime = (time: string) =>
     setReminders([{ id: "reminder", enabled: reminder.enabled, time }]);
-  };
 
-  const chartData = sorted.map((w) => ({
-    label: fmtDate(w.date),
-    Weight: w.weightKg,
-  }));
+  const weights = sorted.map((w) => w.weightKg);
+  const latestDelta = (() => {
+    if (sorted.length < 2) return null;
+    const d = sorted[sorted.length - 1].weightKg - sorted[sorted.length - 2].weightKg;
+    return d;
+  })();
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <Link href="/health" className="text-sm font-medium text-slate-500 hover:text-slate-700">
-        ← Back to My Health
+    <Screen>
+      <Link href="/health" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500">
+        <ChevronLeftIcon className="h-4 w-4" />
+        {t("h_dashboard", "My Health")}
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Exercise &amp; Weight Journey</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Set your goal, log your daily activity, and watch your progress. Your data stays on this device.
-          </p>
-        </div>
-        <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
-          🔥 {streak} day {streak === 1 ? "streak" : "streak"}
-        </span>
+      <div className="mt-1">
+        <SectionHeader
+          title={t("ex_title", "Exercise & Weight Journey")}
+          subtitle={t("ex_sub", "Set your goal, log daily activity, and watch your progress.")}
+        />
       </div>
 
-      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900">1 · Your goal</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          {isLoss ? "Weight loss goal" : "Weight gain goal"} — from {start} kg to {goal} kg (height {heightCm} cm).
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <NumberField label="Height (cm)" value={height} onChange={setHeight} />
-          <NumberField label="Start weight (kg)" value={startW} onChange={setStartW} />
-          <NumberField label="Goal weight (kg)" value={goalW} onChange={setGoalW} />
-        </div>
-        {warn && <p className="mt-3 text-sm text-red-600">{warn}</p>}
-        <button
-          onClick={saveProfile}
-          className="mt-4 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-        >
-          Save goal
-        </button>
-        <div className="mt-4 flex-wrap flex gap-3">
-          <input
-            type="number"
-            inputMode="decimal"
-            placeholder="Record today's weight (kg)"
-            value={todayW}
-            onChange={(e) => setTodayW(e.target.value)}
-            className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <Badge tone={doneToday ? "green" : "amber"}>
+          <ActivityIcon className="mr-1 h-3 w-3" />
+          {doneToday ? t("ex_done", "Done today") : t("ex_not_yet", "Not done yet today")}
+        </Badge>
+        <Badge tone="brand">{`🔥 ${streak} ${t("ex_streak", "day streak")}`}</Badge>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <MeasurementTile
+          label={t("ex_current", "Current weight")}
+          value={currentWeight.toFixed(1)}
+          unit="kg"
+          icon={<ActivityIcon className="h-4 w-4" />}
+          trend={latestDelta === null ? undefined : `${latestDelta > 0 ? "+" : ""}${latestDelta.toFixed(1)} kg`}
+          trendTone={latestDelta === null || latestDelta === 0 ? "flat" : latestDelta < 0 ? "good" : "bad"}
+          spark={weights}
+        />
+        <MeasurementTile
+          label={isLoss ? t("ex_lost", "Lost so far") : t("ex_gained", "Gained so far")}
+          value={Math.abs(kgToward).toFixed(1)}
+          unit="kg"
+          icon={<ActivityIcon className="h-4 w-4" />}
+          tone="green"
+          trend={`${kgToGoal.toFixed(1)} ${t("ex_to_goal", "to goal")}`}
+        />
+        <MeasurementTile
+          label={t("ex_week", "Active this week")}
+          value={String(weekMinutes)}
+          unit="min"
+          icon={<ClockIcon className="h-4 w-4" />}
+          trend={`${todayWorkouts.length} ${t("ex_today", "today")}`}
+        />
+        <Card className="flex items-center gap-3 px-3 py-3">
+          <Ring
+            value={progressPct ?? 0}
+            max={100}
+            label={t("ex_progress", "Progress")}
+            tone={progressPct !== null && progressPct >= 100 ? "green" : "brand"}
           />
-          <button
-            onClick={saveTodayWeight}
-            className="rounded-lg border border-brand-700 bg-white px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-          >
-            Record weight
-          </button>
-        </div>
-      </section>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900">
+              {progressPct === null ? "—" : `${progressPct.toFixed(0)}%`}
+            </p>
+            <p className="truncate text-[11px] text-slate-500">
+              {bmi ? `${t("ex_bmi", "BMI")} ${bmi.toFixed(1)} · ${bmiCategory(bmi)}` : `${t("ex_goal", "Goal")} ${goal} kg`}
+            </p>
+          </div>
+        </Card>
+      </div>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Current weight" value={`${currentWeight.toFixed(1)} kg`} hint={bmi ? `BMI ${bmi.toFixed(1)} · ${bmiCategory(bmi)}` : undefined} />
-        <StatCard
-          label={isLoss ? "Lost so far" : "Gained so far"}
-          value={`${Math.abs(kgToward).toFixed(1)} kg`}
-          hint={`${kgToGoal.toFixed(1)} kg ${isLoss ? "to goal" : "to goal"}`}
-          accent
-        />
-        <StatCard
-          label="Journey progress"
-          value={progressPct === null ? "—" : `${progressPct.toFixed(0)}%`}
-          hint={`Goal ${goal} kg`}
-        />
-        <StatCard label="Active this week" value={`${weekMinutes} min`} hint={`${todayWorkouts.length} logged today`} />
-      </section>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button onClick={() => setGoalOpen(true)}>{t("ex_set_goal", "Set your goal")}</Button>
+        <Button tone="secondary" onClick={() => setLogOpen(true)}>
+          <PlusIcon className="h-4 w-4" />
+          {t("ex_log", "Log workout")}
+        </Button>
+      </div>
 
-      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">2 · Weight journey</h2>
-          <span className="text-xs text-slate-400">{sorted.length} check-ins</span>
-        </div>
-        <div className="mt-4 h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} />
-              <YAxis domain={["auto", "auto"]} tick={{ fontSize: 11, fill: "#64748b" }} />
-              <Tooltip />
-              <ReferenceLine y={goal} stroke="#0f8b8d" strokeDasharray="4 4" label={{ value: "Goal", fontSize: 11, fill: "#0f8b8d", position: "insideTopRight" }} />
-              <Line type="monotone" dataKey="Weight" stroke="#0f8b8d" strokeWidth={2.5} dot={{ r: 3, fill: "#0f8b8d" }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <table className="mt-4 w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-              <th className="py-2 font-medium">Date</th>
-              <th className="py-2 font-medium">Weight</th>
-              <th className="py-2 font-medium">Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...sorted].reverse().map((w, i) => {
-              const prev = sorted[sorted.length - 1 - (i + 1)];
-              const delta = prev ? w.weightKg - prev.weightKg : 0;
-              return (
-                <tr key={w.id} className="border-b border-slate-100">
-                  <td className="py-2 text-slate-600">{fmtDate(w.date)}</td>
-                  <td className="py-2 font-medium">{w.weightKg.toFixed(1)} kg</td>
-                  <td className="py-2">
-                    {prev ? (
-                      <span className={delta === 0 ? "text-slate-500" : delta < 0 ? "text-green-700" : "text-red-600"}>
-                        {delta > 0 ? "+" : ""}
-                        {delta.toFixed(1)} kg
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">start</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">3 · Train every day</h2>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${doneToday ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}
-          >
-            {doneToday ? "✓ Done today" : "Not done yet today"}
-          </span>
+      <Card className="mt-5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-900">{t("ex_journey", "Weight journey")}</h2>
+          <span className="text-[11px] text-slate-400">{`${sorted.length} ${t("ex_checkins", "check-ins")}`}</span>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="block">
-            <span className="text-xs font-medium text-slate-600">Exercise</span>
-            <select
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            >
-              {EXERCISES.map((ex) => (
-                <option key={ex.slug} value={ex.slug}>
-                  {ex.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <NumberField label="Minutes" value={durationMin} onChange={setDurationMin} className="w-28" />
-          <label className="flex-1 basis-40">
-            <span className="text-xs font-medium text-slate-600">Note (optional)</span>
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              placeholder="e.g. felt great, morning session"
-            />
-          </label>
-          <button
-            onClick={() => addWorkout(EXERCISES.find((e) => e.slug === slug) ?? EXERCISES[0])}
-            className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-          >
-            Log workout
-          </button>
-        </div>
+        {sorted.length > 1 && (
+          <div className="mt-3">
+            <Sparkline points={weights} className="h-20" />
+          </div>
+        )}
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {todayWorkouts.map((w) => {
-            const ex = EXERCISES.find((e) => e.slug === w.slug);
+        <div className="mt-3 space-y-2">
+          {[...sorted].reverse().slice(0, 8).map((w, i) => {
+            const prev = sorted[sorted.length - 1 - (i + 1)];
+            const delta = prev ? w.weightKg - prev.weightKg : null;
             return (
-              <div key={w.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                <ExerciseImage slug={w.slug} className="h-10 w-10 rounded-lg object-cover" alt={ex?.name ?? w.slug} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-900">{ex?.name ?? w.slug}</p>
-                  <p className="text-xs text-slate-500">
-                    {w.durationMin} min{w.note ? ` · ${w.note}` : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => removeWorkout(w.id)}
-                  className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 hover:text-red-600"
-                  aria-label="Remove"
+              <div key={w.id} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                <span className="truncate text-xs text-slate-500">{fullDate(w.date)}</span>
+                <span className="text-sm font-semibold tabular-nums text-slate-900">{w.weightKg.toFixed(1)} kg</span>
+                <span
+                  className={`w-16 text-right text-xs font-medium tabular-nums ${
+                    delta === null || delta === 0
+                      ? "text-slate-400"
+                      : delta < 0
+                        ? "text-emerald-600"
+                        : "text-rose-600"
+                  }`}
                 >
-                  Remove
-                </button>
+                  {delta === null
+                    ? t("ex_start", "start")
+                    : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`}
+                </span>
               </div>
             );
           })}
-          {todayWorkouts.length === 0 && (
-            <p className="text-sm text-slate-400">
-              No workout logged today. Pick an exercise above or from the library below.
-            </p>
+          {sorted.length === 0 && (
+            <p className="text-sm text-slate-400">{t("exx_no_weighins", "No weigh-ins recorded yet.")}</p>
           )}
         </div>
-      </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">4 · Daily exercise reminder</h2>
-            <p className="mt-1 text-xs text-slate-500">
+        <div className="mt-3 flex gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder={t("exx_ph_weight", "Today's weight (kg)")}
+            value={todayW}
+            onChange={(e) => setTodayW(e.target.value)}
+            className={`${inputClass} py-2.5 text-sm`}
+          />
+          <Button tone="secondary" onClick={saveTodayWeight} className="shrink-0 px-4">
+            {t("ex_record", "Record")}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="mt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-slate-900">{t("ex_reminder", "Daily exercise reminder")}</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
               {reminder.enabled
-                ? `Active — reminder set for ${reminder.time}.`
-                : "Reminder is switched off."}
+                ? `${t("ex_active", "Active")} — ${t("ex_at", "set for")} ${reminder.time}`
+                : t("ex_off", "Reminder is switched off.")}
             </p>
           </div>
-          <button
-            role="switch"
-            aria-checked={reminder.enabled}
-            onClick={toggleReminder}
-            className={`relative h-6 w-11 rounded-full transition-colors ${reminder.enabled ? "bg-brand-700" : "bg-slate-300"}`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${reminder.enabled ? "left-[22px]" : "left-0.5"}`}
-            />
-          </button>
+          <Switch checked={reminder.enabled} onChange={toggleReminder} label={t("ex_reminder", "Daily exercise reminder")} />
         </div>
-        <label className="mt-4 block w-40">
-          <span className="text-xs font-medium text-slate-600">Reminder time</span>
-          <input
-            type="time"
-            value={reminder.time}
-            onChange={(e) => setReminderTime(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <p className="mt-3 text-xs text-slate-400">
-          A local reminder helps you keep a daily routine. Notification delivery is planned for the digital MVP.
+        {reminder.enabled && (
+          <div className="mt-3 w-40">
+            <Field label={t("ex_time", "Reminder time")}>
+              <input
+                type="time"
+                value={reminder.time}
+                onChange={(e) => setReminderTime(e.target.value)}
+                className={`${inputClass} py-2.5 text-sm`}
+              />
+            </Field>
+          </div>
+        )}
+        <p className="mt-3 flex items-start gap-1.5 text-[11px] text-slate-400">
+          <BellIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {t(
+            "ex_reminder_note",
+            "A local reminder helps you keep a daily routine. Notification delivery is planned for the digital MVP.",
+          )}
         </p>
-      </section>
+      </Card>
 
-      <section className="mt-6">
-        <h2 className="text-sm font-semibold text-slate-900">5 · Exercise library</h2>
-        <p className="mt-1 text-xs text-slate-500">Pictures and videos of different exercises. Pick one and log it as today&apos;s workout.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-5">
+        <h2 className="text-sm font-semibold text-slate-900">{t("ex_library", "Exercise library")}</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          {t("ex_library_d", "Pictures and step-by-step videos. Pick one and log it as today's workout.")}
+        </p>
+
+        <div className="mt-2.5 space-y-2.5">
           {EXERCISES.map((ex) => (
-            <div key={ex.slug} className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <Card key={ex.slug} padded={false} className="overflow-hidden">
               <ExerciseImage slug={ex.slug} className="aspect-video w-full object-cover" alt={ex.name} />
               <div className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-slate-900">{ex.name}</h3>
-                  <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-                    {ex.typicalMin} min
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold text-slate-900">{ex.name}</h3>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {ex.category} · {ex.focus}
+                    </p>
+                  </div>
+                  <Badge tone="slate">
+                    <ClockIcon className="mr-1 h-3 w-3" />
+                    {`${ex.typicalMin} min`}
+                  </Badge>
                 </div>
-                <p className="mt-1 text-xs text-slate-600">
-                  {ex.category} · {ex.focus}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setOpenSlug(openSlug === ex.slug ? null : ex.slug)}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                  >
-                    {openSlug === ex.slug ? "Hide" : "How to do it"}
-                  </button>
-                  <button
-                    onClick={() => addWorkout(ex, ex.typicalMin)}
-                    className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
-                  >
-                    Log today
-                  </button>
+
+                <div className="mt-3 flex gap-2">
+                  <Button tone="secondary" onClick={() => setOpenSlug(openSlug === ex.slug ? null : ex.slug)}>
+                    {openSlug === ex.slug ? t("ex_hide", "Hide") : t("ex_how", "How to do it")}
+                  </Button>
+                  <Button onClick={() => addWorkout(ex, ex.typicalMin)}>
+                    {t("ex_log_today", "Log today")}
+                  </Button>
                 </div>
+
                 {openSlug === ex.slug && (
-                  <div className="mt-4">
+                  <div className="mt-3">
                     <ExerciseVideo slug={ex.slug} />
                     <ol className="mt-3 space-y-1.5">
                       {ex.instructions.map((step, i) => (
@@ -406,49 +350,142 @@ export default function ExercisePage() {
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
-        <p className="mt-4 text-xs text-slate-400">
-          Adding your own media: drop photos into <code className="rounded bg-slate-100 px-1">public/exercise/images/&lt;slug&gt;.(jpg|png)</code> and
-          videos into <code className="rounded bg-slate-100 px-1">public/exercise/videos/&lt;slug&gt;.(mp4|webm)</code>. They appear automatically.
-        </p>
       </section>
-    </main>
-  );
-}
 
-function StatCard({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent?: boolean }) {
-  return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-bold tracking-tight ${accent ? "text-green-700" : "text-slate-900"}`}>{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
-    </div>
-  );
-}
+      <BottomSheet
+        open={goalOpen}
+        onClose={() => setGoalOpen(false)}
+        title={t("ex_set_goal", "Set your goal")}
+        footer={
+          <Button full onClick={saveProfile}>
+            {t("ex_save", "Save goal")}
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            {isLoss ? t("ex_loss_goal", "Weight loss goal") : t("ex_gain_goal", "Weight gain goal")} —{" "}
+            {`${t("ex_from", "from")} ${start} kg ${t("ex_to", "to")} ${goal} kg (${t("ex_height", "height")} ${heightCm} cm).`}
+          </p>
+          <Field label={t("exx_f_height", "Height (cm)")}>
+            <input
+              type="number"
+              inputMode="decimal"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t("exx_f_start", "Start weight (kg)")}>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={startW}
+                onChange={(e) => setStartW(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("exx_f_goal", "Goal weight (kg)")}>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={goalW}
+                onChange={(e) => setGoalW(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          {warn && <p className="text-xs font-medium text-rose-600">{warn}</p>}
+        </div>
+      </BottomSheet>
 
-function NumberField({
-  label,
-  value,
-  onChange,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className}`}>
-      <span className="text-xs font-medium text-slate-600">{label}</span>
-      <input
-        type="number"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-      />
-    </label>
+      <BottomSheet
+        open={logOpen}
+        onClose={() => setLogOpen(false)}
+        title={t("ex_log", "Log workout")}
+        footer={
+          <Button full onClick={() => addWorkout(EXERCISES.find((e) => e.slug === slug) ?? EXERCISES[0])}>
+            {t("ex_add", "Log workout")}
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          <Field label={t("exx_f_exercise", "Exercise")}>
+            <select value={slug} onChange={(e) => setSlug(e.target.value)} className={inputClass}>
+              {EXERCISES.map((ex) => (
+                <option key={ex.slug} value={ex.slug}>
+                  {ex.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t("exx_f_minutes", "Minutes")}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={durationMin}
+                onChange={(e) => setDurationMin(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("exx_f_note", "Note (optional)")}>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={t("exx_ph_note", "e.g. morning session")}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-semibold text-slate-600">{t("ex_today_logged", "Logged today")}</span>
+            {todayWorkouts.length === 0 ? (
+              <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+                {t("exx_none_today", "No workout logged today. Pick an exercise above or from the library.")}
+              </p>
+            ) : (
+              todayWorkouts.map((w) => {
+                const ex = EXERCISES.find((e) => e.slug === w.slug);
+                return (
+                  <div key={w.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-2.5">
+                    <ExerciseImage
+                      slug={w.slug}
+                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                      alt={ex?.name ?? w.slug}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-900">{ex?.name ?? w.slug}</p>
+                      <p className="truncate text-xs text-slate-500">
+                        {`${w.durationMin} min${w.note ? ` · ${w.note}` : ""}`}
+                      </p>
+                    </div>
+                    <Button tone="ghost" onClick={() => removeWorkout(w.id)} aria-label={t("ex_remove", "Remove")}>
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </BottomSheet>
+
+      {todayWorkouts.length > 0 && (
+        <div className="mt-4">
+          <EmptyState
+            icon={<ActivityIcon className="h-6 w-6" />}
+            title={t("exx_nice", "Nice work today")}
+            body={t("exx_nice_d", "Come back tomorrow to keep your streak.")}
+          />
+        </div>
+      )}
+    </Screen>
   );
 }

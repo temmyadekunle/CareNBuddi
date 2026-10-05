@@ -2,6 +2,24 @@
 
 import { useMemo, useState } from "react";
 import {
+  Badge,
+  BottomSheet,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  IconButton,
+  Screen,
+  SectionHeader,
+  Switch,
+  inputClass,
+  useToast,
+} from "@/components/app-ui";
+import { BellIcon, CalendarIcon, ClockIcon, PillIcon, PlusIcon, ShieldIcon, TrashIcon } from "@/components/icons";
+import { useT } from "@/lib/i18n";
+import { KEYS, seedReminders, uid, useStoredCollection } from "@/lib/storage";
+import {
   DAY_LETTERS,
   DAY_NAMES,
   REMINDER_TYPES,
@@ -9,36 +27,34 @@ import {
   type ReminderDay,
   type ReminderType,
 } from "@/lib/types";
-import { KEYS, seedReminders, uid, useStoredCollection } from "@/lib/storage";
 
-const TYPE_ICONS: Record<ReminderType, string> = {
-  medication: "💊",
-  hydration: "💧",
-  activity: "🏃",
-  appointment: "📅",
+const TYPE_META: Record<ReminderType, { key: [string, string]; Icon: typeof PillIcon; tone: "brand" | "green" | "amber" | "slate" }> = {
+  medication: { key: ["rm2_type_medication", "Medication"], Icon: PillIcon, tone: "brand" },
+  hydration: { key: ["rm2_type_hydration", "Hydration"], Icon: ShieldIcon, tone: "slate" },
+  activity: { key: ["rm2_type_activity", "Activity"], Icon: ClockIcon, tone: "green" },
+  appointment: { key: ["rm2_type_appointment", "Appointment"], Icon: CalendarIcon, tone: "amber" },
 };
 
-function dayLabel(day: ReminderDay): string {
-  return DAY_NAMES[day].slice(0, 3);
-}
-
 export default function RemindersPage() {
+  const t = useT();
+  const { push } = useToast();
   const [reminders, setReminders] = useStoredCollection(KEYS.reminders, seedReminders);
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("08:00");
   const [type, setType] = useState<ReminderType>("medication");
   const [days, setDays] = useState<ReminderDay[]>([1, 2, 3, 4, 5]);
   const [notes, setNotes] = useState("");
+  const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Reminder | null>(null);
 
-  const sorted = useMemo(
-    () => [...reminders].sort((a, b) => a.time.localeCompare(b.time)),
-    [reminders],
-  );
+  const today = useMemo(() => new Date().getDay() as ReminderDay, []);
+  const sorted = useMemo(() => [...reminders].sort((a, b) => a.time.localeCompare(b.time)), [reminders]);
+  const todays = sorted.filter((r) => r.enabled && r.days.includes(today));
+
+  const dayLabel = (day: ReminderDay) => DAY_NAMES[day].slice(0, 3);
 
   const toggleDay = (day: ReminderDay) => {
-    setDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
+    setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
   const submit = (e: React.FormEvent) => {
@@ -55,208 +71,199 @@ export default function RemindersPage() {
     setReminders((prev) => [...prev, reminder]);
     setTitle("");
     setNotes("");
+    setOpen(false);
+    push(t("rm2_saved", "Reminder added"), "success");
   };
 
   const toggleEnabled = (id: string) => {
-    setReminders((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)),
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
+  };
+
+  const confirmRemove = () => {
+    if (!toDelete) return;
+    setReminders((prev) => prev.filter((r) => r.id !== toDelete.id));
+    setToDelete(null);
+    push(t("rm2_removed", "Reminder deleted"));
+  };
+
+  const renderRow = (reminder: Reminder, dim: boolean) => {
+    const meta = TYPE_META[reminder.type];
+    const Icon = meta.Icon;
+    return (
+      <Card key={reminder.id} className={dim ? "opacity-60" : undefined}>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <Icon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-slate-900">{reminder.title}</p>
+            <p className="truncate text-xs text-slate-500">
+              {reminder.time} · {reminder.days.map(dayLabel).join(", ")}
+            </p>
+            {reminder.notes ? <p className="truncate text-xs text-slate-400">{reminder.notes}</p> : null}
+          </div>
+          <div className="shrink-0">
+            <Switch
+              checked={reminder.enabled}
+              onChange={() => toggleEnabled(reminder.id)}
+              label={reminder.enabled ? t("rm2_on", "On") : t("rm2_off", "Off")}
+            />
+          </div>
+          <IconButton
+            label={t("rm2_delete", "Delete reminder")}
+            onClick={() => setToDelete(reminder)}
+            className="shrink-0 text-rose-500 hover:bg-rose-50"
+          >
+            <TrashIcon className="h-4 w-4" />
+          </IconButton>
+        </div>
+      </Card>
     );
   };
 
-  const remove = (id: string) => {
-    setReminders((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const today = useMemo(() => new Date().getDay() as ReminderDay, []);
-  const todays = sorted.filter((r) => r.enabled && r.days.includes(today));
-
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Reminders</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Medication, hydration, activity, and appointments.
-        </p>
+    <Screen>
+      <SectionHeader
+        title={t("rm2_title", "Reminders")}
+        subtitle={t("rm2_sub", "Medication, hydration, activity and appointments.")}
+      />
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {REMINDER_TYPES.map((rt) => {
+          const meta = TYPE_META[rt.value as ReminderType];
+          return (
+            <Badge key={rt.value} tone={meta.tone}>
+              {t(meta.key[0], meta.key[1])}
+            </Badge>
+          );
+        })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-        <form
-          onSubmit={submit}
-          className="h-fit rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-        >
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">New reminder</h2>
+      <Button full className="mt-3" onClick={() => setOpen(true)}>
+        <PlusIcon className="h-4 w-4" />
+        {t("rm2_add", "Add reminder")}
+      </Button>
 
-          <div className="space-y-3">
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-600">Title</span>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Evening medication"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-              />
-            </label>
+      <section className="mt-5">
+        <h2 className="text-sm font-semibold text-slate-900">
+          {t("rm2_today", "Today")} ({dayLabel(today)})
+        </h2>
+        <div className="mt-2 space-y-2.5">
+          {todays.length === 0 ? (
+            <EmptyState
+              icon={<BellIcon className="h-6 w-6" />}
+              title={t("rm2_empty_today", "Nothing scheduled today")}
+              body={t("rm2_empty_today_d", "Your reminders for today will appear here.")}
+            />
+          ) : (
+            todays.map((r) => renderRow(r, false))
+          )}
+        </div>
+      </section>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-slate-600">Time</span>
-                <input
-                  type="time"
-                  required
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-slate-600">Type</span>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as ReminderType)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                >
-                  {REMINDER_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+      <section className="mt-5">
+        <h2 className="text-sm font-semibold text-slate-900">{t("rm2_all", "All reminders")}</h2>
+        <div className="mt-2 space-y-2.5">
+          {sorted.length === 0 ? (
+            <EmptyState
+              icon={<BellIcon className="h-6 w-6" />}
+              title={t("rm2_empty_all", "No reminders yet")}
+              body={t("rm2_empty_all_d", "Add your first reminder to never miss a dose or visit.")}
+              action={
+                <Button tone="secondary" onClick={() => setOpen(true)}>
+                  {t("rm2_add", "Add reminder")}
+                </Button>
+              }
+            />
+          ) : (
+            sorted.map((r) => renderRow(r, !todays.includes(r)))
+          )}
+        </div>
+      </section>
 
-            <div>
-              <span className="mb-1 block text-xs font-medium text-slate-600">Repeat on</span>
-              <div className="flex gap-1.5">
-                {DAY_LETTERS.map((letter, i) => {
-                  const day = i as ReminderDay;
-                  const active = days.includes(day);
+      <BottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t("rm2_sheet_title", "New reminder")}
+        footer={
+          <Button full onClick={submit}>
+            {t("rm2_save", "Add reminder")}
+          </Button>
+        }
+      >
+        <form onSubmit={submit} className="space-y-3">
+          <Field label={t("rm2_f_title", "Title")}>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("rm2_ph_title", "e.g. Evening medication")}
+              className={inputClass}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t("rm2_f_time", "Time")}>
+              <input type="time" required value={time} onChange={(e) => setTime(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label={t("rm2_f_type", "Type")}>
+              <select value={type} onChange={(e) => setType(e.target.value as ReminderType)} className={inputClass}>
+                {REMINDER_TYPES.map((rt) => {
+                  const meta = TYPE_META[rt.value as ReminderType];
                   return (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => toggleDay(day)}
-                      title={DAY_NAMES[day]}
-                      className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                        active
-                          ? "bg-emerald-500 text-white"
-                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                      } ${day === today ? "ring-2 ring-emerald-300" : ""}`}
-                    >
-                      {letter}
-                    </button>
+                    <option key={rt.value} value={rt.value}>
+                      {t(meta.key[0], meta.key[1])}
+                    </option>
                   );
                 })}
-              </div>
-            </div>
-
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-600">Notes</span>
-              <textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional detail…"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-              />
-            </label>
+              </select>
+            </Field>
           </div>
-
-          <button
-            type="submit"
-            className="mt-4 w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
-          >
-            Add reminder
-          </button>
+          <div>
+            <span className="mb-1.5 block text-xs font-medium text-slate-600">{t("rm2_f_days", "Repeat on")}</span>
+            <div className="flex gap-1.5">
+              {DAY_LETTERS.map((letter, i) => {
+                const day = i as ReminderDay;
+                const active = days.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    aria-pressed={active}
+                    aria-label={DAY_NAMES[day]}
+                    className={`tap h-10 w-10 rounded-full text-xs font-semibold transition-colors ${
+                      active ? "bg-brand-700 text-white" : "bg-slate-100 text-slate-500"
+                    } ${day === today ? "ring-2 ring-brand-300" : ""}`}
+                  >
+                    {letter}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <Field label={t("rm2_f_notes", "Notes")}>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t("rm2_ph_notes", "Optional detail…")}
+              className={inputClass}
+            />
+          </Field>
         </form>
+      </BottomSheet>
 
-        <div className="space-y-4">
-          <section>
-            <h2 className="mb-2 text-sm font-semibold text-slate-900">
-              Today ({dayLabel(today)})
-            </h2>
-            {todays.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-                Nothing scheduled for today.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {todays.map((r) => (
-                  <ReminderRow key={r.id} reminder={r} onToggle={toggleEnabled} onRemove={remove} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2 className="mb-2 text-sm font-semibold text-slate-900">All reminders</h2>
-            {sorted.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-                No reminders yet. Add your first one.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {sorted.map((r) => (
-                  <ReminderRow
-                    key={r.id}
-                    reminder={r}
-                    onToggle={toggleEnabled}
-                    onRemove={remove}
-                    dim={!todays.includes(r)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function ReminderRow({
-  reminder,
-  onToggle,
-  onRemove,
-  dim,
-}: {
-  reminder: Reminder;
-  onToggle: (id: string) => void;
-  onRemove: (id: string) => void;
-  dim?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm transition-opacity ${
-        dim ? "opacity-60" : ""
-      } ${reminder.enabled ? "" : "opacity-40"}`}
-    >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">
-        {TYPE_ICONS[reminder.type]}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900">{reminder.title}</p>
-        <p className="truncate text-xs text-slate-500">
-          {reminder.time} · {reminder.days.map(dayLabel).join(", ")}
-        </p>
-        {reminder.notes && (
-          <p className="truncate text-xs text-slate-400">{reminder.notes}</p>
-        )}
-      </div>
-      <button
-        onClick={() => onToggle(reminder.id)}
-        title={reminder.enabled ? "Disable" : "Enable"}
-        className="rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
-      >
-        {reminder.enabled ? "On" : "Off"}
-      </button>
-      <button
-        onClick={() => onRemove(reminder.id)}
-        className="rounded-lg px-2.5 py-1 text-xs font-medium text-rose-500 hover:bg-rose-50"
-      >
-        Delete
-      </button>
-    </div>
+      <ConfirmDialog
+        open={toDelete !== null}
+        title={t("rm2_confirm_title", "Delete this reminder?")}
+        body={t("rm2_confirm_body", "This cannot be undone.")}
+        confirmLabel={t("rm2_confirm_yes", "Yes, delete")}
+        cancelLabel={t("rm2_confirm_no", "Keep it")}
+        tone="danger"
+        onConfirm={confirmRemove}
+        onCancel={() => setToDelete(null)}
+      />
+    </Screen>
   );
 }

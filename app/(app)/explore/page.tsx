@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Card, Chip, EmptyState, Screen, SectionHeader, inputClass } from "@/components/app-ui";
+import { SearchIcon } from "@/components/icons";
+import { ReportAction } from "@/components/report-button";
+import { TopicCard, TopicDetail, matchTopic } from "@/components/health";
+import { CATEGORY_DESCRIPTIONS, HEALTH_CATEGORY_LABELS } from "@/lib/content";
+import { useLang, useT } from "@/lib/i18n";
 import {
   KEYS,
   seedReports,
@@ -9,11 +15,7 @@ import {
   useStoredCollection,
   type ContentItem,
 } from "@/lib/storage";
-import { CATEGORY_DESCRIPTIONS, HEALTH_CATEGORY_LABELS } from "@/lib/content";
 import type { Report } from "@/lib/types";
-import { TopicCard, TopicDetail, matchTopic } from "@/components/health";
-import { ReportAction } from "@/components/report-button";
-import { useT, useLang } from "@/lib/i18n";
 
 export default function ExplorePage() {
   const t = useT();
@@ -40,9 +42,7 @@ export default function ExplorePage() {
     return true;
   });
 
-  const usedCategories = Array.from(
-    new Set(published.map((tp) => catLabel(tp.healthCategory))),
-  );
+  const usedCategories = Array.from(new Set(published.map((tp) => catLabel(tp.healthCategory))));
 
   const report = (topicId: string, reason: string) => {
     setReports((prev) => [
@@ -58,107 +58,95 @@ export default function ExplorePage() {
     ]);
   };
 
+  if (selected) {
+    return (
+      <Screen>
+        <TopicDetail
+          topic={selected}
+          onBack={() => setSelected(null)}
+          report={() => report(selected.id, t("e_report_reason", "Content accuracy or safety concern"))}
+        />
+      </Screen>
+    );
+  }
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("e_title")}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("e_sub")}</p>
-        <label htmlFor="explore-search" className="sr-only">
-          {t("h_search")}
-        </label>
+    <Screen>
+      <SectionHeader title={t("e_title", "Explore health education")} subtitle={t("e_sub", "")} />
+
+      <label htmlFor="explore-search" className="sr-only">
+        {t("h_search", "Search")}
+      </label>
+      <div className="relative mt-3">
+        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           id="explore-search"
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("h_search")}
-          className="mt-4 w-full max-w-xl rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+          placeholder={t("h_search", "Search")}
+          className={`${inputClass} pl-10`}
         />
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <CategoryPill active={category === "All"} onClick={() => setCategory("All")}>
-            {t("e_allcat")}
-          </CategoryPill>
-          {usedCategories.map((label) => (
-            <CategoryPill
-              key={label}
-              active={category === label}
-              onClick={() => setCategory(label)}
-            >
-              {label}
-            </CategoryPill>
-          ))}
-        </div>
       </div>
 
-      {selected ? (
-        <TopicDetail
-          topic={selected}
-          onBack={() => setSelected(null)}
-          report={() => report((selected as ContentItem).id, t("e_report_reason"))}
-        />
-      ) : (
-        <>
-          {category === "All" && !q ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {usedCategories.map((label) => (
-                <button
-                  key={label}
-                  onClick={() => setCategory(label)}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition-colors hover:border-brand-300"
-                >
-                  <h3 className="text-sm font-semibold text-slate-900">{label}</h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {CATEGORY_DESCRIPTIONS[lang]?.[catKey(label)] ??
-                      CATEGORY_DESCRIPTIONS.en[catKey(label)]}
-                  </p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-                  {t("f_no_results")}
+      <div className="no-scrollbar -mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4">
+        <CategoryPill active={category === "All"} onClick={() => setCategory("All")}>
+          {t("e_allcat", "All categories")}
+        </CategoryPill>
+        {usedCategories.map((label) => (
+          <CategoryPill key={label} active={category === label} onClick={() => setCategory(label)}>
+            {label}
+          </CategoryPill>
+        ))}
+      </div>
+
+      {category === "All" && !q ? (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {usedCategories.map((label) => (
+            <Card key={label} className="text-left" padded>
+              <button onClick={() => setCategory(label)} className="block w-full text-left">
+                <h3 className="text-sm font-semibold text-slate-900">{label}</h3>
+                <p className="mt-1 line-clamp-3 text-xs text-slate-600">
+                  {CATEGORY_DESCRIPTIONS[lang]?.[catKey(label)] ?? CATEGORY_DESCRIPTIONS.en[catKey(label)]}
                 </p>
-              ) : (
-                filtered.map((tp) => (
-                  <div key={tp.id} className="relative">
-                    <TopicCard topic={tp} onSelect={(t) => setSelected(t as ContentItem)} />
-                    <ReportAction
-                      className="absolute right-3 top-3"
-                      targetType="topic"
-                      targetId={tp.id}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
+              </button>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4 space-y-2.5">
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={<SearchIcon className="h-6 w-6" />}
+              title={t("f_no_results", "No results")}
+              body={t("exx_none_today", "")}
+            />
+          ) : (
+            filtered.map((tp) => (
+              <div key={tp.id} className="relative">
+                <TopicCard topic={tp} onSelect={(next) => setSelected(next as ContentItem)} />
+                <ReportAction className="absolute right-3 top-3" targetType="topic" targetId={tp.id} />
+              </div>
+            ))
           )}
-        </>
+        </div>
       )}
-    </main>
+    </Screen>
   );
 }
 
-export function CategoryPill({
+function CategoryPill({
   active,
   onClick,
   children,
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-        active
-          ? "bg-brand-700 text-white"
-          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-      }`}
-    >
+    <Chip active={active} onClick={onClick}>
       {children}
-    </button>
+    </Chip>
   );
 }

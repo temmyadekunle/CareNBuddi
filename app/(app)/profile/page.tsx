@@ -1,135 +1,355 @@
 "use client";
 
 import Link from "next/link";
-import { KEYS, seedBookings, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { useState } from "react";
+import {
+  AvatarLarge,
+  Badge,
+  BottomSheet,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  inputClass,
+  ListRow,
+  Screen,
+  SectionHeader,
+  useToast,
+} from "@/components/app-ui";
+import {
+  CameraIcon,
+  CalendarIcon,
+  EditIcon,
+  EmergencyIcon,
+  PhoneIcon,
+  UserIcon,
+} from "@/components/icons";
+import {
+  PASSPORT_DEFAULTS,
+  ProfileSettings,
+  type PassportPrefs,
+} from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
-import { LangSwitcher } from "@/components/ui";
+import {
+  KEYS,
+  seedBookings,
+  seedUsers,
+  useSession,
+  useStoredCollection,
+  useStoredValue,
+} from "@/lib/storage";
+import type { Role } from "@/lib/types";
+
+const ROLE_TONE = {
+  consumer: "brand",
+  provider: "green",
+  admin: "amber",
+} as const;
+
+const ROLE_LABEL_KEY = {
+  consumer: "a_consumer",
+  provider: "a_provider",
+  admin: "a_admin",
+} as const;
+
+const ROLE_FALLBACK = {
+  consumer: "Patient / community member",
+  provider: "Healthcare provider",
+  admin: "HealthLink team",
+} as const;
+
+function roleTone(role: Role) {
+  return ROLE_TONE[role] ?? "slate";
+}
 
 export default function ProfilePage() {
   const t = useT();
-  const [session, setSession] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const { push } = useToast();
+  const [session] = useSession();
+  const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
   const [bookings] = useStoredCollection(KEYS.bookings, seedBookings);
+  const [passport, setPassport] = useStoredValue<PassportPrefs>(KEYS.passport, PASSPORT_DEFAULTS);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const [draft, setDraft] = useState({ name: "", phone: "" });
+  const [emergencyDraft, setEmergencyDraft] = useState({ contact: "", phone: "" });
+
   const me = users.find((u) => u.id === session.userId);
   const myBookings = bookings.filter((b) => b.userId === session.userId);
 
+  const openProfileSheet = () => {
+    setDraft({ name: me?.name ?? "", phone: me?.phone ?? "" });
+    setEditOpen(true);
+  };
+
+  const saveProfile = () => {
+    if (!me) return;
+    const name = draft.name.trim();
+    const phone = draft.phone.trim();
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === me.id ? { ...u, name: name || u.name, phone: phone || undefined } : u,
+      ),
+    );
+    setEditOpen(false);
+    push(t("prof_saved", "Profile updated"), "success");
+  };
+
+  const openEmergencySheet = () => {
+    setEmergencyDraft({
+      contact: passport.emergencyContact ?? "",
+      phone: passport.emergencyPhone ?? "",
+    });
+    setEmergencyOpen(true);
+  };
+
+  const saveEmergency = () => {
+    setPassport((prev) => ({
+      ...prev,
+      emergencyContact: emergencyDraft.contact.trim(),
+      emergencyPhone: emergencyDraft.phone.trim(),
+    }));
+    setEmergencyOpen(false);
+    push(t("prof_emergency_saved", "Emergency contact updated"), "success");
+  };
+
+  const telHref = `tel:${(passport.emergencyPhone ?? "").replace(/[^\d+]/g, "")}`;
+
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("n_profile")}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t("a_sub")}</p>
-        </div>
-        <LangSwitcher />
+    <Screen>
+      {/* heading ---------------------------------------------------------- */}
+      <div className="pt-1">
+        <h1 className="truncate text-[22px] font-bold leading-tight tracking-tight text-slate-900">
+          {t("n_profile", "Profile")}
+        </h1>
+        <p className="mt-0.5 truncate text-xs text-slate-500">
+          {t("prof_sub", "Your details, preferences and privacy in one place.")}
+        </p>
       </div>
 
-      {!session.userId || !me ? (
-        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <p className="text-sm text-slate-700">{t("a_sub")}</p>
-          <div className="mt-4 flex flex-wrap gap-3">
+      {!me ? (
+        <div className="mt-5">
+          <EmptyState
+            icon={<UserIcon className="h-6 w-6" />}
+            title={t("prof_signed_out_title", "You are not signed in")}
+            body={t(
+              "prof_signed_out_d",
+              "Sign in to keep your bookings and records together, or carry on as a guest.",
+            )}
+            action={
+              <Link href="/auth/sign-in" className="mt-2 w-full max-w-[16rem]">
+                <Button full>{t("a_signin", "Sign in")}</Button>
+              </Link>
+            }
+          />
+          <div className="mt-3 flex justify-center">
             <Link
-              href="/account"
-              className="rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
+              href="/app"
+              className="tap flex min-h-11 items-center text-xs font-semibold text-brand-700"
             >
-              {t("a_signin")} →
-            </Link>
-            <Link
-              href="/account?demo=consumer"
-              className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {t("a_demo_consumer")}
+              {t("gate_continue_guest", "Continue as guest")}
             </Link>
           </div>
         </div>
       ) : (
-        <div className="mt-6 rounded-2xl border border-brand-100 bg-brand-50 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-brand-900">{me.name}</h2>
-              <p className="text-sm text-brand-700">
-                {me.email} · {me.phone ?? "—"}
-              </p>
-              <span className="mt-1 inline-block rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-brand-700">
-                {me.role}
-              </span>
+        <>
+          {/* profile header ------------------------------------------------- */}
+          <Card className="mt-5">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0">
+                <AvatarLarge name={me.name} />
+                <button
+                  type="button"
+                  onClick={() =>
+                    push(
+                      t(
+                        "prof_photo_soon",
+                        "Photo upload arrives with the backend storage step.",
+                      ),
+                      "info",
+                    )
+                  }
+                  aria-label={t("prof_change_photo", "Change photo")}
+                  className="tap -mt-3 ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-brand-700"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-base font-bold tracking-tight text-slate-900">
+                  {me.name}
+                </h2>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{me.email}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">
+                  {me.phone || t("prof_no_phone", "No phone number added")}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <Badge tone={roleTone(me.role)}>
+                    {t(ROLE_LABEL_KEY[me.role], ROLE_FALLBACK[me.role])}
+                  </Badge>
+                  <Badge tone="slate">{me.lang.toUpperCase()}</Badge>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => setSession((prev) => ({ ...prev, userId: null }))}
-              className="rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
-            >
-              {t("a_signout")}
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-brand-800">{t("a_language_d")}</p>
-        </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button tone="secondary" onClick={openProfileSheet}>
+                <EditIcon className="h-4 w-4" />
+                {t("prof_edit", "Edit profile")}
+              </Button>
+              <Link href="/account" className="tap inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                {t("prof_account_sync", "Account & sync")}
+              </Link>
+            </div>
+          </Card>
+
+          {/* emergency contact ---------------------------------------------- */}
+          <SectionHeader title={t("prof_emergency", "Emergency contact")} />
+          <Card className="border-rose-200/70">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                <EmergencyIcon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {passport.emergencyContact ||
+                    t("prof_no_emergency", "No emergency contact yet")}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">
+                  {passport.emergencyPhone ||
+                    t("prof_no_emergency_d", "Add someone a responder can call for you")}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3.5 flex flex-wrap gap-2">
+              {passport.emergencyPhone ? (
+                <a
+                  href={telHref}
+                  className="tap inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  <PhoneIcon className="h-4 w-4" />
+                  {t("prof_call", "Call")}
+                </a>
+              ) : null}
+              <Button tone="secondary" onClick={openEmergencySheet}>
+                <EditIcon className="h-4 w-4" />
+                {t("pp_edit", "Edit")}
+              </Button>
+              <Link
+                href="/passport"
+                className="tap inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                {t("pp_title", "Health Passport")}
+              </Link>
+            </div>
+          </Card>
+
+          {/* my requests ----------------------------------------------------- */}
+          <SectionHeader
+            title={t("pr_requests", "My requests")}
+            action={t("prof_view_all", "View all")}
+            href="/appointments"
+          />
+          <Card padded={false} className="overflow-hidden">
+            <ListRow
+              href="/appointments"
+              icon={<CalendarIcon className="h-5 w-5" />}
+              tone="green"
+              title={
+                myBookings.length === 1
+                  ? t("prof_bookings_1", "1 booking request")
+                  : `${myBookings.length} ${t("prof_bookings_n", "booking requests")}`
+              }
+              subtitle={
+                myBookings.length === 0
+                  ? t("pr_no_requests", "No booking requests yet.")
+                  : t(
+                      "prof_bookings_d",
+                      "Track the status of every visit you have requested.",
+                    )
+              }
+            />
+          </Card>
+
+          <ProfileSettings />
+        </>
       )}
 
-      <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900">{t("pr_requests")}</h2>
-        <div className="mt-3 space-y-2">
-          {myBookings.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              {t("pr_no_requests")}{" "}
-              <Link href="/find-care" className="font-medium text-brand-700 underline">
-                {t("f_title")}
-              </Link>{" "}
-              {t("pr_get_started")}
-            </p>
-          ) : (
-            myBookings.map((b) => (
-              <div
-                key={b.id}
-                className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">
-                    {b.providerId ? t("pr_provider") : b.message.split("—")[0].trim()}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {b.date ?? new Date(b.createdAt).toISOString().slice(0, 10)}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                  {b.status}
-                </span>
-              </div>
-            ))
-          )}
+      {/* edit profile sheet ------------------------------------------------- */}
+      <BottomSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={t("prof_edit", "Edit profile")}
+        footer={<Button full onClick={saveProfile}>{t("c_save", "Save")}</Button>}
+      >
+        <div className="space-y-4">
+          <Field label={t("a_name", "Full name")}>
+            <input
+              value={draft.name}
+              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+              className={`${inputClass} min-h-11`}
+            />
+          </Field>
+          <Field
+            label={t("auth_phone_label", "Phone (optional)")}
+            hint={t("auth_phone_hint", "Used by providers to confirm a visit")}
+          >
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={draft.phone}
+              onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
+              placeholder={t("prof_phone_ph", "+234 ...")}
+              className={`${inputClass} min-h-11`}
+            />
+          </Field>
+          <Field label={t("a_email", "Email")} hint={t("prof_email_fixed", "Email cannot be changed here")}>
+            <input value={me?.email ?? ""} readOnly className={`${inputClass} min-h-11 opacity-70`} />
+          </Field>
         </div>
-      </div>
+      </BottomSheet>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Placeholder title={t("pr_appt")} desc={t("pr_appt_d")} />
-        <Placeholder title={t("pr_rem")} desc={t("pr_rem_d")} />
-        <Placeholder title={t("pr_saved")} desc={t("pr_saved_d")} />
-        <Placeholder title={t("pr_records")} desc={t("pr_records_d")} />
-      </div>
-
-      <p className="mt-6 text-center text-xs text-slate-400">
-        <Link href="/explore" className="font-medium text-brand-700 underline hover:text-brand-800">
-          {t("e_title")}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/find-care" className="font-medium text-brand-700 underline hover:text-brand-800">
-          {t("f_title")}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/services" className="font-medium text-brand-700 underline hover:text-brand-800">
-          {t("s_title")}
-        </Link>
-      </p>
-    </main>
-  );
-}
-
-function Placeholder({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{desc}</p>
-      <span className="mt-2 inline-block rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">
-        {useT()("pr_soon")}
-      </span>
-    </div>
+      {/* emergency contact sheet -------------------------------------------- */}
+      <BottomSheet
+        open={emergencyOpen}
+        onClose={() => setEmergencyOpen(false)}
+        title={t("prof_emergency", "Emergency contact")}
+        footer={<Button full onClick={saveEmergency}>{t("c_save", "Save")}</Button>}
+      >
+        <div className="space-y-4">
+          <Field label={t("pp_ec", "Emergency contact")}>
+            <input
+              value={emergencyDraft.contact}
+              onChange={(event) =>
+                setEmergencyDraft({ ...emergencyDraft, contact: event.target.value })
+              }
+              placeholder={t("prof_emergency_ph", "e.g. Tayo Ogunleye (sibling)")}
+              className={`${inputClass} min-h-11`}
+            />
+          </Field>
+          <Field label={t("pp_ecp", "Emergency phone")}>
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={emergencyDraft.phone}
+              onChange={(event) =>
+                setEmergencyDraft({ ...emergencyDraft, phone: event.target.value })
+              }
+              placeholder={t("prof_phone_ph", "+234 ...")}
+              className={`${inputClass} min-h-11`}
+            />
+          </Field>
+          <p className="rounded-xl bg-rose-50 px-3 py-2.5 text-[11px] leading-relaxed text-rose-700">
+            {t(
+              "prof_emergency_note",
+              "This is the number shown on your Health Passport emergency card.",
+            )}
+          </p>
+        </div>
+      </BottomSheet>
+    </Screen>
   );
 }

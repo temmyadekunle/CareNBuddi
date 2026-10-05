@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { CloudAccount } from "@/components/cloud-account";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Screen,
+  SectionHeader,
+  Tabs,
+  inputClass,
+  useToast,
+} from "@/components/app-ui";
+import { LanguageIcon, LockIcon, LogOutIcon, UserIcon } from "@/components/icons";
+import { LangSwitcher } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { LANGS } from "@/lib/lang";
+import { isCloudEnabled } from "@/lib/supabase/client";
 import {
   KEYS,
   seedUsers,
@@ -13,7 +27,7 @@ import {
   type Session,
 } from "@/lib/storage";
 import type { Role, User } from "@/lib/types";
-import { LangSwitcher } from "@/components/ui";
+import { useState } from "react";
 
 function randomCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -21,6 +35,7 @@ function randomCode(): string {
 
 export default function AccountPage() {
   const t = useT();
+  const { push } = useToast();
   const [session, setSession] = useSession();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
 
@@ -38,18 +53,17 @@ export default function AccountPage() {
 
   const sendCode = () => {
     if (!email.trim()) {
-      setNotice("Enter an email first.");
+      setNotice(t("a_enter_email", "Enter an email first."));
       return;
     }
-    const c = randomCode();
-    setSentCode(c);
+    setSentCode(randomCode());
     setCode("");
-    setNotice(t("a_code_sent"));
+    setNotice(t("a_code_sent", "Code sent"));
   };
 
   const finish = () => {
     if (!sentCode || code !== sentCode) {
-      setNotice("The code does not match. Check and try again.");
+      setNotice(t("a_code_mismatch", "The code does not match. Check and try again."));
       return;
     }
     const key = email.trim().toLowerCase();
@@ -74,202 +88,183 @@ export default function AccountPage() {
     setSentCode(null);
     setCode("");
     setNotice("");
+    push(t("a_welcome", "Welcome"), "success");
   };
 
-  const demo = (userId: string) => {
-    setSession((prev: Session) => ({ ...prev, userId, lang: prev.lang }));
-  };
+  const demo = (userId: string) => setSession((prev: Session) => ({ ...prev, userId, lang: prev.lang }));
 
   const signOut = () => {
     setSession((prev: Session) => ({ ...prev, userId: null }));
     setCreatedUser(null);
   };
 
-  return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("a_title")}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t("a_sub")}</p>
+  const active = me ?? createdUser;
 
-      {me || createdUser ? (
-        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-brand-700">{t("a_welcome")}</p>
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between gap-3 border-b border-slate-100 pb-2">
-              <dt className="text-slate-500">{t("a_name")}</dt>
-              <dd className="font-medium text-slate-900">{me?.name ?? createdUser?.name ?? ""}</dd>
-            </div>
-            <div className="flex justify-between gap-3 border-b border-slate-100 pb-2">
-              <dt className="text-slate-500">{t("a_email")}</dt>
-              <dd className="font-medium text-slate-900">{me?.email ?? createdUser?.email ?? ""}</dd>
-            </div>
-            <div className="flex justify-between gap-3 border-b border-slate-100 pb-2">
-              <dt className="text-slate-500">{t("a_role")}</dt>
-              <dd className="font-medium text-slate-900">{me?.role ?? createdUser?.role ?? "consumer"}</dd>
-            </div>
-          </dl>
-          <button
-            onClick={signOut}
-            className="mt-4 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-          >
-            {t("a_signout")}
-          </button>
+  return (
+    <Screen>
+      <SectionHeader title={t("a_title", "Account")} subtitle={t("a_sub", "Sign in to keep your data together.")} />
+
+      {isCloudEnabled ? (
+        <div className="mt-3">
+          <CloudAccount />
         </div>
       ) : (
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex gap-1.5">
-              <Tab active={mode === "signup"} onClick={() => setMode("signup")}>
-                {t("a_signup")}
-              </Tab>
-              <Tab active={mode === "signin"} onClick={() => setMode("signin")}>
-                {t("a_signin")}
-              </Tab>
-            </div>
+        <Card className="mt-3 flex items-start gap-2 bg-slate-50">
+          <LockIcon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+          <p className="text-xs text-slate-600">{t("a_sync_off", "Cloud sync is not configured on this build.")}</p>
+        </Card>
+      )}
 
-            <div className="mt-4 space-y-3">
+      {active ? (
+        <Card className="mt-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+              <UserIcon className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900">{active.name}</p>
+              <p className="truncate text-xs text-slate-500">{active.email}</p>
+            </div>
+            <Badge tone={active.role === "admin" ? "brand" : active.role === "provider" ? "green" : "slate"}>
+              {active.role}
+            </Badge>
+          </div>
+          <Button full tone="secondary" className="mt-4" onClick={signOut}>
+            <LogOutIcon className="h-4 w-4" />
+            {t("a_signout", "Sign out")}
+          </Button>
+        </Card>
+      ) : (
+        <>
+          <Card className="mt-3">
+            <Tabs
+              value={mode}
+              onChange={setMode}
+              tabs={[
+                { value: "signup", label: t("a_signup", "Create account") },
+                { value: "signin", label: t("a_signin", "Sign in") },
+              ]}
+            />
+
+            <div className="mt-3 space-y-3">
               {mode === "signup" && (
-                <Label text={t("a_name")}>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                  />
-                </Label>
+                <Field label={t("a_name", "Full name")}>
+                  <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+                </Field>
               )}
-              <Label text={t("a_email")}>
+              <Field label={t("a_email", "Email")}>
                 <input
                   type="email"
-                  required
+                  inputMode="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+                  className={inputClass}
                 />
-              </Label>
+              </Field>
               {mode === "signup" && (
-                <Label text={t("a_phone")}>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+234 ..."
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                  />
-                </Label>
-              )}
-              {mode === "signup" && (
-                <Label text={t("a_role")}>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as Role)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                  >
-                    <option value="consumer">{t("a_consumer")}</option>
-                    <option value="provider">{t("a_provider")}</option>
-                  </select>
-                </Label>
+                <>
+                  <Field label={t("a_phone", "Phone")}>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+234 …"
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label={t("a_role", "I am a")}>
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as Role)}
+                      className={inputClass}
+                    >
+                      <option value="consumer">{t("a_consumer", "Consumer")}</option>
+                      <option value="provider">{t("a_provider", "Provider")}</option>
+                    </select>
+                  </Field>
+                </>
               )}
             </div>
 
             {sentCode && (
-              <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 p-3">
-                <p className="text-xs font-medium text-brand-900">
-                  {t("a_code_sent")}
-                </p>
-                <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-700">
-                  {sentCode}
-                </p>
+              <div className="mt-3 rounded-xl border border-brand-100 bg-brand-50 p-3 text-center">
+                <p className="text-[11px] font-semibold text-brand-900">{t("a_code_sent", "Code sent")}</p>
+                <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-brand-700">{sentCode}</p>
               </div>
             )}
 
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={sendCode}
-                className="rounded-xl border border-brand-700 bg-white px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-              >
-                {t("a_send_code")}
-              </button>
-              <button
-                onClick={finish}
-                className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-              >
-                {t("a_verify")}
-              </button>
-            </div>
-            {notice && <p className="mt-3 text-xs text-slate-500">{notice}</p>}
-            <p className="mt-3 text-xs text-slate-400">
-              {t("a_code")} — demo mode shows the code instead of sending email.
-            </p>
-          </div>
+            {sentCode && (
+              <div className="mt-3">
+                <Field label={t("a_code", "Verification code")}>
+                  <input
+                    inputMode="numeric"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className={`${inputClass} text-center font-mono tracking-[0.3em]`}
+                  />
+                </Field>
+              </div>
+            )}
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">{t("a_demo")}</h2>
-            <div className="mt-3 space-y-2">
-              <DemoButton label={t("a_demo_consumer")} onClick={() => demo("u-consumer")} />
-              <DemoButton label={t("a_demo_provider")} onClick={() => demo("u-provider")} />
-              <DemoButton label={t("a_demo_admin")} onClick={() => demo("u-admin")} />
+            <div className="mt-3 flex gap-2">
+              <Button tone="secondary" onClick={sendCode} className="flex-1">
+                {t("a_send_code", "Send code")}
+              </Button>
+              <Button onClick={finish} className="flex-1">
+                {t("a_verify", "Verify")}
+              </Button>
             </div>
-            <p className="mt-3 text-xs text-slate-400">
-              Provider and admin areas are role-gated in the portal links.
+
+            {notice && <p className="mt-2 text-xs font-medium text-rose-600">{notice}</p>}
+            <p className="mt-2 text-[11px] text-slate-400">
+              {t("a_code", "Verification code")} — {t("a_demo_mode", "demo mode shows the code instead of sending email.")}
             </p>
-          </div>
-        </div>
+          </Card>
+
+          <Card className="mt-3">
+            <h2 className="text-sm font-semibold text-slate-900">{t("a_demo", "Try a demo role")}</h2>
+            <div className="mt-2 space-y-2">
+              {[
+                { id: "u-consumer", label: t("a_demo_consumer", "Consumer") },
+                { id: "u-provider", label: t("a_demo_provider", "Provider") },
+                { id: "u-admin", label: t("a_demo_admin", "Admin") },
+              ].map((d) => (
+                <Button key={d.id} tone="secondary" full onClick={() => demo(d.id)}>
+                  {d.label}
+                </Button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-slate-400">
+              {t("a_demo_note", "Provider and admin areas are role-gated in the portal links.")}
+            </p>
+          </Card>
+        </>
       )}
 
-      <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900">{t("a_language")}</h2>
-        <p className="mt-1 text-xs text-slate-500">{t("a_language_d")}</p>
-        <div className="mt-3 flex items-center gap-2">
-          <LangSwitcher />
-          <span className="text-xs text-slate-400">
-            {LANGS.map((l) => l.native).join(" · ")}
-          </span>
+      <Card className="mt-3">
+        <div className="flex items-center gap-1.5">
+          <LanguageIcon className="h-4 w-4 text-slate-500" />
+          <h2 className="text-sm font-semibold text-slate-900">{t("a_language", "Language")}</h2>
         </div>
-      </div>
+        <p className="mt-1 text-xs text-slate-500">{t("a_language_d", "Choose the language you read most.")}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <LangSwitcher />
+          <span className="text-[11px] text-slate-400">{LANGS.map((l) => l.native).join(" · ")}</span>
+        </div>
+      </Card>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
-        <Link href="/explore" className="font-medium text-brand-700 underline hover:text-brand-800">
-          {t("n_explore")}
+      <p className="mt-4 text-center text-xs text-slate-400">
+        <Link href="/explore" className="font-semibold text-brand-700">
+          {t("n_explore", "Explore")}
         </Link>{" "}
         ·{" "}
-        <Link href="/find-care" className="font-medium text-brand-700 underline hover:text-brand-800">
-          {t("n_find")}
+        <Link href="/find-care" className="font-semibold text-brand-700">
+          {t("n_find", "Find Care")}
         </Link>
       </p>
-    </main>
-  );
-}
-
-function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-        active ? "bg-brand-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Label({ text, children }: { text: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="text-xs font-medium text-slate-600">{text}</span>
-      {children}
-    </label>
-  );
-}
-
-function DemoButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:border-brand-300 hover:bg-brand-50"
-    >
-      {label}
-    </button>
+    </Screen>
   );
 }

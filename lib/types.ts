@@ -126,7 +126,14 @@ export interface ProviderRequest {
   createdAt: string;
 }
 
-export type BookingStatus = "new" | "contacted" | "confirmed";
+export type BookingStatus = "new" | "contacted" | "confirmed" | "completed" | "cancelled";
+
+export type ConsultationType =
+  | "Clinic visit"
+  | "Video call"
+  | "Home visit"
+  | "Screening"
+  | "Phone consult";
 
 export interface Booking {
   id: string;
@@ -138,6 +145,10 @@ export interface Booking {
   date?: string;
   status: BookingStatus;
   createdAt: string;
+  specialty?: string;
+  time?: string;
+  kind?: ConsultationType;
+  cancelledAt?: string;
 }
 
 export type ReportTarget = "topic" | "provider";

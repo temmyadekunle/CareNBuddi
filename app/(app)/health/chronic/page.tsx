@@ -1,6 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import {
+  Badge,
+  Button,
+  Card,
+  ListRow,
+  Screen,
+  SectionHeader,
+  useToast,
+} from "@/components/app-ui";
+import { ActivityIcon, ClockIcon, HeartPulseIcon, PillIcon, StethoscopeIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { KEYS, daysAgo, seedJournal, useStoredCollection } from "@/lib/storage";
 import type { JournalEntry } from "@/lib/types";
@@ -8,33 +18,76 @@ import type { JournalEntry } from "@/lib/types";
 const PROGRAMS = [
   {
     key: "hypertension",
-    title: "Your Hypertension Journey",
-    condition: "Hypertension",
-    tasks: ["Record blood pressure", "Take blood pressure medication", "Read a heart-health tip"],
+    icon: HeartPulseIcon,
+    journeyKey: "chx_journey_hypertension",
+    journey: "Your hypertension journey",
+    condKey: "chx_cond_hypertension",
+    cond: "Hypertension",
+    badgeKey: "chx_badge_hypertension",
+    badge: "BP Care",
+    tasks: [
+      { key: "chx_task_hypertension_bp", en: "Record blood pressure" },
+      { key: "chx_task_hypertension_med", en: "Take blood pressure medication" },
+      { key: "chx_task_hypertension_tip", en: "Read a heart-health tip" },
+    ],
+    tipKey: "chx_tip_hypertension",
     tip: "Less salt, more walking — small daily choices protect your heart.",
-    metric: (j: JournalEntry) => j.vitals.systolic && j.vitals.diastolic ? `${j.vitals.systolic}/${j.vitals.diastolic} mmHg` : null,
+    metric: (j: JournalEntry) =>
+      j.vitals.systolic && j.vitals.diastolic
+        ? `${j.vitals.systolic}/${j.vitals.diastolic} mmHg`
+        : null,
   },
   {
     key: "diabetes",
-    title: "Your Diabetes Journey",
-    condition: "Diabetes",
-    tasks: ["Record blood glucose", "Log meals and activity", "Check feet today"],
+    icon: ActivityIcon,
+    journeyKey: "chx_journey_diabetes",
+    journey: "Your diabetes journey",
+    condKey: "chx_cond_diabetes",
+    cond: "Diabetes",
+    badgeKey: "chx_badge_diabetes",
+    badge: "Sugar Care",
+    tasks: [
+      { key: "chx_task_diabetes_glucose", en: "Record blood glucose" },
+      { key: "chx_task_diabetes_meals", en: "Log meals and activity" },
+      { key: "chx_task_diabetes_feet", en: "Check feet today" },
+    ],
+    tipKey: "chx_tip_diabetes",
     tip: "Consistent meals and daily movement help keep blood sugar steady.",
     metric: () => null,
   },
   {
     key: "sickle-cell",
-    title: "Your Sickle-Cell Journey",
-    condition: "Sickle-cell disease",
-    tasks: ["Record symptoms today", "Drink plenty of water", "Note pain level (0–10)"],
+    icon: ClockIcon,
+    journeyKey: "chx_journey_sickle",
+    journey: "Your sickle-cell journey",
+    condKey: "chx_cond_sickle",
+    cond: "Sickle-cell disease",
+    badgeKey: "chx_badge_sickle",
+    badge: "Symptom Care",
+    tasks: [
+      { key: "chx_task_sickle_symp", en: "Record symptoms today" },
+      { key: "chx_task_sickle_water", en: "Drink plenty of water" },
+      { key: "chx_task_sickle_pain", en: "Note pain level (0–10)" },
+    ],
+    tipKey: "chx_tip_sickle",
     tip: "Stay hydrated and avoid extreme heat or intense exertion.",
     metric: () => null,
   },
   {
     key: "asthma",
-    title: "Your Asthma Journey",
-    condition: "Asthma",
-    tasks: ["Log peak flow / symptoms", "Carry your reliever inhaler", "Note any triggers"],
+    icon: StethoscopeIcon,
+    journeyKey: "chx_journey_asthma",
+    journey: "Your asthma journey",
+    condKey: "chx_cond_asthma",
+    cond: "Asthma",
+    badgeKey: "chx_badge_asthma",
+    badge: "Breathing Care",
+    tasks: [
+      { key: "chx_task_asthma_peak", en: "Log peak flow / symptoms" },
+      { key: "chx_task_asthma_inhaler", en: "Carry your reliever inhaler" },
+      { key: "chx_task_asthma_trigger", en: "Note any triggers" },
+    ],
+    tipKey: "chx_tip_asthma",
     tip: "Know your triggers and keep your inhaler within reach.",
     metric: () => null,
   },
@@ -42,56 +95,96 @@ const PROGRAMS = [
 
 export default function ChronicPage() {
   const t = useT();
+  const { push } = useToast();
   const [journal] = useStoredCollection<JournalEntry>(KEYS.journal, seedJournal);
   const recent = journal.filter((j) => j.date >= daysAgo(30));
   const bpReadings = recent.filter((j) => j.vitals.systolic && j.vitals.diastolic);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("cc_title", "Chronic Care Companion")}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t("cc_sub", "Daily structure and monthly insight for ongoing conditions.")}</p>
+    <Screen>
+      <SectionHeader
+        title={t("chx_title", "Chronic Care Companion")}
+        subtitle={t("chx_sub", "Daily structure and monthly insight for ongoing conditions.")}
+      />
 
-      <div className="mt-6 grid gap-4">
-        {PROGRAMS.map((p) => (
-          <section key={p.key} className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900">{t(`cc_${p.key}`, p.title)}</h2>
-              <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700">{p.condition}</span>
-            </div>
+      <div className="mt-4 grid gap-3">
+        {PROGRAMS.map((p) => {
+          const Icon = p.icon;
+          const latestBp = bpReadings.length > 0 ? p.metric(bpReadings[bpReadings.length - 1]) : null;
+          return (
+            <Card key={p.key} className="overflow-hidden">
+              <div className="flex items-start gap-3 p-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="truncate text-sm font-semibold text-slate-900">{t(p.journeyKey, p.journey)}</h2>
+                      <p className="mt-0.5 text-xs text-slate-500">{t(p.condKey, p.cond)}</p>
+                    </div>
+                    <Badge tone="brand">{t(p.badgeKey, p.badge)}</Badge>
+                  </div>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t("cc_today", "Today")}</h3>
-                <ul className="mt-2 space-y-1">
-                  {p.tasks.map((task) => (
-                    <li key={task} className="text-sm text-slate-700">• {task}</li>
-                  ))}
-                </ul>
+                  <div className="mt-3 grid gap-2">
+                    <ListRow
+                      icon={<ClockIcon className="h-5 w-5 text-slate-400" />}
+                      title={t("chx_today", "Today")}
+                      meta={
+                        <ul className="space-y-0.5 text-right text-xs text-slate-500">
+                          {p.tasks.map((task) => (
+                            <li key={task.key}>• {t(task.key, task.en)}</li>
+                          ))}
+                        </ul>
+                      }
+                    />
+                    <ListRow
+                      icon={<PillIcon className="h-5 w-5 text-slate-400" />}
+                      title={t("chx_month", "This month")}
+                      meta={
+                        <div className="text-right text-xs text-slate-600">
+                          <p>
+                            {p.key === "hypertension"
+                              ? `${bpReadings.length} ${t("chx_bp_logged", "BP readings logged")}`
+                              : `${recent.length} ${t("chx_entries_logged", "journal entries logged")}`}
+                          </p>
+                          {latestBp && (
+                            <p className="mt-0.5 font-medium">
+                              {t("chx_latest", "Latest")}: {latestBp}
+                            </p>
+                          )}
+                        </div>
+                      }
+                    />
+                    <ListRow
+                      icon={<StethoscopeIcon className="h-5 w-5 text-slate-400" />}
+                      title={t("chx_care", "Care")}
+                      meta={
+                        <p className="max-w-[180px] text-right text-xs text-slate-600">{t(p.tipKey, p.tip)}</p>
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link href="/find-care">
+                      <Button tone="secondary" className="min-h-11 px-4 text-sm">
+                        {t("chx_find", "Find a nearby facility")}
+                      </Button>
+                    </Link>
+                    <Button
+                      tone="ghost"
+                      className="min-h-11 px-4 text-sm"
+                      onClick={() => push(t("chx_reminder_set", "Reminder set for this plan"))}
+                    >
+                      {t("chx_remind", "Remind me")}
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl bg-brand-50 p-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-brand-800">{t("cc_month", "This month")}</h3>
-                <p className="mt-2 text-sm text-brand-900">
-                  {p.key === "hypertension"
-                    ? `${bpReadings.length} BP readings logged`
-                    : `${recent.length} journal entries logged`}
-                </p>
-                {p.key === "hypertension" && bpReadings.length > 0 && (
-                  <p className="mt-1 text-sm font-semibold text-brand-900">
-                    {t("cc_latest", "Latest")}: {p.metric(bpReadings[bpReadings.length - 1])}
-                  </p>
-                )}
-              </div>
-              <div className="rounded-xl bg-amber-50 p-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-800">{t("cc_care", "Care")}</h3>
-                <p className="mt-2 text-sm text-amber-900">{p.tip}</p>
-                <Link href="/find-care" className="mt-2 inline-block text-xs font-semibold text-brand-700 hover:underline">
-                  {t("cc_find", "Find a nearby facility →")}
-                </Link>
-              </div>
-            </div>
-          </section>
-        ))}
+            </Card>
+          );
+        })}
       </div>
-    </main>
+    </Screen>
   );
 }
