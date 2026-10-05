@@ -26,6 +26,7 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const gate = useGateStrings();
   const me = users.find((u) => u.id === session.userId);
 
   const isPrivate = PRIVATE_PATHS.some((p) => pathname.startsWith(p));
@@ -34,10 +35,10 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   if (isStaff && me && me.role === "consumer") {
     return (
       <GateCard
-        title={useGateStrings().staffTitle}
-        body={useGateStrings().staffBody}
+        title={gate.staffTitle}
+        body={gate.staffBody}
         href="/profile"
-        linkLabel="Back to profile"
+        linkLabel={gate.backToProfile}
       />
     );
   }
@@ -45,10 +46,10 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   if ((isPrivate || isStaff) && !session.userId) {
     return (
       <GateCard
-        title={useGateStrings().signInTitle}
-        body={useGateStrings().signInBody}
+        title={gate.signInTitle}
+        body={gate.signInBody}
         href="/auth/sign-in"
-        linkLabel={useGateStrings().signInCta}
+        linkLabel={gate.signInCta}
       />
     );
   }

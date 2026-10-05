@@ -73,4 +73,4 @@ if (unknown.length) {
   for (const key of unknown) console.log(`  ${key.padEnd(28)} ${used.get(key)}`);
 }
 
-process.exit(0);
+process.exit(bad > 0 ? 1 : 0);

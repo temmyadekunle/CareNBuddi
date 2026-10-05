@@ -12,7 +12,6 @@ import {
   BookIcon as RecordsIcon,
   CalendarIcon,
   ChatIcon,
-  EmergencyIcon,
   FileTextIcon,
   GridIcon,
   HeartPulseIcon,
