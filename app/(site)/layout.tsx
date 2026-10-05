@@ -31,11 +31,20 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     locale: "en_NG",
+    images: [
+      {
+        url: "/brand/logo.jpg",
+        width: 1080,
+        height: 1080,
+        alt: "HealthLink",
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/brand/logo.jpg"],
   },
   robots: { index: true, follow: true },
   icons: {

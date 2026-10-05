@@ -32,20 +32,40 @@ function image(opts: {
   width: number;
   height: number;
   credit: string;
-  local?: string;
 }): MarketingImage {
   const remote = pexels(opts.photoId);
-  const useLocal = Boolean(opts.local);
-  const build = (w: number) => (useLocal ? (opts.local as string) : remote(w));
   return {
-    src: build,
-    srcSet: useLocal ? "" : WIDTHS.map((w) => `${remote(w)} ${w}w`).join(", "),
+    src: remote,
+    srcSet: WIDTHS.map((w) => `${remote(w)} ${w}w`).join(", "),
     sizes: "(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 620px",
     alt: opts.alt,
     width: opts.width,
     height: opts.height,
     credit: opts.credit,
     source: `https://www.pexels.com/photo/${opts.photoId}/`,
+  };
+}
+
+/**
+ * A brand-owned photograph shipped from /public rather than a stock CDN.
+ * There is no srcSet because these files are not resized at build time.
+ */
+function localBrandImage(opts: {
+  path: string;
+  alt: string;
+  width: number;
+  height: number;
+  credit?: string;
+}): MarketingImage {
+  return {
+    src: () => opts.path,
+    srcSet: "",
+    sizes: "(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 620px",
+    alt: opts.alt,
+    width: opts.width,
+    height: opts.height,
+    credit: opts.credit ?? "HealthLink",
+    source: opts.path,
   };
 }
 
@@ -111,6 +131,18 @@ export const MARKETING_IMAGES = {
     width: 1400,
     height: 933,
     credit: "RDNE Stock project / Pexels",
+  }),
+
+  /**
+   * Our own founder photograph, shipped from /public/brand/founder.jpg
+   * (source: Assets/Founder.jpeg). Add the founder's name and one-line bio to
+   * the caption on the landing page once you are happy for it to be public.
+   */
+  founderPhoto: localBrandImage({
+    path: "/brand/founder.jpg",
+    alt: "The founder of HealthLink",
+    width: 853,
+    height: 1280,
   }),
 } satisfies Record<string, MarketingImage>;
 

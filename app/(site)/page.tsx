@@ -444,6 +444,58 @@ export default function LandingPage() {
         </Reveal>
       </Section>
 
+      {/* --------------------------------------------------- who we are */}
+      <Section
+        id="who-we-are"
+        eyebrow="Who we are"
+        title="Built in Nigeria, for the people who need care most."
+        lede="HealthLink was created to make finding and managing healthcare less dependent on phone calls, paperwork and luck."
+      >
+        <div className="mt-10 grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <Reveal>
+            <figure className="mx-auto max-w-sm">
+              <MarketingImage
+                image={MARKETING_IMAGES.founderPhoto}
+                sizes="(max-width: 1024px) 92vw, 384px"
+                className="w-full rounded-3xl object-cover shadow-lg"
+              />
+              <figcaption className="mt-3 text-center text-sm text-slate-500">
+                Founder, HealthLink
+              </figcaption>
+            </figure>
+          </Reveal>
+          <Reveal delay={80}>
+            <p className="text-lg leading-relaxed text-slate-600">
+              Too many people still lose track of their own care &mdash; which clinic to go to,
+              when the next appointment is, what the results actually said. We think that should
+              not depend on having one reliable phone and one free afternoon.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">
+              So HealthLink is built mobile-first, works on ordinary phones, keeps working when
+              the network is weak, and speaks English, Yoruba, Hausa and Igbo. Patients, families
+              and providers all use the same platform, so the people looking after you are not
+              working from a different version of the truth.
+            </p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {[
+                "Works on any modern phone",
+                "Offline-capable after first load",
+                "Four languages from day one",
+                "Free to use for patients",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700"
+                >
+                  <LanguageIcon className="h-4 w-4 shrink-0 text-brand-700" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        </div>
+      </Section>
+
       {/* -------------------------------------------------- testimonials */}
       <Section
         id="testimonials"

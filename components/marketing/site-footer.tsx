@@ -15,6 +15,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: "Company",
     links: [
       { label: "Why HealthLink", href: "#why" },
+      { label: "Who we are", href: "#who-we-are" },
       { label: "FAQ", href: "#faq" },
     ],
   },
