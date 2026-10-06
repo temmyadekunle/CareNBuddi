@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, OfflineNote } from "@/components/auth-form";
+import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, OfflineNote, SocialLoginButtons } from "@/components/auth-form";
 import { Card, useToast } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
@@ -153,12 +153,15 @@ export default function SignInPage() {
           >
             {t("a_signin", "Sign in")}
           </AuthSubmit>
+
+          {cloudMode && <SocialLoginButtons />}
+
         </Card>
 
         {!cloudMode && <OfflineNote />}
 
         <AuthSwitch
-          question={t("auth_no_account", "New to HealthLink?")}
+          question={t("auth_no_account", "New to CareNBuddi?")}
           actionLabel={t("a_signup", "Create account")}
           href="/auth/sign-up"
         />

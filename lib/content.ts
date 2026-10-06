@@ -1616,7 +1616,7 @@ export function directionsUrl(provider: Provider): string {
 export function whatsappUrl(provider: Provider): string {
   const number = (provider.whatsapp ?? provider.phone.replace(/\D/g, "")).replace(/^0/, "234");
   return `https://wa.me/${number}?text=${encodeURIComponent(
-    "Hello, I found you on HealthLink and would like more information.",
+    "Hello, I found you on CareNBuddi and would like more information.",
   )}`;
 }
 

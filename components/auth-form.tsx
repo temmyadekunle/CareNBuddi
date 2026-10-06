@@ -10,9 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { Button, Field, inputClass } from "@/components/app-ui";
-import { AlertIcon, ShieldIcon } from "@/components/icons";
+import { AlertIcon, ShieldIcon, GoogleIcon, AppleIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { readLocal, writeLocal } from "@/lib/storage";
+import { isCloudEnabled } from "@/lib/supabase/client";
+import { useCloud } from "@/lib/supabase/cloud";
 
 /* --------------------------------------------------------- pending sign-up */
 
@@ -87,10 +89,10 @@ export function AuthSuccess({ children }: { children: ReactNode }) {
 export function OfflineNote() {
   const t = useT();
   return (
-    <p className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-relaxed text-slate-500">
-      <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+    <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-700">
+      <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0" />
       <span className="min-w-0 flex-1">
-        {t("a_sync_off", "Offline preview - records stay on this device")}
+        {t("a_offline_note", "Working offline — your data stays on this device. Sign in to sync across devices.")}
       </span>
     </p>
   );
@@ -128,6 +130,44 @@ export function AuthSubmit({
     <Button type="submit" full disabled={pending}>
       {pending ? pendingLabel : children}
     </Button>
+  );
+}
+
+export function SocialLoginButtons() {
+  const t = useT();
+  const cloud = useCloud();
+
+  if (!cloud.enabled) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase tracking-wider text-slate-400">
+          <span className="bg-white px-2">{t("auth_or", "or")}</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => void cloud.signInWithGoogle()}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          <GoogleIcon className="h-5 w-5" />
+          <span>{t("auth_google", "Google")}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void cloud.signInWithApple()}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          <AppleIcon className="h-5 w-5" />
+          <span>{t("auth_apple", "Apple")}</span>
+        </button>
+      </div>
+    </div>
   );
 }
 

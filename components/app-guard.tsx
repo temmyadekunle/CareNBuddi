@@ -67,7 +67,7 @@ function useGateStrings() {
     ),
     signInCta: t("gate_signin_cta", "Sign in"),
     staffTitle: t("gate_staff_title", "Staff access only"),
-    staffBody: t("gate_staff_body", "This area is for HealthLink providers and staff."),
+    staffBody: t("gate_staff_body", "This area is for CareNBuddi providers and staff."),
     backToProfile: t("gate_back_profile", "Back to profile"),
   };
 }

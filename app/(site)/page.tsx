@@ -55,7 +55,7 @@ const STEPS = [
   {
     Art: ConnectedArt,
     title: "Create your profile",
-    body: "Set up your HealthLink profile and personalise your healthcare experience.",
+    body: "Set up your CareNBuddi profile and personalise your healthcare experience.",
   },
   {
     Art: FindCareArt,
@@ -189,7 +189,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <CtaLink href="/onboarding">Get Started</CtaLink>
               <CtaLink href="#features" variant="secondary">
-                Explore HealthLink
+                Explore CareNBuddi
               </CtaLink>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
@@ -253,7 +253,7 @@ export default function LandingPage() {
         id="how-it-works"
         eyebrow="How it works"
         title="Three steps to a clearer healthcare journey"
-        lede="HealthLink is built around the way people actually access care in Nigeria."
+        lede="CareNBuddi is built around the way people actually access care in Nigeria."
         tone="tint"
       >
         <ol className="mt-10 grid gap-6 md:grid-cols-3">
@@ -323,7 +323,7 @@ export default function LandingPage() {
         id="for-patients"
         eyebrow="For patients"
         title="Healthcare that works around you."
-        lede="Finding care should not mean juggling phone numbers, paper notes and memory. HealthLink puts the important parts in one calm, simple place."
+        lede="Finding care should not mean juggling phone numbers, paper notes and memory. CareNBuddi puts the important parts in one calm, simple place."
         tone="tint"
       >
         <div className="mt-10 grid items-center gap-10 lg:grid-cols-2">
@@ -368,7 +368,7 @@ export default function LandingPage() {
         id="for-providers"
         eyebrow="For healthcare providers"
         title="Better connections between providers and patients."
-        lede="HealthLink gives doctors, nurses, clinics and facilities a clearer way to be found and to organise the care they deliver."
+        lede="CareNBuddi gives doctors, nurses, clinics and facilities a clearer way to be found and to organise the care they deliver."
       >
         <div className="mt-10 grid items-center gap-10 lg:grid-cols-2">
           <Reveal className="order-2 lg:order-1">
@@ -401,7 +401,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <div className="mt-8 flex flex-wrap gap-3">
-              <CtaLink href="/provider/register">Join HealthLink</CtaLink>
+              <CtaLink href="/provider/register">Join CareNBuddi</CtaLink>
               <CtaLink href="/provider" variant="secondary">
                 Provider view
               </CtaLink>
@@ -415,7 +415,7 @@ export default function LandingPage() {
         id="app"
         eyebrow="The app"
         title="Everything you need, right at your fingertips."
-        lede="HealthLink brings essential healthcare tools together in one simple experience."
+        lede="CareNBuddi brings essential healthcare tools together in one simple experience."
         tone="tint"
       >
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -435,7 +435,7 @@ export default function LandingPage() {
 
         <div className="mx-auto mt-12 max-w-xl text-center">
           <p className="text-sm text-slate-600">
-            Add HealthLink to your home screen and it opens like a normal app.
+            Add CareNBuddi to your home screen and it opens like a normal app.
           </p>
           <div className="mt-4 flex justify-center">
             <CtaLink href="/onboarding">Get Started</CtaLink>
@@ -450,9 +450,9 @@ export default function LandingPage() {
       {/* --------------------------------------------------------- why */}
       <Section
         id="why"
-        eyebrow="Why HealthLink"
+        eyebrow="Why CareNBuddi"
         title="Healthcare shouldn't feel complicated."
-        lede="We built HealthLink around a simple idea: the people using it are busy, often on a poor connection, and should not have to work hard to get care."
+        lede="We built CareNBuddi around a simple idea: the people using it are busy, often on a poor connection, and should not have to work hard to get care."
       >
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PRINCIPLES.map((item, i) => (
@@ -484,12 +484,12 @@ export default function LandingPage() {
         </Reveal>
       </Section>
 
-      {/* --------------------------------------------------- who we are */}
+{/* --------------------------------------------------- who we are */}
       <Section
         id="who-we-are"
         eyebrow="Who we are"
         title="Built in Nigeria, for the people who need care most."
-        lede="HealthLink was created to make finding and managing healthcare less dependent on phone calls, paperwork and luck."
+        lede="CareNBuddi was created to make finding and managing healthcare less dependent on phone calls, paperwork and luck."
       >
         <div className="mt-10 grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <Reveal>
@@ -502,7 +502,7 @@ export default function LandingPage() {
               <figcaption className="mt-3 text-center text-sm text-slate-500">
                 Temitope F. Adekunle
                 <span className="mt-0.5 block text-xs text-slate-400">
-                  Health Educator &amp; Mental Health Counselor, HealthLink
+                  Health Educator & Mental Health Counselor, CareNBuddi
                 </span>
               </figcaption>
             </figure>
@@ -514,7 +514,7 @@ export default function LandingPage() {
               not depend on having one reliable phone and one free afternoon.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-slate-600">
-              So HealthLink is built mobile-first, works on ordinary phones, keeps working when
+              So CareNBuddi is built mobile-first, works on ordinary phones, keeps working when
               the network is weak, and speaks English, Yoruba, Hausa and Igbo. Patients, families
               and providers all use the same platform, so the people looking after you are not
               working from a different version of the truth.
@@ -554,7 +554,7 @@ export default function LandingPage() {
       </Section>
 
       {/* --------------------------------------------------------- faq */}
-      <Section id="faq" eyebrow="FAQ" title="Questions people ask about HealthLink">
+      <Section id="faq" eyebrow="FAQ" title="Questions people ask about CareNBuddi">
         <Reveal>
           <Faq />
         </Reveal>
@@ -582,9 +582,9 @@ export default function LandingPage() {
               </CtaLink>
               <Link
                 href="/provider/register"
-                className="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex min-h-[2.75rem] items_center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
-                Join HealthLink
+                Join CareNBuddi
               </Link>
             </div>
           </Reveal>

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HealthLink",
+  title: "CareNBuddi",
   description:
-    "Your Personal Health Navigation System — learn about your health, check your numbers, find appropriate care, connect with providers and stay on track. Better Information. Healthier You.",
+    "Your Health, Your Buddi — Personal Health Navigation System: learn about your health, check your numbers, find appropriate care, connect with providers and stay on track.",
   manifest: "/manifest.json",
 };
 
@@ -28,10 +28,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-slate-50 text-slate-900">
         {children}
         <PwaRegister />

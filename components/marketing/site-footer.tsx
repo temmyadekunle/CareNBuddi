@@ -17,7 +17,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: "Company",
     links: [
-      { label: "Why HealthLink", href: "#why" },
+      { label: "Why CareNBuddi", href: "#why" },
       { label: "Who we are", href: "#who-we-are" },
       { label: "FAQ", href: "#faq" },
     ],
@@ -67,7 +67,7 @@ const SHARE_TARGETS = [
 /** Add real accounts here when they exist. */
 const PROFILE_LINKS: { label: string; href: string }[] = [];
 
-const SHARE_TEXT = "HealthLink — healthcare, connected. Find care, book appointments and manage your health in one place.";
+const SHARE_TEXT = "CareNBuddi — healthcare, connected. Find care, book appointments and manage your health in one place.";
 
 export function SiteFooter() {
   const [copied, setCopied] = useState(false);
@@ -88,10 +88,10 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
-            <Link href="/" aria-label="HealthLink home" className="flex items-center gap-2.5">
+            <Link href="/" aria-label="CareNBuddi home" className="flex items-center gap-2.5">
               <LogoMark className="h-9 w-9" />
               <span className="text-lg font-semibold tracking-tight text-slate-900">
-                HealthLink
+                CareNBuddi
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-slate-600">Healthcare, connected.</p>
@@ -170,7 +170,7 @@ export function SiteFooter() {
                 <button
                   type="button"
                   onClick={copyLink}
-                  aria-label="Copy link to HealthLink"
+                  aria-label="Copy link to CareNBuddi"
                   title="Copy link"
                   className="flex h-10 items-center rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 transition-colors hover:border-brand-300 hover:text-brand-700"
                 >
@@ -180,7 +180,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <p className="text-xs text-slate-500">&copy; 2026 HealthLink. All rights reserved.</p>
+          <p className="text-xs text-slate-500">&copy; 2026 CareNBuddi. All rights reserved.</p>
         </div>
       </div>
     </footer>

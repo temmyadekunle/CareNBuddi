@@ -1,11 +1,11 @@
 /**
- * HealthLink brand illustrations.
+ * CareNBuddi brand illustrations.
  *
  * Every image in the product is drawn here as original flat-vector SVG: no
  * stock photography, no external files, no network requests — licensing-clean
  * by construction. The people are drawn with dark skin tones and textured /
  * curly / loc / wrapped hairstyles so the scenes reflect the Black African
- * and Nigerian communities HealthLink serves.
+ * and Nigerian communities CareNBuddi serves.
  */
 
 import type { ReactNode } from "react";

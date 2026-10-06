@@ -57,7 +57,32 @@ body {
   background: #ffffff;
 }
 
-@media (min-width: 768px) {
+/* Tablet: wider than phone but not full desktop frame */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-canvas {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #e6ecf3;
+    padding: 28px 16px;
+  }
+
+  #app-shell {
+    width: 100%;
+    max-width: 520px;
+    height: min(900px, calc(100vh - 56px));
+    border-radius: 2rem;
+    border: 1px solid #dbe3ec;
+    box-shadow:
+      0 0 0 8px #10192b,
+      0 0 0 9px #2b3a52,
+      0 30px 60px -20px rgba(15, 23, 42, 0.45);
+  }
+}
+
+/* Desktop: full phone frame */
+@media (min-width: 1024px) {
   .app-canvas {
     display: flex;
     justify-content: center;

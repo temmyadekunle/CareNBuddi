@@ -1,6 +1,6 @@
 {
-  "name": "HealthLink",
-  "short_name": "HealthLink",
+  "name": "CareNBuddi",
+  "short_name": "CareNBuddi",
   "description": "Your Personal Health Navigation System — learn, check, find care, and stay on track.",
   "start_url": "/app",
   "scope": "/",

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Welcome to HealthLink",
+  title: "Welcome to CareNBuddi",
   description:
-    "HealthLink connects you to verified care near you and keeps your health in one place — Better Information. Healthier You.",
+    "CareNBuddi connects you to verified care near you and keeps your health in one place — Your Health, Your Buddi.",
 };
 
 /**

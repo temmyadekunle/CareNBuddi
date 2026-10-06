@@ -62,7 +62,7 @@ export function toAppointment(booking: Booking, providers: Provider[]): Appointm
   return {
     booking,
     provider,
-    providerName: provider?.name ?? booking.name ?? "HealthLink",
+    providerName: provider?.name ?? booking.name ?? "CareNBuddi",
     specialty:
       booking.specialty ??
       provider?.services[0] ??

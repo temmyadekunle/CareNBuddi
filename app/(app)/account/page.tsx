@@ -74,7 +74,7 @@ export default function AccountPage() {
     } else {
       const user: User = {
         id: uid(),
-        name: name.trim() || "HealthLink Member",
+        name: name.trim() || "CareNBuddi Member",
         email: key,
         phone: phone.trim() || undefined,
         role: mode === "signup" ? role : "consumer",

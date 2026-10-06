@@ -53,7 +53,7 @@ export function InstallSteps() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <h3 className="text-sm font-semibold text-slate-900">Android</h3>
         <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-slate-600">
-          <li>Open HealthLink in Chrome</li>
+          <li>Open CareNBuddi in Chrome</li>
           <li>Tap the browser menu</li>
           <li>Choose “Install app” or “Add to Home screen”</li>
         </ol>
@@ -61,7 +61,7 @@ export function InstallSteps() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <h3 className="text-sm font-semibold text-slate-900">iPhone &amp; iPad</h3>
         <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-slate-600">
-          <li>Open HealthLink in Safari</li>
+          <li>Open CareNBuddi in Safari</li>
           <li>Tap the Share button</li>
           <li>Choose “Add to Home Screen”</li>
         </ol>

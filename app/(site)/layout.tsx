@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteNav } from "@/components/marketing/site-nav";
 
-const TITLE = "HealthLink — Healthcare, connected.";
+const TITLE = "CareNBuddi — Your Health, Your Buddi.";
 const DESCRIPTION =
-  "HealthLink connects you to the care you need. Find healthcare providers near you, book appointments, keep your health information organised and stay connected — in English, Yoruba, Hausa and Igbo.";
+  "CareNBuddi connects you to the care you need. Find healthcare providers near you, book appointments, keep your health information organised and stay connected — in English, Yoruba, Hausa and Igbo.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://healthlink.folababy02.workers.dev"),
+  metadataBase: new URL("https://carenbuddi.vercel.app"),
   title: {
     default: TITLE,
-    template: "%s | HealthLink",
+    template: "%s | CareNBuddi",
   },
   description: DESCRIPTION,
-  applicationName: "HealthLink",
+  applicationName: "CareNBuddi",
   keywords: [
     "healthcare Nigeria",
     "find a hospital",
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
     "health records",
     "health reminders",
     "healthcare app Nigeria",
-    "HealthLink app",
+    "CareNBuddi app",
   ],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: "/",
-    siteName: "HealthLink",
+    siteName: "CareNBuddi",
     title: TITLE,
     description: DESCRIPTION,
     locale: "en_NG",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
         url: "/brand/logo.jpg",
         width: 1080,
         height: 1080,
-        alt: "HealthLink",
+        alt: "CareNBuddi",
       },
     ],
   },

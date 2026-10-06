@@ -43,6 +43,8 @@ interface CloudValue {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   sync: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
 }
 
 const CloudContext = createContext<CloudValue | null>(null);
@@ -212,6 +214,34 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     setLastSyncedAt(null);
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sign-in is not configured");
+    setError(null);
+    setNotice(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${window.location.pathname}`,
+      },
+    });
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const signInWithApple = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sign-in is not configured");
+    setError(null);
+    setNotice(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "apple",
+      options: {
+        redirectTo: `${window.location.origin}${window.location.pathname}`,
+      },
+    });
+    if (error) throw new Error(error.message);
+  }, []);
+
   const value = useMemo<CloudValue>(
     () => ({
       enabled: isCloudEnabled,
@@ -229,8 +259,10 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
         if (!userId) return;
         await runSync(userId);
       },
+      signInWithGoogle,
+      signInWithApple,
     }),
-    [ready, user, profile, syncState, lastSyncedAt, error, notice, signUp, signIn, signOut, userId, runSync],
+    [ready, user, profile, syncState, lastSyncedAt, error, notice, signUp, signIn, signOut, signInWithGoogle, signInWithApple, userId, runSync],
   );
 
   return <CloudContext.Provider value={value}>{children}</CloudContext.Provider>;

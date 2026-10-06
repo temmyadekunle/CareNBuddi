@@ -9,6 +9,7 @@ import {
   AuthSubmit,
   AuthSwitch,
   OfflineNote,
+  SocialLoginButtons,
   writeAuthPending,
 } from "@/components/auth-form";
 import { Card, Segmented, useToast } from "@/components/app-ui";
@@ -263,6 +264,9 @@ export default function SignUpPage() {
           <AuthSubmit pending={pending} pendingLabel={t("auth_creating", "Creating…")}>
             {t("a_signup", "Create account")}
           </AuthSubmit>
+
+          {cloudMode && <SocialLoginButtons />}
+
         </Card>
 
         {!cloudMode && <OfflineNote />}

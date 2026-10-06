@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useCloud } from "@/lib/supabase/cloud";
+import { GoogleIcon, AppleIcon } from "@/components/icons";
 import type { Role } from "@/lib/types";
 
 /**
@@ -11,7 +12,7 @@ import type { Role } from "@/lib/types";
  */
 export function CloudAccount() {
   const t = useT();
-  const { ready, user, profile, syncState, lastSyncedAt, signIn, signUp, signOut, sync } = useCloud();
+  const { ready, user, profile, syncState, lastSyncedAt, signIn, signUp, signOut, sync, signInWithGoogle, signInWithApple } = useCloud();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,7 @@ export function CloudAccount() {
     try {
       if (mode === "signup") {
         const { needsConfirmation } = await signUp(email, password, {
-          name: name.trim() || "HealthLink Member",
+          name: name.trim() || "CareNBuddi Member",
           phone: phone.trim(),
           role,
           lang: "en",
@@ -172,6 +173,33 @@ export function CloudAccount() {
             className={inputClass}
           />
         </Field>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase tracking-wider text-slate-400">
+            <span className="bg-white px-2">{t("auth_or")}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => void signInWithGoogle()}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <GoogleIcon className="h-5 w-5" />
+            <span>{t("auth_google")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void signInWithApple()}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <AppleIcon className="h-5 w-5" />
+            <span>{t("auth_apple")}</span>
+          </button>
+        </div>
       </div>
 
       <button

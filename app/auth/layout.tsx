@@ -23,16 +23,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <header className="z-30 flex shrink-0 items-center gap-2.5 border-b border-slate-200/70 bg-white/92 px-3 py-2.5 backdrop-blur-md">
               <Link
                 href="/app"
-                aria-label={t("auth_back", "Back to HealthLink")}
+                aria-label={t("auth_back", "Back to CareNBuddi")}
                 className="tap flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </Link>
-              <Link href="/app" aria-label={t("auth_home", "HealthLink home")} className="tap shrink-0">
+              <Link href="/app" aria-label={t("auth_home", "CareNBuddi home")} className="tap shrink-0">
                 <LogoMark className="h-9 w-9 rounded-xl" />
               </Link>
               <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-tight text-slate-900">
-                {t("brand_name", "HealthLink")}
+                {t("brand_name", "CareNBuddi")}
               </span>
               <LangSwitcher compact />
             </header>

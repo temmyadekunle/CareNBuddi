@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSuccess, OfflineNote } from "@/components/auth-form";
-import { Card, useToast } from "@/components/app-ui";
-import { LockIcon } from "@/components/icons";
+import { Button, Card, useToast } from "@/components/app-ui";
+import { LockIcon, CheckIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { getSupabase, isCloudEnabled } from "@/lib/supabase/client";
 
@@ -19,8 +19,17 @@ export default function ForgotPasswordPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const cloudMode = isCloudEnabled;
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendCooldown((n) => Math.max(0, n - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   const submit = async () => {
     setFormError(null);
@@ -40,7 +49,7 @@ export default function ForgotPasswordPage() {
       setFormError(
         t(
           "auth_reset_offline",
-          "Password reset needs a HealthLink cloud account. In offline preview no password is checked.",
+          "Password reset needs a CareNBuddi cloud account. In offline preview no password is checked.",
         ),
       );
       return;
@@ -67,6 +76,50 @@ export default function ForgotPasswordPage() {
         return;
       }
       setSent(true);
+      setResendCooldown(60);
+      push(t("auth_reset_sent", "Reset link sent"), "success");
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : t("auth_reset_failed", "We could not send that email. Try again in a moment."),
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const resend = async () => {
+    setFormError(null);
+    const trimmed = email.trim();
+    if (!trimmed || resendCooldown > 0) return;
+
+    if (!cloudMode) {
+      push(t("auth_resend_demo", "In offline preview no code is actually sent."), "info");
+      return;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      setFormError(
+        t(
+          "auth_reset_unconfigured",
+          "Email delivery is not configured yet. Use Account & sync to finish setting up your account.",
+        ),
+      );
+      return;
+    }
+
+    setPending(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${window.location.origin}/auth/sign-in`,
+      });
+      if (error) {
+        setFormError(error.message);
+        return;
+      }
+      setResendCooldown(60);
       push(t("auth_reset_sent", "Reset link sent"), "success");
     } catch (error) {
       setFormError(
@@ -113,15 +166,31 @@ export default function ForgotPasswordPage() {
           />
 
           {formError && <AuthError>{formError}</AuthError>}
+
           {sent && (
-            <AuthSuccess>
-              {t("auth_reset_sent_d", "If that address has an account, the reset link is on its way.")}
-            </AuthSuccess>
+            <div className="flex items-start gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-green-800">
+              <CheckIcon className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1">
+                <p className="font-semibold">{t("auth_reset_sent", "Reset link sent")}</p>
+                <p>{t("auth_reset_sent_d", "If that address has an account, the reset link is on its way.")}</p>
+              </span>
+            </div>
           )}
 
           <AuthSubmit pending={pending} pendingLabel={t("auth_resend_in", "Sending…")}>
-            {t("auth_reset_cta", "Send reset link")}
+            {sent ? t("auth_reset_cta_resend", "Resend reset link") : t("auth_reset_cta", "Send reset link")}
           </AuthSubmit>
+
+          {sent && resendCooldown > 0 && (
+            <Button
+              tone="ghost"
+              full
+              onClick={() => void resend()}
+              disabled={resendCooldown > 0 || pending}
+            >
+              {t("auth_resend_in", `Resend in ${resendCooldown}s`)}
+            </Button>
+          )}
         </Card>
 
         {!cloudMode && <OfflineNote />}

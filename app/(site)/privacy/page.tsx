@@ -4,17 +4,17 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How HealthLink handles the information you enter into the app: what we store, why we store it, and how to ask us to remove it.",
+    "How CareNBuddi handles the information you enter into the app: what we store, why we store it, and how to ask us to remove it.",
 };
 
 const SECTIONS: { heading: string; body: string }[] = [
   {
     heading: "This page is a draft",
-    body: "This privacy policy is a working draft written to describe how the HealthLink app behaves today. It has not yet been reviewed by a lawyer. We will replace it with a reviewed, versioned policy — including our company name, registered address, data protection officer contact details and legal basis for processing — before a public launch. Please treat it as an honest description of the product, not as final legal advice.",
+    body: "This privacy policy is a working draft written to describe how the CareNBuddi app behaves today. It has not yet been reviewed by a lawyer. We will replace it with a reviewed, versioned policy — including our company name, registered address, data protection officer contact details and legal basis for processing — before a public launch. Please treat it as an honest description of the product, not as final legal advice.",
   },
   {
-    heading: "What HealthLink stores",
-    body: "HealthLink stores what you choose to enter into the app. This can include the account details you provide when you sign up or register, the health information, records and measurements you save, the profile photo you choose, the providers you save or bookmark, and the appointments you create. Browsing the app as a guest does not require an account, and guest browsing does not write your activity to an account.",
+    heading: "What CareNBuddi stores",
+    body: "CareNBuddi stores what you choose to enter into the app. This can include the account details you provide when you sign up or register, the health information, records and measurements you save, the profile photo you choose, the providers you save or bookmark, and the appointments you create. Browsing the app as a guest does not require an account, and guest browsing does not write your activity to an account.",
   },
   {
     heading: "Why we store it",
@@ -22,15 +22,15 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Where it is stored",
-    body: "Signed-in data is stored in our database so it can be loaded when you open the app. Some content is also cached on your own device so HealthLink keeps working when your connection is slow or unavailable. Clearing your browser storage, or deleting HealthLink from your home screen, removes that local cache from the device.",
+    body: "Signed-in data is stored in our database so it can be loaded when you open the app. Some content is also cached on your own device so CareNBuddi keeps working when your connection is slow or unavailable. Clearing your browser storage, or deleting CareNBuddi from your home screen, removes that local cache from the device.",
   },
   {
     heading: "Who can see it",
-    body: "Your account and your saved health information are visible to you. Providers you connect with see the information that is necessary for the care they are delivering to you, and staff who administer HealthLink can access the app in order to keep it working. We do not sell your information to anyone.",
+    body: "Your account and your saved health information are visible to you. Providers you connect with see the information that is necessary for the care they are delivering to you, and staff who administer CareNBuddi can access the app in order to keep it working. We do not sell your information to anyone.",
   },
   {
     heading: "How long we keep it",
-    body: "We keep your information for as long as your HealthLink account exists, so your health history does not disappear without warning. When you close your account, we delete or anonymise your information from our active systems, except where we are legally required to keep a record.",
+    body: "We keep your information for as long as your CareNBuddi account exists, so your health history does not disappear without warning. When you close your account, we delete or anonymise your information from our active systems, except where we are legally required to keep a record.",
   },
   {
     heading: "Your choices and how to ask us to delete your data",
@@ -38,11 +38,11 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Security",
-    body: "HealthLink uses HTTPS in transit, keeps access to the service limited to people who need it for support and maintenance, and stores secrets outside the source code. No system is perfectly secure, so please do not use HealthLink as the only place you keep a medical record, and do not share your account details with anyone.",
+    body: "CareNBuddi uses HTTPS in transit, keeps access to the service limited to people who need it for support and maintenance, and stores secrets outside the source code. No system is perfectly secure, so please do not use CareNBuddi as the only place you keep a medical record, and do not share your account details with anyone.",
   },
   {
     heading: "Children",
-    body: "HealthLink is not intended for children under 13. If you believe a child has created an account, contact us and we will help close it.",
+    body: "CareNBuddi is not intended for children under 13. If you believe a child has created an account, contact us and we will help close it.",
   },
   {
     heading: "Changes to this policy",
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
             Use the support route inside the app. Our email address and postal address will be
             published here before a public launch. You can also{" "}
             <Link href="/" className="font-semibold text-brand-700 underline underline-offset-2">
-              return to the HealthLink homepage
+              return to the CareNBuddi homepage
             </Link>
             .
           </p>

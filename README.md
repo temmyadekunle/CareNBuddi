@@ -1,6 +1,8 @@
-# HealthLink
+# CareNBuddi
 
-A personal health dashboard built with Next.js (App Router), React, TypeScript, and Tailwind CSS.
+A personal health navigation system built with Next.js (App Router), React, TypeScript, and Tailwind CSS.
+
+**Slogan:** Your Health, Your Buddi
 
 ## Features
 
