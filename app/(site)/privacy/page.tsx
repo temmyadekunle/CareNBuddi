@@ -14,7 +14,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "What HealthLink stores",
-    body: "HealthLink stores what you choose to enter into the app. This can include the account details you provide when you sign up or register, the health information, records and measurements you save, the providers you save or bookmark, and the appointments you create. Browsing the app as a guest does not require an account, and guest browsing does not write your activity to an account.",
+    body: "HealthLink stores what you choose to enter into the app. This can include the account details you provide when you sign up or register, the health information, records and measurements you save, the profile photo you choose, the providers you save or bookmark, and the appointments you create. Browsing the app as a guest does not require an account, and guest browsing does not write your activity to an account.",
   },
   {
     heading: "Why we store it",

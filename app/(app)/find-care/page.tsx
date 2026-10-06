@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Badge,
   BottomSheet,
@@ -11,7 +11,6 @@ import {
   ListRow,
   Screen,
   Segmented,
-  SkeletonCards,
   Switch,
   inputClass,
 } from "@/components/app-ui";
@@ -38,7 +37,7 @@ import {
   type ProviderCategory,
 } from "@/lib/content";
 import { useLang, useT } from "@/lib/i18n";
-import { KEYS, seedProviders, useStoredCollection } from "@/lib/storage";
+import { KEYS, refreshLocal, seedProviders, useStoredCollection } from "@/lib/storage";
 
 const ANY_STATE = "__any_state__";
 const ANY_CATEGORY = "__any_category__";
@@ -55,25 +54,24 @@ export default function FindCarePage() {
   const [cost, setCost] = useState<CostFilter>("any");
   const [open24, setOpen24] = useState(false);
 
-  const [reloadKey, setReloadKey] = useState(0);
   const [stateOpen, setStateOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [booking, setBooking] = useState<Provider | null>(null);
+  const [tapped, setTapped] = useState(false);
 
   const q = query.trim().toLowerCase();
-  const firstLoad = useRef(true);
-  const signature = `${q}|${state}|${category}|${cost}|${open24 ? 1 : 0}|${reloadKey}`;
-  const [settled, setSettled] = useState<string | null>(null);
-  const loading = settled !== signature;
 
-  useEffect(() => {
-    if (settled === signature) return;
-    const delay = firstLoad.current ? 500 : 320;
-    firstLoad.current = false;
-    const id = window.setTimeout(() => setSettled(signature), delay);
-    return () => window.clearTimeout(id);
-  }, [settled, signature]);
-
+  /**
+   * The provider list is already sitting in memory, so filtering it is
+   * synchronous and finishes in well under a millisecond. There is no request
+   * to wait for.
+   *
+   * This list used to fake a load: a 500ms delay on first paint and 320ms after
+   * every keystroke, replacing all the results with skeleton cards each time.
+   * On a phone that made typing and filtering feel like the app had frozen,
+   * even though the work was already done. So the results now update as you
+   * type, and nothing is hidden behind a spinner.
+   */
   const filtered = useMemo<Provider[] | null>(() => {
     try {
       return providers.filter((provider) => {
@@ -105,7 +103,16 @@ export default function FindCarePage() {
     setOpen24(false);
   };
 
-  const reload = () => setReloadKey((key) => key + 1);
+  /**
+   * Re-reads the list from device storage. The brief spin is only there to
+   * acknowledge the tap: the read itself is immediate and the results below
+   * are never replaced by a loading state.
+   */
+  const reload = () => {
+    refreshLocal(KEYS.providers);
+    setTapped(true);
+    window.setTimeout(() => setTapped(false), 350);
+  };
 
   return (
     <Screen>
@@ -126,10 +133,9 @@ export default function FindCarePage() {
           aria-label={t("fc_refresh", "Refresh results")}
           title={t("fc_refresh", "Refresh results")}
           onClick={reload}
-          disabled={loading}
-          className="tap inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-60"
+          className="tap inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
         >
-          <RefreshIcon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshIcon className={`h-4 w-4 ${tapped ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -209,11 +215,7 @@ export default function FindCarePage() {
         {t("f_verified", "Verified")} ✓
       </p>
 
-      {loading ? (
-        <div className="mt-3">
-          <SkeletonCards rows={4} />
-        </div>
-      ) : failed ? (
+      {failed ? (
         <div className="mt-3">
           <ErrorState
             title={t("fc_error_title", "Couldn't load results")}

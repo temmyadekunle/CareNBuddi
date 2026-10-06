@@ -165,8 +165,7 @@ export const MARKETING_IMAGES = {
 
   /**
    * Our own founder photograph, shipped from /public/brand/founder.jpg
-   * (source: Assets/Founder.jpeg). Add the founder's name and one-line bio to
-   * the caption on the landing page once you are happy for it to be public.
+   * (source: Assets/Founder.jpeg).
    */
   founderPhoto: localBrandImage({
     path: "/brand/founder.jpg",

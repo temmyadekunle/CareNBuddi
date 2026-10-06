@@ -637,14 +637,42 @@ export function Avatar({
   );
 }
 
-/** Larger, friendlier avatar for the profile header. */
-export function AvatarLarge({ name, size = 84 }: { name: string; size?: number }) {
+/**
+ * Larger, friendlier avatar for the profile header. Pass `src` to show the
+ * person's own photo instead of the generated illustration.
+ */
+export function AvatarLarge({
+  name,
+  size = 84,
+  src,
+}: {
+  name: string;
+  size?: number;
+  src?: string | null;
+}) {
   const initials = name
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+
+  if (src) {
+    return (
+      // A profile photo is a data URL the user just picked on this device, so
+      // there is no network request to optimise and next/image cannot process it.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover ring-4 ring-white"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
   const skin = SKIN[name.length % SKIN.length];
   return (
     <span

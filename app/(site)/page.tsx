@@ -500,7 +500,10 @@ export default function LandingPage() {
                 className="w-full rounded-3xl object-cover shadow-lg"
               />
               <figcaption className="mt-3 text-center text-sm text-slate-500">
-                Founder, HealthLink
+                Temitope F. Adekunle
+                <span className="mt-0.5 block text-xs text-slate-400">
+                  Health Educator &amp; Mental Health Counselor, HealthLink
+                </span>
               </figcaption>
             </figure>
           </Reveal>

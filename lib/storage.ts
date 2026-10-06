@@ -23,6 +23,7 @@ export const KEYS = {
   exerciseReminder: "healthlink:exercise-reminder",
   careCircle: "healthlink:care-circle",
   passport: "healthlink:passport",
+  profilePhotos: "healthlink:profile-photos",
   session: "healthlink:session",
   users: "healthlink:users",
   providers: "healthlink:providers",
@@ -185,6 +186,15 @@ export function onLocalChange(cb: (key: string) => void): () => void {
   };
 }
 
+/**
+ * Drops the in-memory copy of a value so the next read comes from storage
+ * again, then wakes subscribers. Used by pull-to-refresh style buttons.
+ */
+export function refreshLocal(key: string) {
+  cache.delete(key);
+  notify(key);
+}
+
 export function readLocal<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
@@ -248,6 +258,42 @@ function writeCollection<T extends { id: string }>(key: string, items: T[]) {
     // storage may be unavailable
   }
   notify(key);
+}
+
+/**
+ * Reads a stored collection straight from storage, bypassing the in-memory
+ * copy. Used to render user-supplied images, which are far too large to keep
+ * in a module-level cache.
+ */
+export function readCollectionFresh<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw) as T;
+    return parsed ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Writes a value and reports whether it actually persisted.
+ *
+ * `writeValue` swallows failures so the rest of the app can keep working, but
+ * that is no good for a profile photo: the user needs to be told when the
+ * device has run out of room rather than being shown a picture that will be
+ * gone after a reload.
+ */
+export function writeValueChecked<T>(key: string, value: T): boolean {
+  cache.set(key, value);
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    notify(key);
+    return true;
+  } catch {
+    cache.delete(key);
+    return false;
+  }
 }
 
 export function useStoredCollection<T extends { id: string }>(

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AvatarLarge,
   Badge,
@@ -30,6 +30,7 @@ import {
   type PassportPrefs,
 } from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
+import { fileToSquareDataUrl, readPhoto, removePhoto, savePhoto } from "@/lib/profile-photo";
 import {
   KEYS,
   seedBookings,
@@ -72,11 +73,67 @@ export default function ProfilePage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoState, setPhotoState] = useState(() => ({
+    userId: session.userId,
+    src: readPhoto(session.userId),
+  }));
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = useState({ name: "", phone: "" });
   const [emergencyDraft, setEmergencyDraft] = useState({ contact: "", phone: "" });
 
   const me = users.find((u) => u.id === session.userId);
   const myBookings = bookings.filter((b) => b.userId === session.userId);
+
+  /**
+   * The photo lives in device storage rather than in React state, because a
+   * data URL is far too large to keep in a module-level cache. Re-read it
+   * whenever the signed-in account changes, and after every save or removal.
+   */
+  if (photoState.userId !== session.userId) {
+    setPhotoState({ userId: session.userId, src: readPhoto(session.userId) });
+  }
+  const photo = photoState.userId === session.userId ? photoState.src : null;
+
+  const pickPhoto = () => fileRef.current?.click();
+
+  const onPhotoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // Reset first, so choosing the same file twice still fires a change.
+    event.target.value = "";
+    if (!file || !me) return;
+
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await fileToSquareDataUrl(file);
+      if (savePhoto(me.id, dataUrl)) {
+        setPhotoState({ userId: me.id, src: dataUrl });
+        push(t("prof_photo_saved", "Photo updated"), "success");
+      } else {
+        push(t("prof_photo_no_room", "This device is out of storage space."), "error");
+      }
+    } catch (err) {
+      const code = err instanceof Error ? err.message : "";
+      push(
+        code === "too-large"
+          ? t("prof_photo_too_large", "That image is too large. Choose a smaller one.")
+          : t("prof_photo_failed", "We could not use that image. Try another one."),
+        "error",
+      );
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const clearPhoto = () => {
+    if (!me) return;
+    if (removePhoto(me.id)) {
+      setPhotoState({ userId: me.id, src: null });
+      push(t("prof_photo_removed", "Photo removed"), "success");
+    } else {
+      push(t("prof_photo_failed", "We could not use that image. Try another one."), "error");
+    }
+  };
 
   const openProfileSheet = () => {
     setDraft({ name: me?.name ?? "", phone: me?.phone ?? "" });
@@ -158,23 +215,25 @@ export default function ProfilePage() {
           <Card className="mt-5">
             <div className="flex items-start gap-3">
               <div className="shrink-0">
-                <AvatarLarge name={me.name} />
+                <AvatarLarge name={me.name} src={photo} />
                 <button
                   type="button"
-                  onClick={() =>
-                    push(
-                      t(
-                        "prof_photo_soon",
-                        "Photo upload arrives with the backend storage step.",
-                      ),
-                      "info",
-                    )
-                  }
+                  onClick={pickPhoto}
+                  disabled={photoBusy}
                   aria-label={t("prof_change_photo", "Change photo")}
-                  className="tap -mt-3 ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-brand-700"
+                  className="tap -mt-3 ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-brand-700 disabled:opacity-60"
                 >
                   <CameraIcon className="h-4 w-4" />
                 </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPhotoSelected}
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-base font-bold tracking-tight text-slate-900">
@@ -198,6 +257,11 @@ export default function ProfilePage() {
                 <EditIcon className="h-4 w-4" />
                 {t("prof_edit", "Edit profile")}
               </Button>
+              {photo ? (
+                <Button tone="secondary" onClick={clearPhoto}>
+                  {t("prof_photo_remove", "Remove photo")}
+                </Button>
+              ) : null}
               <Link href="/account" className="tap inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100">
                 {t("prof_account_sync", "Account & sync")}
               </Link>
