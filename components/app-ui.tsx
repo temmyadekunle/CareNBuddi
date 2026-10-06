@@ -22,7 +22,7 @@ import {
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
-    <div className="animate-fade-rise px-4 pb-6 pt-3">
+    <div className="animate-fade-rise px-4 pb-6 pt-3 flex-1">
       {children}
     </div>
   );

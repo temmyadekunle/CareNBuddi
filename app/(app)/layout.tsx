@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <ToastProvider>
           <div id="app-shell">
             <Nav />
-            <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24">
+            <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24 scroll-smooth">
               <AppGuard>{children}</AppGuard>
             </main>
             <BottomNav />

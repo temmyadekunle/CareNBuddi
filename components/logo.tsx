@@ -2,9 +2,9 @@ export function LogoMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo.jpeg"
+      src="/brand/logo.jpg"
       alt="HealthLink logo"
-      className={`shrink-0 rounded-lg bg-white object-contain ring-1 ring-slate-200 ${className ?? ""}`}
+      className={`shrink-0 rounded-lg bg-white object-contain ${className ?? ""}`}
       width={48}
       height={48}
     />
