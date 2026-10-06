@@ -66,9 +66,10 @@ export default function TermsPage() {
         <div className="mt-12 rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="text-base font-semibold text-slate-900">Questions</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Ask from inside the app, or return to the{" "}
+            Use the support route inside the app. Our email address and postal address will be
+            published here before a public launch. You can also{" "}
             <Link href="/" className="font-semibold text-brand-700 underline underline-offset-2">
-              HealthLink homepage
+              return to the HealthLink homepage
             </Link>
             .
           </p>

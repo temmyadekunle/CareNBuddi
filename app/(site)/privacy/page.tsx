@@ -34,7 +34,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Your choices and how to ask us to delete your data",
-    body: "You can review and remove individual items inside the app at any time. To close your account or ask us to delete everything we hold about you, use the support route inside the app or the contact route listed on this page. We will confirm what we delete and, where we cannot delete something because a legal obligation requires us to keep it, we will explain why.",
+    body: "You can review and remove individual items inside the app at any time. To close your account or ask us to delete everything we hold about you, use the support route inside the app. Our company name, postal address, email address and data protection officer contact details will be published at the bottom of this page before a public launch. We will confirm what we delete and, where we cannot delete something because a legal obligation requires us to keep it, we will explain why.",
   },
   {
     heading: "Security",
@@ -74,9 +74,10 @@ export default function PrivacyPage() {
         <div className="mt-12 rounded-2xl border border-slate-200 bg-slate-50 p-6">
           <h2 className="text-base font-semibold text-slate-900">Questions</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Ask from inside the app, or return to the{" "}
+            Use the support route inside the app. Our email address and postal address will be
+            published here before a public launch. You can also{" "}
             <Link href="/" className="font-semibold text-brand-700 underline underline-offset-2">
-              HealthLink homepage
+              return to the HealthLink homepage
             </Link>
             .
           </p>

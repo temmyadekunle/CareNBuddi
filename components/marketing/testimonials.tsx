@@ -43,7 +43,7 @@ export function Testimonials() {
         {TESTIMONIALS.map((item) => (
           <figure
             key={item.name}
-            className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
           >
             <div aria-hidden className="flex gap-0.5 text-amber-400">
               {Array.from({ length: 5 }).map((_, i) => (

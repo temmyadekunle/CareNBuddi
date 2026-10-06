@@ -22,6 +22,12 @@ import { CtaLink, Section } from "@/components/marketing/section";
 import { Testimonials } from "@/components/marketing/testimonials";
 import { MARKETING_IMAGES } from "@/lib/marketing-images";
 
+/**
+ * One hover treatment and one reveal rule for every card on the page, so the
+ * whole site moves the same way.
+ */
+const CARD = "transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md";
+
 const BENEFITS = [
   {
     Icon: SearchIcon,
@@ -113,19 +119,19 @@ const PROVIDER_POINTS = [
 
 const FEATURE_PHOTOS = [
   {
-    image: "preventiveCareLagos",
+    image: "vitalsCheck",
     title: "Check-ins you can rely on",
-    body: "Log blood pressure, weight and blood sugar, then see how they are trending over time.",
+    body: "Log blood pressure, weight and blood sugar, then watch how they change over time.",
   },
   {
-    image: "diagnosisExplained",
-    title: "Results you can actually read",
-    body: "Keep results, notes and prescriptions together instead of folded into a paper file.",
+    image: "vaccination",
+    title: "Vaccines and doses, tracked",
+    body: "Keep a record of what has been given and when the next dose is due.",
   },
   {
-    image: "digitalRecords",
-    title: "Your health, in your hands",
-    body: "Records, appointments and reminders in one place, on the phone you already own.",
+    image: "medication",
+    title: "Prescriptions in one place",
+    body: "Hold on to your prescriptions and medicines so they are there when you need them.",
   },
 ] as const;
 
@@ -227,7 +233,9 @@ export default function LandingPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {BENEFITS.map((item, i) => (
               <Reveal key={item.title} delay={i * 70}>
-                <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                <div
+                  className={`h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
+                >
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                     <item.Icon className="h-5 w-5" />
                   </span>
@@ -251,7 +259,9 @@ export default function LandingPage() {
         <ol className="mt-10 grid gap-6 md:grid-cols-3">
           {STEPS.map((step, i) => (
             <Reveal key={step.title} as="li" delay={i * 90} className="h-full">
-              <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div
+                className={`flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
+              >
                 <span className="text-sm font-bold tracking-widest text-brand-600">
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -274,19 +284,14 @@ export default function LandingPage() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature, i) => (
             <Reveal key={feature.title} delay={i * 60}>
-              <article className="group h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
+              <article
+                className={`group h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
+              >
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-700 text-white">
                   <feature.Icon className="h-5 w-5" />
                 </span>
                 <h3 className="mt-4 text-base font-semibold text-slate-900">{feature.title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{feature.body}</p>
-                <a
-                  href="#app"
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
-                >
-                  Learn more
-                  <span aria-hidden>&rarr;</span>
-                </a>
               </article>
             </Reveal>
           ))}
@@ -295,7 +300,9 @@ export default function LandingPage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURE_PHOTOS.map((item, i) => (
             <Reveal key={item.title} delay={i * 80}>
-              <figure className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <figure
+                className={`h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+              >
                 <MarketingImage
                   image={MARKETING_IMAGES[item.image]}
                   sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 380px"
@@ -348,9 +355,9 @@ export default function LandingPage() {
           </Reveal>
           <Reveal delay={80}>
             <MarketingImage
-              image={MARKETING_IMAGES.patientConsultation}
-              sizes="(max-width: 1024px) 92vw, 520px"
-              className="mx-auto w-full max-w-md rounded-3xl object-cover shadow-lg"
+              image={MARKETING_IMAGES.communityHealthCheck}
+              sizes="(max-width: 1024px) 92vw, 560px"
+              className="w-full rounded-3xl object-cover shadow-lg"
             />
           </Reveal>
         </div>
@@ -450,7 +457,9 @@ export default function LandingPage() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PRINCIPLES.map((item, i) => (
             <Reveal key={item.title} delay={i * 70}>
-              <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div
+                className={`h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
+              >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                   <item.Icon className="h-5 w-5" />
                 </span>
@@ -512,7 +521,7 @@ export default function LandingPage() {
                 "Works on any modern phone",
                 "Offline-capable after first load",
                 "Four languages from day one",
-                "Free to use for patients",
+                "No payment needed to get started",
               ].map((item) => (
                 <li
                   key={item}
@@ -535,51 +544,59 @@ export default function LandingPage() {
         tone="tint"
       >
         <div className="mt-10">
-          <Testimonials />
+          <Reveal>
+            <Testimonials />
+          </Reveal>
         </div>
       </Section>
 
       {/* --------------------------------------------------------- faq */}
       <Section id="faq" eyebrow="FAQ" title="Questions people ask about HealthLink">
-        <Faq />
+        <Reveal>
+          <Faq />
+        </Reveal>
       </Section>
 
       {/* --------------------------------------------------- final cta */}
       <section className="relative overflow-hidden bg-brand-900 px-4 py-20 sm:px-6">
         <MarketingImage
-          image={MARKETING_IMAGES.careCorridor}
+          image={MARKETING_IMAGES.lagosSurgeon}
           sizes="(max-width: 1024px) 100vw, 1200px"
           className="absolute inset-0 h-full w-full object-cover opacity-20"
           decorative
         />
         <div className="relative mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Take control of your healthcare journey.
-          </h2>
-          <p className="mt-4 text-lg text-brand-100">
-            Connect with the care you need, when you need it.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <CtaLink href="/onboarding" variant="onBrand">
-              Get Started
-            </CtaLink>
-            <Link
-              href="/provider/register"
-              className="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              Join HealthLink
-            </Link>
-          </div>
-          <p className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-100">
-            <span className="inline-flex items-center gap-2">
-              <ShieldIcon className="h-4 w-4" />
-              You control what you save
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <StethoscopeIcon className="h-4 w-4" />
-              Built for patients and providers
-            </span>
-          </p>
+          <Reveal>
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Take control of your healthcare journey.
+            </h2>
+            <p className="mt-4 text-lg text-brand-100">
+              Connect with the care you need, when you need it.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <CtaLink href="/onboarding" variant="onBrand">
+                Get Started
+              </CtaLink>
+              <Link
+                href="/provider/register"
+                className="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Join HealthLink
+              </Link>
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <p className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-100">
+              <span className="inline-flex items-center gap-2">
+                <ShieldIcon className="h-4 w-4" />
+                You control what you save
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <StethoscopeIcon className="h-4 w-4" />
+                Built for patients and providers
+              </span>
+            </p>
+          </Reveal>
         </div>
       </section>
     </main>

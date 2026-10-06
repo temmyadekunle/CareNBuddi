@@ -1,19 +1,14 @@
 /**
  * Central registry of every photograph used on the marketing site.
  *
+ * Image policy: every photo shows Black African or Nigerian people, and most
+ * were photographed in Nigeria. Each entry documents which real app feature it
+ * illustrates, so a photo can never advertise something we have not built.
+ *
  * All images are free-to-use Pexels photos (Pexels License: free to use,
- * attribution appreciated but not required). The footer carries the credit
- * line. To add photographer names, open each photo's Pexels page — the site
- * blocks scraping, so names cannot be read automatically.
- *
- * The set is deliberately Nigeria- and Africa-led: the hero and the preventive
- * care image were photographed in Lagos, and the provider, patient and records
- * images all show Black clinicians and patients.
- *
- * Every entry is tied to a feature that actually exists in the app. Images for
- * features we have not built are kept at the bottom of this file, unused, so
- * they are ready if those modules ship — they must not appear on the marketing
- * site until then.
+ * attribution appreciated but not required), served from the Pexels CDN with
+ * imgix crops. Photographer names cannot be read automatically — the site
+ * blocks scraping — so credit is recorded as the provider.
  */
 
 export type MarketingImage = {
@@ -27,6 +22,8 @@ export type MarketingImage = {
   height: number;
   credit: string;
   source: string;
+  /** The app feature this photo illustrates. */
+  feature: string;
 };
 
 const WIDTHS = [480, 768, 1080, 1440];
@@ -40,7 +37,7 @@ function pexelsUrl(photoId: number, width: number, ratio?: number, focus?: strin
 
 /**
  * @param ratio  Optional display aspect ratio. When set, the CDN crops to it
- *               so we never download a 3:2 original for a 3:4 slot.
+ *               so a 3:2 original is never downloaded for a 3:4 slot.
  * @param focus  imgix focal point, e.g. "faces" to keep heads in frame.
  */
 function image(opts: {
@@ -48,6 +45,7 @@ function image(opts: {
   alt: string;
   width: number;
   height: number;
+  feature: string;
   credit?: string;
   ratio?: number;
   focus?: string;
@@ -62,6 +60,7 @@ function image(opts: {
     height: opts.height,
     credit: opts.credit ?? "Pexels",
     source: `https://www.pexels.com/photo/${opts.photoId}/`,
+    feature: opts.feature,
   };
 }
 
@@ -74,7 +73,7 @@ function localBrandImage(opts: {
   alt: string;
   width: number;
   height: number;
-  credit?: string;
+  feature: string;
 }): MarketingImage {
   return {
     src: () => opts.path,
@@ -83,8 +82,9 @@ function localBrandImage(opts: {
     alt: opts.alt,
     width: opts.width,
     height: opts.height,
-    credit: opts.credit ?? "HealthLink",
+    credit: "HealthLink",
     source: opts.path,
+    feature: opts.feature,
   };
 }
 
@@ -95,65 +95,72 @@ export const MARKETING_IMAGES = {
     alt: "A doctor consulting with a patient during a clinic visit in Lagos",
     width: 2000,
     height: 1333,
+    feature: "Marketing hero — the whole product in one picture",
     ratio: 1.25,
     focus: "faces",
   }),
 
-  /** For Patients: a patient talking with her doctor during a consultation. */
-  patientConsultation: image({
-    photoId: 4266930,
-    alt: "A patient talking with her doctor during a consultation",
-    width: 2000,
-    height: 3000,
-    ratio: 0.78,
-    focus: "faces",
+  /** For Patients: an African health worker checking an older patient's blood pressure. */
+  communityHealthCheck: image({
+    photoId: 8248433,
+    alt: "A health worker checking an older woman's blood pressure during a check-up",
+    width: 1200,
+    height: 798,
+    feature: "Find Care and health check-ups",
+    ratio: 1.15,
   }),
 
-  /** For Providers: a doctor working on a tablet, for the provider directory. */
+  /** For Providers: a Black female doctor working on a tablet. */
   providerWithTablet: image({
     photoId: 19957218,
     alt: "A doctor using a tablet while working with patients",
     width: 2000,
     height: 3000,
+    feature: "Provider directory and appointment requests",
     ratio: 0.78,
     focus: "faces",
   }),
 
-  /** Feature: logging and tracking vitals, photographed in Lagos. */
-  preventiveCareLagos: image({
+  /** Feature: logging vitals, photographed in Lagos. */
+  vitalsCheck: image({
     photoId: 30688589,
     alt: "A healthcare professional checking a patient's blood pressure in Lagos",
     width: 2000,
     height: 1333,
+    feature: "Health dashboard — blood pressure, weight, blood sugar",
     ratio: 1.2,
   }),
 
-  /** Feature: a doctor explaining a diagnosis and results to a patient. */
-  diagnosisExplained: image({
-    photoId: 6303652,
-    alt: "A doctor explaining a diagnosis to a patient in a hospital",
-    width: 2000,
-    height: 1333,
+  /** Feature: an African health worker administering a vaccine. */
+  vaccination: image({
+    photoId: 10794860,
+    alt: "A health worker administering a vaccine to a patient",
+    width: 1200,
+    height: 900,
+    feature: "Vaccine and dose tracking",
+    credit: "Francis Agyemang Opoku / Pexels",
     ratio: 1.2,
   }),
 
-  /** Feature: digital health records on a tablet. */
-  digitalRecords: image({
-    photoId: 5452188,
-    alt: "A doctor using a tablet computer to review health records",
-    width: 2000,
-    height: 3000,
-    ratio: 0.78,
+  /** Feature: an African health professional holding medication. */
+  medication: image({
+    photoId: 38774683,
+    alt: "A healthcare professional holding medication in a clinic",
+    width: 1200,
+    height: 1680,
+    feature: "Prescriptions and medicines",
+    ratio: 1.2,
     focus: "faces",
   }),
 
-  /** Final CTA background: a care worker walking with a patient. */
-  careCorridor: image({
-    photoId: 33932453,
-    alt: "A care worker walking alongside a patient in a hospital corridor",
-    width: 2000,
-    height: 1333,
-    credit: "Wellington Tavares / Pexels",
+  /** Final CTA background: a surgeon in a Lagos hospital. */
+  lagosSurgeon: image({
+    photoId: 16903231,
+    alt: "A surgeon in scrubs and a face mask in a hospital in Lagos",
+    width: 1200,
+    height: 675,
+    feature: "Hospital care and referrals",
+    ratio: 1.6,
   }),
 
   /**
@@ -166,14 +173,74 @@ export const MARKETING_IMAGES = {
     alt: "The founder of HealthLink",
     width: 853,
     height: 1280,
+    feature: "Who we are",
   }),
 
   /* ---------------------------------------------------------------------
-   * Held back on purpose — do not add these to the page yet.
+   * Ready for the app and for new sections, not used on the landing page yet.
+   * Each one is tied to a real feature, so any of these can ship as a category
+   * banner in the app or as a future marketing section.
+   * ------------------------------------------------------------------- */
+
+  /** Symptom journal. */
+  symptomsConsultation: image({
+    photoId: 6303646,
+    alt: "A patient discussing a diagnosis with a doctor in a hospital",
+    width: 1200,
+    height: 1800,
+    feature: "Symptom journal",
+    ratio: 0.78,
+    focus: "faces",
+  }),
+
+  /** Emergency care. */
+  emergencyCare: image({
+    photoId: 6098046,
+    alt: "A healthcare professional in protective clothing in a hospital",
+    width: 1200,
+    height: 1800,
+    feature: "Emergency and urgent care",
+    ratio: 0.78,
+    focus: "faces",
+  }),
+
+  /** Health records and documentation. */
+  healthRecords: image({
+    photoId: 6098051,
+    alt: "A healthcare professional writing up patient notes in a hospital",
+    width: 1200,
+    height: 800,
+    feature: "Health records and documents",
+    ratio: 1.15,
+  }),
+
+  /** Nurse consultation in a hospital corridor. */
+  nurseConsultation: image({
+    photoId: 6303647,
+    alt: "A nurse talking with a patient in a hospital corridor",
+    width: 1200,
+    height: 1800,
+    feature: "Care plans and referrals",
+    ratio: 0.78,
+    focus: "faces",
+  }),
+
+  /** A patient talking with a doctor in a hospital hallway. */
+  patientInHospital: image({
+    photoId: 6303659,
+    alt: "A patient talking with a doctor in a hospital hallway",
+    width: 1200,
+    height: 834,
+    feature: "Talking to a doctor",
+    ratio: 1.15,
+  }),
+
+  /* ---------------------------------------------------------------------
+   * Held back on purpose — do not add these to any page yet.
    *
    * HealthLink has no online consultation and no mental health module, so
    * showing a telehealth or counselling photo would advertise a feature that
-   * does not exist. Keep them here for when those modules ship.
+   * does not exist. Kept here for when those modules ship.
    * ------------------------------------------------------------------- */
 
   /** Reserved for a future online consultation feature. */
@@ -182,6 +249,7 @@ export const MARKETING_IMAGES = {
     alt: "A doctor sitting with a smartphone and tablet for a remote consultation",
     width: 2000,
     height: 1333,
+    feature: "NOT BUILT — online consultation",
   }),
 
   /** Reserved for a future mental health feature. */
@@ -190,6 +258,7 @@ export const MARKETING_IMAGES = {
     alt: "A person having a private conversation with a mental health professional",
     width: 2000,
     height: 1333,
+    feature: "NOT BUILT — mental health",
   }),
 } satisfies Record<string, MarketingImage>;
 

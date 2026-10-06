@@ -31,14 +31,14 @@ export function AppDownload() {
     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
       <Link
         href="/app"
-        className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-800"
+        className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
       >
         Open the app
       </Link>
       {prompt ? (
         <button
           onClick={install}
-          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
         >
           Install on this device
         </button>

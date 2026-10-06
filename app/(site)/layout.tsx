@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     "book an appointment",
     "health records",
     "health reminders",
-    "online doctor Nigeria",
+    "healthcare app Nigeria",
     "HealthLink app",
   ],
   alternates: { canonical: "/" },
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
     images: ["/brand/logo.jpg"],
