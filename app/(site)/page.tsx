@@ -714,45 +714,41 @@ export default function LandingPage() {
 
       {/* ------------------------------------------------- meet the team */}
       <Section id="team" eyebrow="The team" title="Meet Our Team">
-        <div className="mt-10 space-y-6">
-          <Reveal>
-            <figure
-              className={`mx-auto max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal className="h-full">
+            <div
+              className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
             >
-              <MarketingImage
-                image={MARKETING_IMAGES.founderPhoto}
-                sizes="(max-width: 640px) 92vw, 384px"
-                className="aspect-[4/5] w-full object-cover object-top"
-              />
-              <figcaption className="p-5 text-center">
-                <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
-                <p className="mt-0.5 text-sm font-medium text-brand-700">
-                  CEO / Co-founder, CareNBuddi
-                </p>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  Health Educator &amp; Mental Health Counselor
-                </p>
-              </figcaption>
-            </figure>
+              <span className="h-20 w-20 overflow-hidden rounded-full bg-brand-100">
+                <MarketingImage
+                  image={MARKETING_IMAGES.founderPhoto}
+                  sizes="80px"
+                  className="h-20 w-20 object-cover object-top"
+                />
+              </span>
+              <p className="mt-4 text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
+              <p className="mt-0.5 text-sm font-medium text-brand-700">
+                CEO / Co-founder, CareNBuddi
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Health Educator &amp; Mental Health Counselor
+              </p>
+            </div>
           </Reveal>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {TEAM_ROLES.map((role, i) => (
-              <Reveal key={role.title} delay={i * 70}>
-                <div
-                  className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
-                >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                    <role.Icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="mt-3 text-base font-semibold text-slate-900">{role.title}</h3>
-                  {role.name ? (
-                    <p className="mt-0.5 text-sm text-slate-500">{role.name}</p>
-                  ) : null}
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          {TEAM_ROLES.map((role, i) => (
+            <Reveal key={role.title} delay={(i + 1) * 70} className="h-full">
+              <div
+                className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
+              >
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                  <role.Icon className="h-8 w-8" />
+                </span>
+                <p className="mt-4 text-base font-semibold text-slate-900">{role.title}</p>
+                <p className="mt-0.5 text-sm text-slate-500">CareNBuddi</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
