@@ -19,6 +19,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "Why CareNBuddi", href: "#why" },
       { label: "Who we are", href: "#who-we-are" },
+      { label: "Our vision", href: "#our-vision" },
       { label: "FAQ", href: "#faq" },
     ],
   },
@@ -67,7 +68,7 @@ const SHARE_TARGETS = [
 /** Add real accounts here when they exist. */
 const PROFILE_LINKS: { label: string; href: string }[] = [];
 
-const SHARE_TEXT = "CareNBuddi — healthcare, connected. Find care, book appointments and manage your health in one place.";
+const SHARE_TEXT = "CareNBuddi — Your Health, Your Buddi. Find care, book appointments and manage your health in one place.";
 
 export function SiteFooter() {
   const [copied, setCopied] = useState(false);
@@ -91,7 +92,7 @@ export function SiteFooter() {
             <Link href="/" aria-label="CareNBuddi home">
               <Logo className="h-[46px] w-auto md:h-[60px]" />
             </Link>
-            <p className="mt-3 max-w-xs text-sm text-slate-600">Healthcare, connected.</p>
+            <p className="mt-3 max-w-xs text-sm text-slate-600">Your Health, Your Buddi.</p>
             <Link
               href="/app"
               className="mt-4 inline-flex rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"

@@ -4,16 +4,24 @@ import { ConnectedArt, FindCareArt, ManageArt } from "@/components/brand-art";
 import {
   ActivityIcon,
   BellIcon,
+  BookIcon,
   CalendarIcon,
   ChartIcon,
   ChatIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   FileTextIcon,
   HeartPulseIcon,
   LanguageIcon,
+  PhoneIcon,
+  RefreshIcon,
   SearchIcon,
   ShieldIcon,
   StethoscopeIcon,
+  UserIcon,
+  WalletIcon,
 } from "@/components/icons";
+import { LogoMark } from "@/components/logo";
 import { Faq } from "@/components/marketing/faq";
 import { MarketingImage } from "@/components/marketing/marketing-image";
 import { PhoneMockup } from "@/components/marketing/phone-mockup";
@@ -164,6 +172,26 @@ const PRODUCT_FACTS = [
   { label: "Works on", value: "Any modern phone, online or offline" },
 ];
 
+const TRUST_POINTS = [
+  { label: "Works on any modern phone", Icon: PhoneIcon },
+  { label: "Offline-capable after first load", Icon: RefreshIcon },
+  { label: "Four languages from day one", Icon: LanguageIcon },
+  { label: "No payment needed to get started", Icon: WalletIcon },
+];
+
+const VISION_LINES = [
+  "Patients can connect more easily with healthcare providers.",
+  "Families can stay better informed.",
+  "Important health information is easier to manage.",
+  "Technology bridges the gap between \u201cI need care\u201d and \u201cI know what to do next.\u201d",
+];
+
+const VISION_FLOW = [
+  { label: "Patient", Icon: UserIcon, logo: false },
+  { label: "CareNBuddi", Icon: HeartPulseIcon, logo: true },
+  { label: "Healthcare Provider", Icon: StethoscopeIcon, logo: false },
+] as const;
+
 export default function LandingPage() {
   return (
     <main id="top">
@@ -177,10 +205,10 @@ export default function LandingPage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-brand-800">
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-600" />
-              Healthcare, connected
+              Your Health, Your Buddi.
             </p>
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Healthcare, connected.
+              Your Health, Your Buddi.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600 sm:text-xl">
               Find the care you need, connect with healthcare professionals, and manage your
@@ -484,58 +512,163 @@ export default function LandingPage() {
         </Reveal>
       </Section>
 
-{/* --------------------------------------------------- who we are */}
+      {/* --------------------------------------------------- who we are */}
       <Section
         id="who-we-are"
         eyebrow="Who we are"
-        title="Built in Nigeria, for the people who need care most."
-        lede="CareNBuddi was created to make finding and managing healthcare less dependent on phone calls, paperwork and luck."
+        title="Care should meet you where you are."
+        lede="CareNBuddi was created from a simple belief: getting healthcare should not be harder than it needs to be. Built in Nigeria, it is designed around real people and real healthcare challenges."
+        tone="tint"
       >
-        <div className="mt-10 grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <Reveal>
-            <figure className="mx-auto max-w-sm">
+        <div className="mt-10 grid gap-6 lg:grid-cols-2">
+          <Reveal className="flex h-full flex-col gap-6">
+            <div className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                <BookIcon className="h-5 w-5" />
+              </span>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
+                Our inspiration
+              </p>
+              <h3 className="mt-1.5 text-xl font-bold tracking-tight text-slate-900">
+                Every minute matters.
+              </h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
+                Inspired by the story of Bethany Hamilton in Soul Surfer, we were reminded of
+                something important: in an emergency, care shouldn&apos;t always have to wait until
+                a patient reaches the hospital.
+              </p>
+            </div>
+            <div className="flex flex-1 items-center rounded-2xl bg-brand-900 p-6">
+              <p className="text-lg font-semibold leading-snug text-white">
+                &ldquo;We don&apos;t believe technology should replace human care. We believe it
+                should help people reach it.&rdquo;
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80} className="flex h-full flex-col gap-6">
+            <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base">
+              CareNBuddi uses technology to help people connect with healthcare, manage their care
+              and find the right next step &mdash; whether they are at home, working remotely,
+              travelling, or simply trying to navigate the healthcare system.
+            </p>
+            <figure
+              className={`flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+            >
               <MarketingImage
                 image={MARKETING_IMAGES.founderPhoto}
-                sizes="(max-width: 1024px) 92vw, 384px"
-                className="w-full rounded-3xl object-cover shadow-lg"
+                sizes="(max-width: 1024px) 92vw, 480px"
+                className="aspect-[16/10] w-full object-cover object-top"
               />
-              <figcaption className="mt-3 text-center text-sm text-slate-500">
-                Temitope F. Adekunle
-                <span className="mt-0.5 block text-xs text-slate-400">
-                  Health Educator & Mental Health Counselor, CareNBuddi
-                </span>
+              <figcaption className="p-5">
+                <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Health Educator &amp; Mental Health Counselor, CareNBuddi
+                </p>
               </figcaption>
             </figure>
           </Reveal>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST_POINTS.map((point) => (
+            <div
+              key={point.label}
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                <point.Icon className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-medium text-slate-700">{point.label}</span>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ---------------------------------------------------- our vision */}
+      <Section
+        id="our-vision"
+        eyebrow="Our vision"
+        title="What if care could come closer to you?"
+        lede="We envision a healthcare experience where distance doesn't have to be the first barrier."
+      >
+        <div className="mt-10 grid items-center gap-10 lg:grid-cols-2">
+          <Reveal>
+            <MarketingImage
+              image={MARKETING_IMAGES.patientInHospital}
+              sizes="(max-width: 1024px) 92vw, 560px"
+              className="w-full rounded-3xl object-cover shadow-lg"
+            />
+          </Reveal>
           <Reveal delay={80}>
-            <p className="text-lg leading-relaxed text-slate-600">
-              Too many people still lose track of their own care &mdash; which clinic to go to,
-              when the next appointment is, what the results actually said. We think that should
-              not depend on having one reliable phone and one free afternoon.
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-slate-600">
-              So CareNBuddi is built mobile-first, works on ordinary phones, keeps working when
-              the network is weak, and speaks English, Yoruba, Hausa and Igbo. Patients, families
-              and providers all use the same platform, so the people looking after you are not
-              working from a different version of the truth.
-            </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-              {[
-                "Works on any modern phone",
-                "Offline-capable after first load",
-                "Four languages from day one",
-                "No payment needed to get started",
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700"
-                >
-                  <LanguageIcon className="h-4 w-4 shrink-0 text-brand-700" />
-                  {item}
+            <ul className="space-y-3.5">
+              {VISION_LINES.map((line) => (
+                <li key={line} className="flex items-start gap-3 text-slate-700">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-800"
+                  >
+                    <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" aria-hidden>
+                      <path
+                        d="m5 10.5 3.2 3.2L15 7"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span className="text-[15px] leading-relaxed">{line}</span>
                 </li>
               ))}
             </ul>
+            <p className="mt-6 text-lg font-semibold text-slate-900">
+              CareNBuddi is building that bridge.
+            </p>
           </Reveal>
+        </div>
+
+        {/* ------------------------------------------- the care flow */}
+        <Reveal delay={60}>
+          <div className="mt-12 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-0">
+            {VISION_FLOW.map((node, i) => (
+              <div key={node.label} className="flex flex-col items-center sm:flex-row">
+                <div
+                  className={`w-full rounded-2xl border bg-white px-5 py-5 text-center shadow-sm sm:w-52 ${
+                    node.logo ? "border-brand-300" : "border-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-xl ${
+                      node.logo ? "" : "bg-brand-50 text-brand-700"
+                    }`}
+                  >
+                    {node.logo ? (
+                      <LogoMark className="h-12 w-12 rounded-xl" />
+                    ) : (
+                      <node.Icon className="h-5 w-5" />
+                    )}
+                  </span>
+                  <p className="mt-2.5 text-sm font-semibold text-slate-900">{node.label}</p>
+                </div>
+                {i < VISION_FLOW.length - 1 ? (
+                  <span aria-hidden className="mx-auto my-1 flex h-5 w-5 items-center justify-center text-brand-500 sm:mx-3 sm:my-0">
+                    <ChevronRightIcon className="hidden h-5 w-5 sm:block" />
+                    <ChevronDownIcon className="h-5 w-5 sm:hidden" />
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+
+        <div className="mx-auto mt-12 max-w-xl text-center">
+          <p className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Care, connected.
+          </p>
+          <div className="mt-5 flex justify-center">
+            <CtaLink href="/onboarding">Get Started</CtaLink>
+          </div>
         </div>
       </Section>
 
