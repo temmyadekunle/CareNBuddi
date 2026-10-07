@@ -521,8 +521,10 @@ export default function LandingPage() {
         tone="tint"
       >
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <Reveal className="flex h-full flex-col gap-6">
-            <div className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}>
+          <Reveal className="h-full">
+            <div
+              className={`flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
+            >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                 <BookIcon className="h-5 w-5" />
               </span>
@@ -538,35 +540,24 @@ export default function LandingPage() {
                 a patient reaches the hospital.
               </p>
             </div>
-            <div className="flex flex-1 items-center rounded-2xl bg-brand-900 p-6">
-              <p className="text-lg font-semibold leading-snug text-white">
-                &ldquo;We don&apos;t believe technology should replace human care. We believe it
-                should help people reach it.&rdquo;
-              </p>
-            </div>
           </Reveal>
 
-          <Reveal delay={80} className="flex h-full flex-col gap-6">
-            <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base">
-              CareNBuddi uses technology to help people connect with healthcare, manage their care
-              and find the right next step &mdash; whether they are at home, working remotely,
-              travelling, or simply trying to navigate the healthcare system.
-            </p>
-            <figure
-              className={`flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+          <Reveal delay={80} className="h-full">
+            <div
+              className={`flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${CARD}`}
             >
-              <MarketingImage
-                image={MARKETING_IMAGES.founderPhoto}
-                sizes="(max-width: 1024px) 92vw, 480px"
-                className="aspect-[16/10] w-full object-cover object-top"
-              />
-              <figcaption className="p-5">
-                <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  Health Educator &amp; Mental Health Counselor, CareNBuddi
+              <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base">
+                CareNBuddi uses technology to help people connect with healthcare, manage their care
+                and find the right next step &mdash; whether they are at home, working remotely,
+                travelling, or simply trying to navigate the healthcare system.
+              </p>
+              <div className="mt-5 rounded-xl bg-brand-900 p-5">
+                <p className="text-base font-semibold leading-snug text-white sm:text-lg">
+                  &ldquo;We don&apos;t believe technology should replace human care. We believe it
+                  should help people reach it.&rdquo;
                 </p>
-              </figcaption>
-            </figure>
+              </div>
+            </div>
           </Reveal>
         </div>
 
@@ -583,6 +574,27 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+      </Section>
+
+      {/* ------------------------------------------------------ founder */}
+      <Section id="founder" eyebrow="Our founder" title="Meet the founder">
+        <Reveal>
+          <figure
+            className={`mx-auto mt-10 max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+          >
+            <MarketingImage
+              image={MARKETING_IMAGES.founderPhoto}
+              sizes="(max-width: 640px) 92vw, 384px"
+              className="aspect-[4/5] w-full object-cover object-top"
+            />
+            <figcaption className="p-5 text-center">
+              <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
+              <p className="mt-0.5 text-sm text-slate-500">
+                Health Educator &amp; Mental Health Counselor, CareNBuddi
+              </p>
+            </figcaption>
+          </figure>
+        </Reveal>
       </Section>
 
       {/* ---------------------------------------------------- our vision */}
