@@ -173,6 +173,11 @@ const PRODUCT_FACTS = [
   { label: "Works on", value: "Any modern phone, online or offline" },
 ];
 
+const APP_STORES = [
+  { name: "Google Play", icon: "/brand/google-play.svg" },
+  { name: "App Store", icon: "/brand/app-store.svg" },
+];
+
 const TRUST_POINTS = [
   { label: "Works on any modern phone", Icon: PhoneIcon },
   { label: "Offline-capable after first load", Icon: RefreshIcon },
@@ -477,6 +482,29 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 text-left">
             <AppDownload />
+            <div className="mt-8 flex flex-wrap items-start justify-center gap-4">
+              {APP_STORES.map((store) => (
+                <div
+                  key={store.name}
+                  className="flex w-44 flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={store.icon}
+                    alt={`${store.name} logo`}
+                    className="h-9 w-9"
+                    width={36}
+                    height={36}
+                  />
+                  <span className="mt-2.5 text-sm font-semibold text-slate-900">
+                    {store.name}
+                  </span>
+                  <span className="mt-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                    Coming soon
+                  </span>
+                </div>
+              ))}
+            </div>
             <InstallSteps />
           </div>
         </div>

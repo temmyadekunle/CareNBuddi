@@ -49,10 +49,10 @@ export function SiteNav() {
           </ul>
           <div className="flex items-center gap-2.5">
             <Link
-              href="/auth/sign-in"
+              href="/careers"
               className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-brand-700"
             >
-              Log In
+              Careers
             </Link>
             <Link
               href="/onboarding"
@@ -93,11 +93,11 @@ export function SiteNav() {
             </ul>
             <div className="mt-3 grid grid-cols-2 gap-2.5 pb-2">
               <Link
-                href="/auth/sign-in"
+                href="/careers"
                 onClick={() => setOpen(false)}
                 className="rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700"
               >
-                Log In
+                Careers
               </Link>
               <Link
                 href="/onboarding"
