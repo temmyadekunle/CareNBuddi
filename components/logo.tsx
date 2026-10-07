@@ -4,7 +4,7 @@ export function LogoMark({ className }: { className?: string }) {
     <img
       src="/brand/mark.svg"
       alt="CareNBuddi logo"
-      className={`shrink-0 rounded-lg bg-white object-contain ${className ?? ""}`}
+      className={`shrink-0 object-contain ${className ?? ""}`}
       width={48}
       height={48}
     />
@@ -13,11 +13,13 @@ export function LogoMark({ className }: { className?: string }) {
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
-      <LogoMark className="h-12 w-12" />
-      <span className="whitespace-nowrap text-xl font-semibold tracking-tight text-slate-900">
-        CareNBuddi
-      </span>
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/logo-full.svg"
+      alt="CareNBuddi — Your Health, Your Buddi."
+      className={`h-auto w-auto ${className ?? ""}`}
+      width={460}
+      height={120}
+    />
   );
 }

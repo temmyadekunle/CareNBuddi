@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CloseIcon, MenuIcon } from "@/components/icons";
-import { LogoMark } from "@/components/logo";
+import { Logo } from "@/components/logo";
 
 const LINKS = [
   { href: "#top", label: "Home" },
@@ -33,9 +33,8 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" aria-label="CareNBuddi home" className="flex items-center gap-2.5">
-          <LogoMark className="h-9 w-9" />
-          <span className="text-lg font-semibold tracking-tight text-slate-900">CareNBuddi</span>
+        <Link href="/" aria-label="CareNBuddi home">
+          <Logo className="h-[46px] w-auto md:h-[60px]" />
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-7 lg:flex">

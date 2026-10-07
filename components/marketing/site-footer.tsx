@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LogoMark } from "@/components/logo";
+import { Logo } from "@/components/logo";
 
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
@@ -88,11 +88,8 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
-            <Link href="/" aria-label="CareNBuddi home" className="flex items-center gap-2.5">
-              <LogoMark className="h-9 w-9" />
-              <span className="text-lg font-semibold tracking-tight text-slate-900">
-                CareNBuddi
-              </span>
+            <Link href="/" aria-label="CareNBuddi home">
+              <Logo className="h-[46px] w-auto md:h-[60px]" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-slate-600">Healthcare, connected.</p>
             <Link
