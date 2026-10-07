@@ -16,6 +16,7 @@ import {
   PhoneIcon,
   RefreshIcon,
   SearchIcon,
+  SettingsIcon,
   ShieldIcon,
   StethoscopeIcon,
   UserIcon,
@@ -191,6 +192,12 @@ const VISION_FLOW = [
   { label: "CareNBuddi", Icon: HeartPulseIcon, logo: true },
   { label: "Healthcare Provider", Icon: StethoscopeIcon, logo: false },
 ] as const;
+
+const TEAM_ROLES = [
+  { title: "CTO", name: "", Icon: SettingsIcon },
+  { title: "Board Advisor", name: "", Icon: ShieldIcon },
+  { title: "Admin", name: "", Icon: UserIcon },
+];
 
 export default function LandingPage() {
   return (
@@ -576,27 +583,6 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ------------------------------------------------------ founder */}
-      <Section id="founder" eyebrow="Our founder" title="Meet the founder">
-        <Reveal>
-          <figure
-            className={`mx-auto mt-10 max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
-          >
-            <MarketingImage
-              image={MARKETING_IMAGES.founderPhoto}
-              sizes="(max-width: 640px) 92vw, 384px"
-              className="aspect-[4/5] w-full object-cover object-top"
-            />
-            <figcaption className="p-5 text-center">
-              <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
-              <p className="mt-0.5 text-sm text-slate-500">
-                Health Educator &amp; Mental Health Counselor, CareNBuddi
-              </p>
-            </figcaption>
-          </figure>
-        </Reveal>
-      </Section>
-
       {/* ---------------------------------------------------- our vision */}
       <Section
         id="our-vision"
@@ -695,6 +681,50 @@ export default function LandingPage() {
           <Reveal>
             <Testimonials />
           </Reveal>
+        </div>
+      </Section>
+
+      {/* ------------------------------------------------- meet the team */}
+      <Section id="team" eyebrow="The team" title="Meet Our Team">
+        <div className="mt-10 space-y-6">
+          <Reveal>
+            <figure
+              className={`mx-auto max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${CARD}`}
+            >
+              <MarketingImage
+                image={MARKETING_IMAGES.founderPhoto}
+                sizes="(max-width: 640px) 92vw, 384px"
+                className="aspect-[4/5] w-full object-cover object-top"
+              />
+              <figcaption className="p-5 text-center">
+                <p className="text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
+                <p className="mt-0.5 text-sm font-medium text-brand-700">
+                  CEO / Co-founder, CareNBuddi
+                </p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Health Educator &amp; Mental Health Counselor
+                </p>
+              </figcaption>
+            </figure>
+          </Reveal>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {TEAM_ROLES.map((role, i) => (
+              <Reveal key={role.title} delay={i * 70}>
+                <div
+                  className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                    <role.Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-3 text-base font-semibold text-slate-900">{role.title}</h3>
+                  {role.name ? (
+                    <p className="mt-0.5 text-sm text-slate-500">{role.name}</p>
+                  ) : null}
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </Section>
 
