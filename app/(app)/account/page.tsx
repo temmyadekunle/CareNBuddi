@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   Field,
+  ListRow,
   Screen,
   SectionHeader,
   Tabs,
@@ -243,6 +244,16 @@ export default function AccountPage() {
           </Card>
         </>
       )}
+
+      <Card padded={false} className="mt-3 overflow-hidden">
+        <ListRow
+          href="/auth/forgot-password"
+          icon={<LockIcon className="h-5 w-5" />}
+          tone="slate"
+          title={t("prof_change_password", "Change password")}
+          subtitle={t("prof_change_password_d", "We email you a secure reset link")}
+        />
+      </Card>
 
       <Card className="mt-3">
         <div className="flex items-center gap-1.5">

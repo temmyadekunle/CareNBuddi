@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   AvatarLarge,
@@ -8,32 +9,53 @@ import {
   BottomSheet,
   Button,
   Card,
+  ConfirmDialog,
   EmptyState,
   Field,
-  inputClass,
   ListRow,
   Screen,
-  SectionHeader,
+  Segmented,
+  inputClass,
   useToast,
 } from "@/components/app-ui";
 import {
+  ActivityIcon,
+  AlertIcon,
+  BellIcon,
   CameraIcon,
-  CalendarIcon,
-  EditIcon,
+  CardIcon,
+  ChatIcon,
   EmergencyIcon,
+  HelpIcon,
+  InfoIcon,
+  LanguageIcon,
+  LockIcon,
+  LogOutIcon,
+  MessageIcon,
   PhoneIcon,
+  SearchIcon,
+  ShieldIcon,
+  StethoscopeIcon,
+  TrashIcon,
   UserIcon,
+  WalletIcon,
 } from "@/components/icons";
 import {
+  DEFAULT_NOTIFICATIONS,
+  NOTIFICATIONS_KEY,
   PASSPORT_DEFAULTS,
-  ProfileSettings,
+  PrivacyBlock,
+  SwitchRow,
+  UNITS_KEY,
+  type NotificationPrefs,
   type PassportPrefs,
+  type Units,
 } from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
 import { fileToSquareDataUrl, readPhoto, removePhoto, savePhoto } from "@/lib/profile-photo";
+import { useCloud } from "@/lib/supabase/cloud";
 import {
   KEYS,
-  seedBookings,
   seedUsers,
   useSession,
   useStoredCollection,
@@ -59,20 +81,39 @@ const ROLE_FALLBACK = {
   admin: "CareNBuddi team",
 } as const;
 
+const SUPPORT_EMAIL = "support@healthlink.ng";
+
 function roleTone(role: Role) {
   return ROLE_TONE[role] ?? "slate";
 }
 
 export default function ProfilePage() {
   const t = useT();
+  const router = useRouter();
   const { push } = useToast();
-  const [session] = useSession();
+  const cloud = useCloud();
+  const [session, setSession] = useSession();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
-  const [bookings] = useStoredCollection(KEYS.bookings, seedBookings);
-  const [passport, setPassport] = useStoredValue<PassportPrefs>(KEYS.passport, PASSPORT_DEFAULTS);
+  const [passport, setPassport] = useStoredValue<PassportPrefs>(
+    KEYS.passport,
+    PASSPORT_DEFAULTS,
+  );
+  const [units, setUnits] = useStoredValue<Units>(UNITS_KEY, "metric");
+  const [notifications, setNotifications] = useStoredValue<NotificationPrefs>(
+    NOTIFICATIONS_KEY,
+    DEFAULT_NOTIFICATIONS,
+  );
 
-  const [editOpen, setEditOpen] = useState(false);
+  const [personalOpen, setPersonalOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [soon, setSoon] = useState<null | "payments" | "wallet">(null);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoState, setPhotoState] = useState(() => ({
     userId: session.userId,
@@ -83,7 +124,6 @@ export default function ProfilePage() {
   const [emergencyDraft, setEmergencyDraft] = useState({ contact: "", phone: "" });
 
   const me = users.find((u) => u.id === session.userId);
-  const myBookings = bookings.filter((b) => b.userId === session.userId);
 
   /**
    * The photo lives in device storage rather than in React state, because a
@@ -135,9 +175,9 @@ export default function ProfilePage() {
     }
   };
 
-  const openProfileSheet = () => {
+  const openPersonalSheet = () => {
     setDraft({ name: me?.name ?? "", phone: me?.phone ?? "" });
-    setEditOpen(true);
+    setPersonalOpen(true);
   };
 
   const saveProfile = () => {
@@ -149,7 +189,7 @@ export default function ProfilePage() {
         u.id === me.id ? { ...u, name: name || u.name, phone: phone || undefined } : u,
       ),
     );
-    setEditOpen(false);
+    setPersonalOpen(false);
     push(t("prof_saved", "Profile updated"), "success");
   };
 
@@ -172,6 +212,34 @@ export default function ProfilePage() {
   };
 
   const telHref = `tel:${(passport.emergencyPhone ?? "").replace(/[^\d+]/g, "")}`;
+
+  const goFromHelp = (href: string) => {
+    setHelpOpen(false);
+    router.push(href);
+  };
+
+  const mailSupport = () => {
+    setHelpOpen(false);
+    window.location.href = `mailto:${SUPPORT_EMAIL}`;
+  };
+
+  const signOut = async () => {
+    setSigningOut(true);
+    push(t("a_syncing", "Syncing…"), "info");
+    try {
+      if (cloud.enabled) await cloud.signOut();
+    } catch {
+      // the local session is cleared either way
+    } finally {
+      setSigningOut(false);
+    }
+    setSession((prev) => ({ ...prev, userId: null }));
+    setConfirmOut(false);
+    push(t("prof_signed_out", "You are signed out"), "info");
+    router.push("/auth/sign-in");
+  };
+
+  const menuCard = "mt-3 overflow-hidden divide-y divide-slate-100";
 
   return (
     <Screen>
@@ -211,17 +279,17 @@ export default function ProfilePage() {
         </div>
       ) : (
         <>
-          {/* profile header ------------------------------------------------- */}
+          {/* identity ---------------------------------------------------- */}
           <Card className="mt-5">
-            <div className="flex items-start gap-3">
-              <div className="shrink-0">
-                <AvatarLarge name={me.name} src={photo} />
+            <div className="flex flex-col items-center pb-1 pt-2 text-center">
+              <div className="relative">
+                <AvatarLarge name={me.name} src={photo} size={96} />
                 <button
                   type="button"
                   onClick={pickPhoto}
                   disabled={photoBusy}
                   aria-label={t("prof_change_photo", "Change photo")}
-                  className="tap -mt-3 ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-brand-700 disabled:opacity-60"
+                  className="tap absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-brand-700 disabled:opacity-60"
                 >
                   <CameraIcon className="h-4 w-4" />
                 </button>
@@ -235,119 +303,142 @@ export default function ProfilePage() {
                   aria-hidden
                 />
               </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate text-base font-bold tracking-tight text-slate-900">
-                  {me.name}
-                </h2>
-                <p className="mt-0.5 truncate text-xs text-slate-500">{me.email}</p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
-                  {me.phone || t("prof_no_phone", "No phone number added")}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <Badge tone={roleTone(me.role)}>
-                    {t(ROLE_LABEL_KEY[me.role], ROLE_FALLBACK[me.role])}
-                  </Badge>
-                  <Badge tone="slate">{me.lang.toUpperCase()}</Badge>
-                </div>
+              <h2 className="mt-3 truncate text-lg font-bold tracking-tight text-slate-900">
+                {me.name}
+              </h2>
+              <p className="mt-0.5 truncate text-xs text-slate-500">{me.email}</p>
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                <Badge tone={roleTone(me.role)}>
+                  {t(ROLE_LABEL_KEY[me.role], ROLE_FALLBACK[me.role])}
+                </Badge>
+                <Badge tone="slate">{me.lang.toUpperCase()}</Badge>
               </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button tone="secondary" onClick={openProfileSheet}>
-                <EditIcon className="h-4 w-4" />
-                {t("prof_edit", "Edit profile")}
-              </Button>
-              {photo ? (
-                <Button tone="secondary" onClick={clearPhoto}>
-                  {t("prof_photo_remove", "Remove photo")}
-                </Button>
-              ) : null}
-              <Link href="/account" className="tap inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                {t("prof_account_sync", "Account & sync")}
-              </Link>
             </div>
           </Card>
 
-          {/* emergency contact ---------------------------------------------- */}
-          <SectionHeader title={t("prof_emergency", "Emergency contact")} />
-          <Card className="border-rose-200/70">
-            <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-                <EmergencyIcon className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">
-                  {passport.emergencyContact ||
-                    t("prof_no_emergency", "No emergency contact yet")}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
-                  {passport.emergencyPhone ||
-                    t("prof_no_emergency_d", "Add someone a responder can call for you")}
-                </p>
-              </div>
-            </div>
-            <div className="mt-3.5 flex flex-wrap gap-2">
-              {passport.emergencyPhone ? (
-                <a
-                  href={telHref}
-                  className="tap inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700"
-                >
-                  <PhoneIcon className="h-4 w-4" />
-                  {t("prof_call", "Call")}
-                </a>
-              ) : null}
-              <Button tone="secondary" onClick={openEmergencySheet}>
-                <EditIcon className="h-4 w-4" />
-                {t("pp_edit", "Edit")}
-              </Button>
-              <Link
-                href="/passport"
-                className="tap inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                {t("pp_title", "Health Passport")}
-              </Link>
-            </div>
-          </Card>
-
-          {/* my requests ----------------------------------------------------- */}
-          <SectionHeader
-            title={t("pr_requests", "My requests")}
-            action={t("prof_view_all", "View all")}
-            href="/appointments"
-          />
-          <Card padded={false} className="overflow-hidden">
+          {/* menu ---------------------------------------------------------- */}
+          <Card padded={false} className={`mt-4 ${menuCard}`}>
             <ListRow
-              href="/appointments"
-              icon={<CalendarIcon className="h-5 w-5" />}
+              onClick={openPersonalSheet}
+              icon={<UserIcon className="h-5 w-5" />}
+              tone="brand"
+              title={t("prof_personal", "Personal Information")}
+            />
+            <ListRow
+              href="/account"
+              icon={<LockIcon className="h-5 w-5" />}
+              tone="slate"
+              title={t("prof_acct_sec", "Account & Security")}
+            />
+            <ListRow
+              onClick={() => setSoon("payments")}
+              icon={<CardIcon className="h-5 w-5" />}
               tone="green"
-              title={
-                myBookings.length === 1
-                  ? t("prof_bookings_1", "1 booking request")
-                  : `${myBookings.length} ${t("prof_bookings_n", "booking requests")}`
-              }
-              subtitle={
-                myBookings.length === 0
-                  ? t("pr_no_requests", "No booking requests yet.")
-                  : t(
-                      "prof_bookings_d",
-                      "Track the status of every visit you have requested.",
-                    )
-              }
+              title={t("prof_payments", "Payment Methods")}
+            />
+            <ListRow
+              onClick={() => setSoon("wallet")}
+              icon={<WalletIcon className="h-5 w-5" />}
+              tone="green"
+              title={t("prof_wallet", "CareNBuddi Wallet")}
+            />
+            <ListRow
+              onClick={() => setNotifOpen(true)}
+              icon={<BellIcon className="h-5 w-5" />}
+              tone="coral"
+              title={t("prof_notifications", "Notifications")}
+            />
+            <ListRow
+              onClick={() => setPrivacyOpen(true)}
+              icon={<ShieldIcon className="h-5 w-5" />}
+              tone="green"
+              title={t("prof_privacy_consent", "Privacy & Consent")}
+            />
+            <ListRow
+              onClick={openEmergencySheet}
+              icon={<EmergencyIcon className="h-5 w-5" />}
+              tone="rose"
+              title={t("prof_emerg_contacts", "Emergency Contacts")}
+            />
+            <ListRow
+              href="/care-circle"
+              icon={<ActivityIcon className="h-5 w-5" />}
+              tone="brand"
+              title={t("n_carecircle", "Care Circle")}
             />
           </Card>
 
-          <ProfileSettings />
+          <Card padded={false} className={menuCard}>
+            {me.role === "provider" ? (
+              <ListRow
+                href="/provider"
+                icon={<StethoscopeIcon className="h-5 w-5" />}
+                tone="green"
+                title={t("prof_provider_dash", "Provider dashboard")}
+              />
+            ) : (
+              <ListRow
+                href="/provider/register"
+                icon={<StethoscopeIcon className="h-5 w-5" />}
+                tone="green"
+                title={t("prof_become_provider", "Become a Provider")}
+              />
+            )}
+          </Card>
+
+          <Card padded={false} className={menuCard}>
+            <ListRow
+              onClick={() => setHelpOpen(true)}
+              icon={<HelpIcon className="h-5 w-5" />}
+              tone="slate"
+              title={t("prof_help_support", "Help & Support")}
+            />
+            <ListRow
+              onClick={() => setAboutOpen(true)}
+              icon={<InfoIcon className="h-5 w-5" />}
+              tone="slate"
+              title={t("prof_about", "About CareNBuddi")}
+            />
+          </Card>
+
+          <Card padded={false} className={`mb-2 ${menuCard}`}>
+            <ListRow
+              onClick={() => {
+                if (!signingOut) setConfirmOut(true);
+              }}
+              icon={<LogOutIcon className="h-5 w-5" />}
+              tone="rose"
+              chevron={false}
+              title={t("prof_logout", "Log Out")}
+            />
+          </Card>
         </>
       )}
 
-      {/* edit profile sheet ------------------------------------------------- */}
+      {/* personal information sheet ---------------------------------------- */}
       <BottomSheet
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        title={t("prof_edit", "Edit profile")}
-        footer={<Button full onClick={saveProfile}>{t("c_save", "Save")}</Button>}
+        open={personalOpen}
+        onClose={() => setPersonalOpen(false)}
+        title={t("prof_personal", "Personal Information")}
+        footer={
+          <Button full onClick={saveProfile}>
+            {t("c_save", "Save")}
+          </Button>
+        }
       >
         <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button tone="secondary" onClick={pickPhoto} disabled={photoBusy}>
+              <CameraIcon className="h-4 w-4" />
+              {photo ? t("prof_photo_change", "Change photo") : t("prof_photo_add", "Add photo")}
+            </Button>
+            {photo ? (
+              <Button tone="secondary" onClick={clearPhoto}>
+                <TrashIcon className="h-4 w-4" />
+                {t("prof_photo_remove", "Remove photo")}
+              </Button>
+            ) : null}
+          </div>
           <Field label={t("a_name", "Full name")}>
             <input
               value={draft.name}
@@ -369,18 +460,174 @@ export default function ProfilePage() {
               className={`${inputClass} min-h-11`}
             />
           </Field>
-          <Field label={t("a_email", "Email")} hint={t("prof_email_fixed", "Email cannot be changed here")}>
-            <input value={me?.email ?? ""} readOnly className={`${inputClass} min-h-11 opacity-70`} />
+          <Field
+            label={t("a_email", "Email")}
+            hint={t("prof_email_fixed", "Email cannot be changed here")}
+          >
+            <input
+              value={me?.email ?? ""}
+              readOnly
+              className={`${inputClass} min-h-11 opacity-70`}
+            />
           </Field>
+
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-sm font-semibold text-slate-900">{t("prof_units", "Units")}</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {t("prof_units_d", "How weight, height and temperature are shown")}
+            </p>
+            <div className="mt-2.5">
+              <Segmented<Units>
+                options={[
+                  { value: "metric", label: t("prof_units_metric", "Metric (kg)") },
+                  { value: "imperial", label: t("prof_units_imperial", "Imperial (lb)") },
+                ]}
+                value={units}
+                onChange={setUnits}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 pt-1">
+            <ListRow
+              onClick={() => {
+                setPersonalOpen(false);
+                router.push("/account");
+              }}
+              icon={<LanguageIcon className="h-5 w-5" />}
+              tone="brand"
+              title={t("a_language", "Language")}
+              subtitle={t("a_language_d", "Change the language of the dashboard and health content.")}
+            />
+          </div>
         </div>
       </BottomSheet>
 
-      {/* emergency contact sheet -------------------------------------------- */}
+      {/* coming soon sheet -------------------------------------------------- */}
+      <BottomSheet
+        open={soon !== null}
+        onClose={() => setSoon(null)}
+        title={
+          soon === "payments"
+            ? t("prof_payments", "Payment Methods")
+            : t("prof_wallet", "CareNBuddi Wallet")
+        }
+        footer={
+          <Button full tone="secondary" onClick={() => setSoon(null)}>
+            {t("c_close", "Close")}
+          </Button>
+        }
+      >
+        <div className="flex flex-col items-center py-4 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            {soon === "payments" ? (
+              <CardIcon className="h-7 w-7" />
+            ) : (
+              <WalletIcon className="h-7 w-7" />
+            )}
+          </span>
+          <p className="mt-3 text-sm font-semibold text-slate-900">
+            {t("prof_coming_soon", "Coming soon")}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {soon === "payments"
+              ? t("prof_payments_soon", "Saving cards and paying for services is on the way.")
+              : t("prof_wallet_soon", "Your CareNBuddi Wallet balance will live here.")}
+          </p>
+        </div>
+      </BottomSheet>
+
+      {/* notifications sheet ------------------------------------------------ */}
+      <BottomSheet
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        title={t("prof_notifications", "Notifications")}
+        footer={
+          <Button full onClick={() => setNotifOpen(false)}>
+            {t("c_done", "Done")}
+          </Button>
+        }
+      >
+        <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
+          <SwitchRow
+            icon={<BellIcon className="h-5 w-5" />}
+            tone="brand"
+            title={t("prof_notif_appt", "Appointment reminders")}
+            subtitle={t("prof_notif_appt_d", "A nudge before each booked visit")}
+            checked={notifications.appointments}
+            onChange={(next) => setNotifications((prev) => ({ ...prev, appointments: next }))}
+          />
+          <SwitchRow
+            icon={<AlertIcon className="h-5 w-5" />}
+            tone="amber"
+            title={t("prof_notif_meds", "Medication reminders")}
+            subtitle={t("prof_notif_meds_d", "Prompts for the reminders you turn on")}
+            checked={notifications.medication}
+            onChange={(next) => setNotifications((prev) => ({ ...prev, medication: next }))}
+          />
+          <SwitchRow
+            icon={<HelpIcon className="h-5 w-5" />}
+            tone="green"
+            title={t("prof_notif_tips", "Health tips")}
+            subtitle={t("prof_notif_tips_d", "Occasional prevention and screening advice")}
+            checked={notifications.tips}
+            onChange={(next) => setNotifications((prev) => ({ ...prev, tips: next }))}
+          />
+        </div>
+      </BottomSheet>
+
+      {/* privacy & consent sheet -------------------------------------------- */}
+      <BottomSheet
+        open={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+        title={t("prof_privacy_consent", "Privacy & Consent")}
+        footer={
+          <Button full onClick={() => setPrivacyOpen(false)}>
+            {t("c_done", "Done")}
+          </Button>
+        }
+      >
+        <div className="space-y-3">
+          <PrivacyBlock
+            icon={<PhoneIcon className="h-5 w-5" />}
+            tone="brand"
+            title={t("prof_privacy_local_title", "Stored on this device")}
+            body={t(
+              "prof_privacy_local_d",
+              "By default everything you type — bookings, journal, records, passport and preferences — is written to this phone's local storage only. It is never uploaded.",
+            )}
+          />
+          <PrivacyBlock
+            icon={<ShieldIcon className="h-5 w-5" />}
+            tone="green"
+            title={t("prof_privacy_cloud_title", "Cloud sync only if you connect an account")}
+            body={t(
+              "prof_privacy_cloud_d",
+              "When a CareNBuddi cloud account is connected, your records are encrypted in transit and synced so you can use the app on another device. Open Account & Security to connect or disconnect.",
+            )}
+          />
+          <PrivacyBlock
+            icon={<EmergencyIcon className="h-5 w-5" />}
+            tone="rose"
+            title={t("prof_privacy_share_title", "What providers see")}
+            body={t(
+              "prof_privacy_share_d",
+              "A provider only sees the name and phone you give them when you request a visit, plus whatever you choose to show from your Health Passport.",
+            )}
+          />
+        </div>
+      </BottomSheet>
+
+      {/* emergency contacts sheet -------------------------------------------- */}
       <BottomSheet
         open={emergencyOpen}
         onClose={() => setEmergencyOpen(false)}
-        title={t("prof_emergency", "Emergency contact")}
-        footer={<Button full onClick={saveEmergency}>{t("c_save", "Save")}</Button>}
+        title={t("prof_emerg_contacts", "Emergency Contacts")}
+        footer={
+          <Button full onClick={saveEmergency}>
+            {t("c_save", "Save")}
+          </Button>
+        }
       >
         <div className="space-y-4">
           <Field label={t("pp_ec", "Emergency contact")}>
@@ -412,8 +659,104 @@ export default function ProfilePage() {
               "This is the number shown on your Health Passport emergency card.",
             )}
           </p>
+          {passport.emergencyPhone ? (
+            <a
+              href={telHref}
+              className="tap inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700"
+            >
+              <PhoneIcon className="h-4 w-4" />
+              {t("prof_call", "Call")}
+            </a>
+          ) : null}
         </div>
       </BottomSheet>
+
+      {/* help & support sheet ------------------------------------------------ */}
+      <BottomSheet
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        title={t("prof_help_support", "Help & Support")}
+        footer={
+          <Button full tone="secondary" onClick={() => setHelpOpen(false)}>
+            {t("c_close", "Close")}
+          </Button>
+        }
+      >
+        <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
+          <ListRow
+            onClick={() => goFromHelp("/emergency")}
+            icon={<EmergencyIcon className="h-5 w-5" />}
+            tone="rose"
+            title={t("em_title", "Get Help Now")}
+          />
+          <ListRow
+            onClick={() => goFromHelp("/ask")}
+            icon={<ChatIcon className="h-5 w-5" />}
+            tone="brand"
+            title={t("n_ask", "Ask")}
+          />
+          <ListRow
+            onClick={mailSupport}
+            icon={<MessageIcon className="h-5 w-5" />}
+            tone="slate"
+            title={t("prof_contact_support", "Contact support")}
+            subtitle={SUPPORT_EMAIL}
+          />
+          <ListRow
+            onClick={() => goFromHelp("/find-care")}
+            icon={<SearchIcon className="h-5 w-5" />}
+            tone="green"
+            title={t("n_find", "Find care")}
+          />
+        </div>
+      </BottomSheet>
+
+      {/* about sheet --------------------------------------------------------- */}
+      <BottomSheet
+        open={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+        title={t("prof_about", "About CareNBuddi")}
+        footer={
+          <Button full tone="secondary" onClick={() => setAboutOpen(false)}>
+            {t("c_close", "Close")}
+          </Button>
+        }
+      >
+        <div className="flex flex-col items-center py-2 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/mark.png"
+            alt=""
+            width={64}
+            height={64}
+            className="h-16 w-16 rounded-2xl"
+          />
+          <p className="mt-3 text-base font-bold text-slate-900">CareNBuddi</p>
+          <p className="mt-0.5 text-sm font-semibold text-brand-700">
+            {t("a_tagline", "Your Health, Your Buddi.")}
+          </p>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            {t(
+              "prof_about_d",
+              "Find the care you need, connect with healthcare professionals, and manage your health journey — all in one place.",
+            )}
+          </p>
+        </div>
+      </BottomSheet>
+
+      {/* sign out ------------------------------------------------------------ */}
+      <ConfirmDialog
+        open={confirmOut}
+        title={t("prof_signout_title", "Sign out of CareNBuddi?")}
+        body={t(
+          "prof_signout_body",
+          "Your saved records stay on this device. You can sign back in at any time.",
+        )}
+        confirmLabel={t("prof_logout", "Log Out")}
+        cancelLabel={t("c_cancel", "Cancel")}
+        onConfirm={() => void signOut()}
+        onCancel={() => setConfirmOut(false)}
+      />
     </Screen>
   );
 }

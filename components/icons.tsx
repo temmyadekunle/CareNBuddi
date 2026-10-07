@@ -217,6 +217,16 @@ export function HelpIcon(props: IconProps) {
   );
 }
 
+export function InfoIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11.2V16" />
+      <path d="M12 8h.01" />
+    </Base>
+  );
+}
+
 export function SettingsIcon(props: IconProps) {
   return (
     <Base {...props}>
@@ -312,6 +322,16 @@ export function WalletIcon(props: IconProps) {
     <Base {...props}>
       <rect x="3.5" y="6" width="17" height="12.5" rx="3" />
       <path d="M3.5 9.5h17M16 14h1.5" />
+    </Base>
+  );
+}
+
+export function CardIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="2.5" y="5.5" width="19" height="13.5" rx="2.5" />
+      <path d="M2.5 10h19" />
+      <path d="M6.5 14.5h4" />
     </Base>
   );
 }
