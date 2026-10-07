@@ -716,11 +716,11 @@ export default function LandingPage() {
             <div
               className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
             >
-              <span className="h-32 w-32 overflow-hidden rounded-full bg-brand-100">
+              <span className="block aspect-square w-full overflow-hidden rounded-2xl bg-brand-100">
                 <MarketingImage
                   image={MARKETING_IMAGES.founderPhoto}
-                  sizes="128px"
-                  className="h-32 w-32 object-cover object-top"
+                  sizes="280px"
+                  className="h-full w-full object-cover"
                 />
               </span>
               <p className="mt-4 text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
@@ -738,8 +738,8 @@ export default function LandingPage() {
               <div
                 className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
               >
-                <span className="flex h-32 w-32 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                  <role.Icon className="h-10 w-10" />
+                <span className="flex aspect-square w-full items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                  <role.Icon className="h-14 w-14" />
                 </span>
                 <p className="mt-4 text-base font-semibold text-slate-900">{role.title}</p>
                 <p className="mt-0.5 text-sm text-slate-500">CareNBuddi</p>

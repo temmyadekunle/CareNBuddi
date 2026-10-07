@@ -165,13 +165,14 @@ export const MARKETING_IMAGES = {
 
   /**
    * Our own founder photograph, shipped from /public/brand/founder.jpg
-   * (source: Assets/Founder.jpeg).
+   * (source: Assets/Founder.jpeg), pre-cropped to a square around the face
+   * for the Meet Our Team card.
    */
   founderPhoto: localBrandImage({
     path: "/brand/founder.jpg",
     alt: "The founder of CareNBuddi",
-    width: 853,
-    height: 1280,
+    width: 520,
+    height: 520,
     feature: "Who we are",
   }),
 
