@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     locale: "en_NG",
     images: [
       {
-        url: "/icon-512.png",
-        width: 512,
-        height: 512,
-        alt: "CareNBuddi",
+        url: "/brand/logo-real.jpg",
+        width: 1080,
+        height: 720,
+        alt: "CareNBuddi — Your Health, Your Buddi.",
       },
     ],
   },
@@ -44,12 +44,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/icon-512.png"],
+    images: ["/brand/logo-real.jpg"],
   },
   robots: { index: true, follow: true },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon-16.png", type: "image/png", sizes: "16x16" },
       { url: "/icon-32.png", type: "image/png", sizes: "32x32" },
       { url: "/icon-48.png", type: "image/png", sizes: "48x48" },
