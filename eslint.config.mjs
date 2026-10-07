@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Android wrapper embeds a copy of the built app (out/) as WebView
+    // assets; those minified chunks are not lint targets.
+    "android/**",
   ]),
 ]);
 

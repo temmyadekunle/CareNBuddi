@@ -101,27 +101,20 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Page navigations: show the cached copy straight away when the network is
-  // slow or offline, and pick up a new deploy in the background.
+  // Page navigations: go to the network first so the user always gets the
+  // latest deploy, but never wait longer than NAV_TIMEOUT_MS — a slow or dead
+  // connection falls back to the cached copy instead of hanging the tap.
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
+        const fresh = await fetchWithTimeout(request, NAV_TIMEOUT_MS);
+        if (fresh) {
+          event.waitUntil(putInCache(request, fresh));
+          return fresh;
+        }
+
         const cached = await caches.match(request);
-        const fresh = fetchWithTimeout(request, NAV_TIMEOUT_MS);
-
-        if (cached) {
-          // Refresh the cache for next time, but do not make this load wait.
-          event.waitUntil(
-            fetchWithTimeout(request, NAV_TIMEOUT_MS).then((res) => putInCache(request, res)),
-          );
-          return cached;
-        }
-
-        const res = await fresh;
-        if (res) {
-          event.waitUntil(putInCache(request, res));
-          return res;
-        }
+        if (cached) return cached;
 
         const fallback = await caches.match(FALLBACK);
         return (

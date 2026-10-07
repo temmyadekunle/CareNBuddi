@@ -113,6 +113,17 @@ body {
   min-height: 100dvh;
 }
 
+/* Phone: the shell must be exactly one viewport tall. If it grows with the
+   content, the absolutely positioned tab bar and bottom sheets sit at the
+   end of the document instead of the bottom of the screen, and main's
+   overscroll-contain swallows touch scrolling because main never overflows. */
+@media (max-width: 767px) {
+  #app-shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
 /* ---------- motion ---------- */
 
 @keyframes sheet-in {
@@ -174,7 +185,13 @@ body {
 }
 
 .animate-fade-rise {
-  animation: fade-rise 260ms ease-out both;
+  /* backwards, not both: fill:both would keep transform:translateY(0) on the
+     element forever, and any transformed ancestor becomes the containing
+     block for absolute children — which pins BottomSheet/ConfirmDialog to
+     the bottom of the whole scrollable page instead of the bottom of the
+     screen. With backwards the transform is dropped once the animation
+     finishes, so overlays resolve to #app-shell again. */
+  animation: fade-rise 260ms ease-out backwards;
 }
 
 .skeleton {
