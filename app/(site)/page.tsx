@@ -174,8 +174,8 @@ const PRODUCT_FACTS = [
 ];
 
 const APP_STORES = [
-  { name: "Google Play", icon: "/brand/google-play.svg" },
-  { name: "App Store", icon: "/brand/app-store.svg" },
+  { name: "App Store", badge: "/brand/apple-badge.svg", width: 120, height: 40 },
+  { name: "Google Play", badge: "/brand/google-badge.png", width: 563, height: 167 },
 ];
 
 const TRUST_POINTS = [
@@ -482,24 +482,21 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 text-left">
             <AppDownload />
-            <div className="mt-8 flex flex-wrap items-start justify-center gap-4">
+            <div className="mt-8 flex flex-wrap items-start justify-center gap-6">
               {APP_STORES.map((store) => (
                 <div
                   key={store.name}
-                  className="flex w-44 flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
+                  className="flex flex-col items-center gap-2.5"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={store.icon}
-                    alt={`${store.name} logo`}
-                    className="h-9 w-9"
-                    width={36}
-                    height={36}
+                    src={store.badge}
+                    alt={`${store.name} download badge`}
+                    className="h-12 w-auto drop-shadow-sm"
+                    width={store.width}
+                    height={store.height}
                   />
-                  <span className="mt-2.5 text-sm font-semibold text-slate-900">
-                    {store.name}
-                  </span>
-                  <span className="mt-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
                     Coming soon
                   </span>
                 </div>
@@ -719,11 +716,11 @@ export default function LandingPage() {
             <div
               className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
             >
-              <span className="h-20 w-20 overflow-hidden rounded-full bg-brand-100">
+              <span className="h-32 w-32 overflow-hidden rounded-full bg-brand-100">
                 <MarketingImage
                   image={MARKETING_IMAGES.founderPhoto}
-                  sizes="80px"
-                  className="h-20 w-20 object-cover object-top"
+                  sizes="128px"
+                  className="h-32 w-32 object-cover object-top"
                 />
               </span>
               <p className="mt-4 text-base font-semibold text-slate-900">Temitope F. Adekunle</p>
@@ -741,8 +738,8 @@ export default function LandingPage() {
               <div
                 className={`flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm ${CARD}`}
               >
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                  <role.Icon className="h-8 w-8" />
+                <span className="flex h-32 w-32 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                  <role.Icon className="h-10 w-10" />
                 </span>
                 <p className="mt-4 text-base font-semibold text-slate-900">{role.title}</p>
                 <p className="mt-0.5 text-sm text-slate-500">CareNBuddi</p>
