@@ -15,6 +15,14 @@ android {
     compileSdk 34
     buildToolsVersion "35.0.0"
 
+    androidResources {
+        // AGP's default ignoreAssetsPattern ends with <dir>_* (drop dirs whose
+        // name starts with "_"), which silently excludes the Next.js _next/
+        // folder from the APK — leaving the WebView app with no CSS/JS chunks.
+        // Use the same defaults minus that rule.
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+
     defaultConfig {
         applicationId "ng.carenbuddi.app"
         minSdk 24
