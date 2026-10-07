@@ -66,7 +66,7 @@ const SCREENS: Screen[] = [
       },
       {
         key: "onb_1_b3",
-        fallback: "Use HealthLink in English, Yoruba, Hausa or Igbo.",
+        fallback: "Use CareNBuddi in English, Yoruba, Hausa or Igbo.",
       },
     ],
   },
@@ -89,7 +89,7 @@ const SCREENS: Screen[] = [
       },
       {
         key: "onb_2_b3",
-        fallback: "The HealthLink team checks every provider before you see them.",
+        fallback: "The CareNBuddi team checks every provider before you see them.",
       },
     ],
   },

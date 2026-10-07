@@ -133,7 +133,7 @@ export function SiteFooter() {
 
         <div className="mt-10 flex flex-col gap-6 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Share HealthLink</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Share CareNBuddi</h2>
             <p className="mt-1 text-xs text-slate-500">
               Know someone who should use this? Send it to them.
             </p>

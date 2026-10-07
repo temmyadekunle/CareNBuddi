@@ -58,7 +58,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mt-3 text-lg text-slate-600">
-          How HealthLink handles the information you enter into the app.
+          How CareNBuddi handles the information you enter into the app.
         </p>
         <p className="mt-2 text-sm text-slate-500">Draft — last updated 5 October 2026.</p>
 

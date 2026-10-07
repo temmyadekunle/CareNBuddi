@@ -151,7 +151,7 @@ export default function PassportPage() {
 
         <div className="mt-3 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
           <QRCodeSVG value={qrPayload} size={150} />
-          <p className="text-center text-xs text-slate-500">{t("pp_scan", "Scan with a HealthLink worker app")}</p>
+          <p className="text-center text-xs text-slate-500">{t("pp_scan", "Scan with a CareNBuddi worker app")}</p>
         </div>
       </Card>
 

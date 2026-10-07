@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CareNBuddi logo">
+  <title>CareNBuddi</title>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#087F8C"/>
+  <g fill="#FFFFFF">
+    <rect x="106" y="112" width="300" height="240" rx="86"/>
+    <polygon points="172,326 150,404 252,334"/>
+  </g>
+  <g fill="#FF7A6B">
+    <circle cx="214" cy="202" r="54"/>
+    <circle cx="298" cy="202" r="54"/>
+    <polygon points="162,238 350,238 256,344"/>
+  </g>
+  <circle cx="352" cy="150" r="26" fill="#65D6C0"/>
+</svg>

@@ -1,6 +1,6 @@
 # Backend & database (Supabase)
 
-HealthLink runs without a backend — every screen works offline against
+CareNBuddi runs without a backend — every screen works offline against
 `localStorage`. Once Supabase is configured, the same screens create real
 accounts and keep records in Postgres, synced automatically.
 

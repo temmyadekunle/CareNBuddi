@@ -56,7 +56,7 @@ const ROLE_LABEL_KEY = {
 const ROLE_FALLBACK = {
   consumer: "Patient / community member",
   provider: "Healthcare provider",
-  admin: "HealthLink team",
+  admin: "CareNBuddi team",
 } as const;
 
 function roleTone(role: Role) {

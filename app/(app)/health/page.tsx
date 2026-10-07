@@ -694,7 +694,7 @@ export default function HealthDashboardPage() {
       <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
         {t(
           "ft_notdx",
-          "HealthLink offers general health information. It is not a diagnosis and does not replace a healthcare professional.",
+          "CareNBuddi offers general health information. It is not a diagnosis and does not replace a healthcare professional.",
         )}
       </p>
     </Screen>

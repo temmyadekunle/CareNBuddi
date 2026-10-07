@@ -10,7 +10,7 @@ import {
 } from "@/components/icons";
 
 /**
- * Marketing mockups of the real HealthLink app.
+ * Marketing mockups of the real CareNBuddi app.
  *
  * Every label below is copied from the shipped app (components/nav.tsx,
  * lib/i18n.ts, lib/content.ts) and every provider is a real seed record from
@@ -53,7 +53,7 @@ export function PhoneMockup({
       <div
         className="relative mx-auto aspect-[9/19] w-full max-w-[260px] rounded-[2.1rem] bg-slate-900 p-2 shadow-[0_30px_60px_-28px_rgba(15,23,42,0.55)]"
         role="img"
-        aria-label={`Screenshot of the HealthLink ${SCREEN_NAMES[screen]} screen`}
+        aria-label={`Screenshot of the CareNBuddi ${SCREEN_NAMES[screen]} screen`}
       >
         <div className="relative h-full w-full overflow-hidden rounded-[1.65rem] bg-[#f6f8fb]">
           <div className="flex items-center justify-between px-3 pb-1 pt-2 text-[8px] font-medium text-slate-400">
@@ -78,7 +78,7 @@ function renderScreen(screen: ScreenName) {
 function StatusBar() {
   return (
     <div className="flex items-center justify-between px-3 pt-2">
-      <span className="text-[9px] font-semibold text-slate-900">HealthLink</span>
+      <span className="text-[9px] font-semibold text-slate-900">CareNBuddi</span>
       <div aria-hidden className="flex items-center gap-1 text-brand-600">
         <ActivityIcon className="h-3 w-3" />
       </div>

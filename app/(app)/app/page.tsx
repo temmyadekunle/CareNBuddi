@@ -293,7 +293,7 @@ export default function HomeScreen() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-rose-900">{t("em_call", "Call an emergency number immediately")}</p>
             <p className="mt-0.5 text-xs text-rose-800">
-              {t("home_emergency_d", "Do not wait for an app. Call first, then use HealthLink after.")}
+              {t("home_emergency_d", "Do not wait for an app. Call first, then use CareNBuddi after.")}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               <a

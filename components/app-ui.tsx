@@ -628,7 +628,7 @@ export function Avatar({
         {role !== "patient" && (
           <>
             <path d="M18.5 36h5l-2.5 6Z" fill={skin} />
-            <path d="M24 33.5 25.5 39h-3Z" fill="#0f8b8d" />
+            <path d="M24 33.5 25.5 39h-3Z" fill="#087F8C" />
           </>
         )}
       </svg>
@@ -677,10 +677,10 @@ export function AvatarLarge({
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-4 ring-white"
-      style={{ width: size, height: size, background: "#eef7f7" }}
+      style={{ width: size, height: size, background: "#EAF7F5" }}
     >
       <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden>
-        <circle cx="24" cy="24" r="24" fill="#eef7f7" />
+        <circle cx="24" cy="24" r="24" fill="#EAF7F5" />
         <path d="M6 48c0-9.9 8.1-18 18-18s18 8.1 18 18Z" fill={skin} />
         <circle cx="24" cy="19" r="10.5" fill={skin} />
         <path

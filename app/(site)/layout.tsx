@@ -33,9 +33,9 @@ export const metadata: Metadata = {
     locale: "en_NG",
     images: [
       {
-        url: "/brand/logo.jpg",
-        width: 1080,
-        height: 1080,
+        url: "/icon-512.png",
+        width: 512,
+        height: 512,
         alt: "CareNBuddi",
       },
     ],
@@ -44,12 +44,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/brand/logo.jpg"],
+    images: ["/icon-512.png"],
   },
   robots: { index: true, follow: true },
   icons: {
     icon: [
-      { url: "/icon.png", type: "image/png", sizes: "48x48" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-32.png", type: "image/png", sizes: "32x32" },
       { url: "/apple-touch-icon.png", sizes: "180x180" },
     ],
     apple: "/apple-touch-icon.png",

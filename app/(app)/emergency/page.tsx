@@ -85,7 +85,7 @@ export default function EmergencyPage() {
         </div>
       </Card>
 
-      <p className="mt-4 text-center text-xs text-slate-400">{t("em_footer", "HealthLink does not provide emergency medical care.")}</p>
+      <p className="mt-4 text-center text-xs text-slate-400">{t("em_footer", "CareNBuddi does not provide emergency medical care.")}</p>
     </Screen>
   );
 }

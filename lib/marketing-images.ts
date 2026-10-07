@@ -82,7 +82,7 @@ function localBrandImage(opts: {
     alt: opts.alt,
     width: opts.width,
     height: opts.height,
-    credit: "HealthLink",
+    credit: "CareNBuddi",
     source: opts.path,
     feature: opts.feature,
   };
@@ -169,7 +169,7 @@ export const MARKETING_IMAGES = {
    */
   founderPhoto: localBrandImage({
     path: "/brand/founder.jpg",
-    alt: "The founder of HealthLink",
+    alt: "The founder of CareNBuddi",
     width: 853,
     height: 1280,
     feature: "Who we are",
@@ -237,7 +237,7 @@ export const MARKETING_IMAGES = {
   /* ---------------------------------------------------------------------
    * Held back on purpose — do not add these to any page yet.
    *
-   * HealthLink has no online consultation and no mental health module, so
+   * CareNBuddi has no online consultation and no mental health module, so
    * showing a telehealth or counselling photo would advertise a feature that
    * does not exist. Kept here for when those modules ship.
    * ------------------------------------------------------------------- */

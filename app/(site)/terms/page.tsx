@@ -50,7 +50,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p className="mt-3 text-lg text-slate-600">
-          The terms that apply when you use the HealthLink app.
+          The terms that apply when you use the CareNBuddi app.
         </p>
         <p className="mt-2 text-sm text-slate-500">Draft — last updated 5 October 2026.</p>
 

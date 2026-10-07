@@ -319,7 +319,7 @@ export default function AppointmentsPage() {
       <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
         {t(
           "ft_notdx",
-          "HealthLink provides general health information and navigation. It is not a medical diagnosis and does not replace a healthcare professional.",
+          "CareNBuddi provides general health information and navigation. It is not a medical diagnosis and does not replace a healthcare professional.",
         )}
       </p>
 

@@ -2,7 +2,7 @@ export function LogoMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/brand/logo.jpg"
+      src="/brand/mark.svg"
       alt="CareNBuddi logo"
       className={`shrink-0 rounded-lg bg-white object-contain ${className ?? ""}`}
       width={48}

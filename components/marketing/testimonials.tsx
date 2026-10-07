@@ -18,13 +18,13 @@ const PLACEHOLDER_TESTIMONIALS = true;
 const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "I wanted one place to see which clinic to go to and what my next appointment is. HealthLink keeps that in my pocket instead of scattered across paper and messages.",
+      "I wanted one place to see which clinic to go to and what my next appointment is. CareNBuddi keeps that in my pocket instead of scattered across paper and messages.",
     name: "Placeholder name 1",
     context: "Patient, Lagos",
   },
   {
     quote:
-      "My mother takes her medication in three languages depending on who is caring for her that day. Having HealthLink in Yoruba and English changed how we manage her care.",
+      "My mother takes her medication in three languages depending on who is caring for her that day. Having CareNBuddi in Yoruba and English changed how we manage her care.",
     name: "Placeholder name 2",
     context: "Caregiver, Ibadan",
   },

@@ -296,7 +296,7 @@ export function ProfileSettings() {
             title={t("prof_privacy_cloud_title", "Cloud sync only if you connect an account")}
             body={t(
               "prof_privacy_cloud_d",
-              "When a HealthLink cloud account is connected, your records are encrypted in transit and synced so you can use the app on another device. Open Account & sync to connect or disconnect.",
+              "When a CareNBuddi cloud account is connected, your records are encrypted in transit and synced so you can use the app on another device. Open Account & sync to connect or disconnect.",
             )}
           />
           <PrivacyBlock
@@ -313,7 +313,7 @@ export function ProfileSettings() {
 
       <ConfirmDialog
         open={confirmOut}
-        title={t("prof_signout_title", "Sign out of HealthLink?")}
+        title={t("prof_signout_title", "Sign out of CareNBuddi?")}
         body={t(
           "prof_signout_body",
           "Your saved records stay on this device. You can sign back in at any time.",

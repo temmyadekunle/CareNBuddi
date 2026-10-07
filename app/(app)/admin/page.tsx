@@ -288,7 +288,7 @@ function Verification() {
         phone: req.phone,
         hours: "Mon–Sat, 8am–5pm",
         verified: true,
-        description: t("ad_v_approved_desc", "Verified HealthLink partner facility."),
+        description: t("ad_v_approved_desc", "Verified CareNBuddi partner facility."),
         emergency: false,
       },
     ]);

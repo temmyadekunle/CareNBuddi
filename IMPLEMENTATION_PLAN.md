@@ -1,12 +1,12 @@
-# HealthLink — Implementation Plan
+# CareNBuddi — Implementation Plan
 
-Base: PRD v2.0 (root `PRD.md`) · Repo: temmyadekunle/HealthLink
+Base: PRD v2.0 (root `PRD.md`) · Repo: temmyadekunle/CareNBuddi
 
 ## 0. Reset — where we are vs. where the product needs to go
 
 A personal health **tracker prototype** (journal/records/reminders) was built before the product direction crystallized. The confirmed direction (PRD v2.0) is a **digital + community-based preventive healthcare ecosystem**: one connected journey Learn → Check → Find → Connect → Act → Follow Up, mapped to PRD §47–§51 versions (V1, V1.5, V2, V3, V4).
 
-**Decision gate (V1 start):** archive the tracker routes to a branch (`git branch tracker-prototype`) and remove `journal`, `records`, `reminders` — reuse only the shared design tokens (PRD §54: HealthLink Teal / Health Green / Warm Coral with the AA steer, Geist font, radii).
+**Decision gate (V1 start):** archive the tracker routes to a branch (`git branch tracker-prototype`) and remove `journal`, `records`, `reminders` — reuse only the shared design tokens (PRD §54: CareNBuddi Teal / Health Green / Warm Coral with the AA steer, Geist font, radii).
 
 Locked tool decisions (from PRD "Appendix A — Steered Choice" — do not change without an explicit steer):
 
@@ -33,14 +33,14 @@ Current working state (static, no DB) — this now mirrors **PRD §9 Home**, **�
 
 ---
 
-## Phase A — PRD V1 (Digital HealthLink MVP)
+## Phase A — PRD V1 (Digital CareNBuddi MVP)
 
-Goal: prove people need and use HealthLink. Scope = PRD §47: Consumer (1–11), Provider (12–16), Admin (17–21). The whole "Digital HealthLink" journey (search → learn → navigate → act) on the local stack.
+Goal: prove people need and use CareNBuddi. Scope = PRD §47: Consumer (1–11), Provider (12–16), Admin (17–21). The whole "Digital CareNBuddi" journey (search → learn → navigate → act) on the local stack.
 
 ### Step A.1 — Local environment & schema
 - Provision **PostgreSQL 17** (winget) + verify `psql` and service running; provision **Mailhog** (Windows binary; fallback: SMTP dev inbox, flagged).
 - Prisma: `prisma/schema.prisma`, `prisma migrate dev`, idempotent seed; `.env` (gitignored) + `.env.example`.
-- Models (V1): Auth.js tables (`User`, `Account`, `Session`, `VerificationToken`); `Category` (16 education categories); `Topic` (slug, title, `healthCategory`, summary, structured sections, sources, `reviewedBy`, `reviewedOn`, status), `Faq`; `ProviderCategory` (enum: PRD §15 types), `Provider`, `Service` (M2M), `ProviderImage` (`storage/uploads`), `VerificationLevel` (HealthLink Verified / Partner / Unverified, PRD §16); `SavedResource`, `Report`, `AppointmentRequest`, `ServiceRequest` (PRD §18/§19), `UserHealthItem` (PRD §11 tracker basics), `Reminder` (PRD §12), `EmergencyContact`; `SearchLog` + counters (metrics, PRD §59).
+- Models (V1): Auth.js tables (`User`, `Account`, `Session`, `VerificationToken`); `Category` (16 education categories); `Topic` (slug, title, `healthCategory`, summary, structured sections, sources, `reviewedBy`, `reviewedOn`, status), `Faq`; `ProviderCategory` (enum: PRD §15 types), `Provider`, `Service` (M2M), `ProviderImage` (`storage/uploads`), `VerificationLevel` (CareNBuddi Verified / Partner / Unverified, PRD §16); `SavedResource`, `Report`, `AppointmentRequest`, `ServiceRequest` (PRD §18/§19), `UserHealthItem` (PRD §11 tracker basics), `Reminder` (PRD §12), `EmergencyContact`; `SearchLog` + counters (metrics, PRD §59).
 
 ### Step A.2 — Auth & guest-first shell
 - Auth.js v5 magic-link + Prisma adapter + `app/api/auth/[...nextauth]/route.ts`.
@@ -81,20 +81,20 @@ Goal: continuity of care across screening events and dependants.
 
 ## Phase C — PRD V2 (Mobile clinic, organizations, digital-physical)
 
-Goal: take HealthLink from the phone into the community.
+Goal: take CareNBuddi from the phone into the community.
 
-- HealthLink Mobile Clinic operating arm + service catalogue (PRD §19) with clinical-scope discipline.
+- CareNBuddi Mobile Clinic operating arm + service catalogue (PRD §19) with clinical-scope discipline.
 - Community Health Days + "Know Your Numbers" first campaign (PRD §20/§64).
-- Corporate HealthLink / School HealthLink / Church & Community programmes (PRD §33–§35).
+- Corporate CareNBuddi / School CareNBuddi / Church & Community programmes (PRD §33–§35).
 - Advanced referrals with provider handoff (PRD §24).
 - Provider analytics + WhatsApp integration (PRD §37/§31).
 - Business platform dashboards (PRD §32).
 
 ---
 
-## Phase D — PRD V3 (Advanced HealthLink)
+## Phase D — PRD V3 (Advanced CareNBuddi)
 
-Only after the foundation works: Telehealth, PHR interoperability aligned with Nigerian digital-health architecture (PRD §25), AI health-navigation assistant grounded in approved content (PRD §28), multilingual + voice + low-literacy mode (PRD §29/§30), advanced reminders, healthcare affordability navigation (PRD §39), HealthLink marketplace with safety safeguards (PRD §38). Health Wallet (PRD §40) only after legal/financial review.
+Only after the foundation works: Telehealth, PHR interoperability aligned with Nigerian digital-health architecture (PRD §25), AI health-navigation assistant grounded in approved content (PRD §28), multilingual + voice + low-literacy mode (PRD §29/§30), advanced reminders, healthcare affordability navigation (PRD §39), CareNBuddi marketplace with safety safeguards (PRD §38). Health Wallet (PRD §40) only after legal/financial review.
 
 ---
 

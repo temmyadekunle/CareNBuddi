@@ -7,15 +7,15 @@ type Item = { q: string; a: string };
 
 const ITEMS: Item[] = [
   {
-    q: "What is HealthLink?",
-    a: "HealthLink is a digital healthcare platform for Nigeria. It brings finding care, booking appointments, keeping health information organised, and staying in touch with healthcare providers into one mobile app — available in English, Yoruba, Hausa and Igbo.",
+    q: "What is CareNBuddi?",
+    a: "CareNBuddi is a digital healthcare platform for Nigeria. It brings finding care, booking appointments, keeping health information organised, and staying in touch with healthcare providers into one mobile app — available in English, Yoruba, Hausa and Igbo.",
   },
   {
-    q: "Who can use HealthLink?",
-    a: "Anyone looking for healthcare in Nigeria: patients and families, community health workers, doctors, nurses, clinics, hospitals, laboratories and pharmacies. HealthLink also has dedicated views for providers and staff.",
+    q: "Who can use CareNBuddi?",
+    a: "Anyone looking for healthcare in Nigeria: patients and families, community health workers, doctors, nurses, clinics, hospitals, laboratories and pharmacies. CareNBuddi also has dedicated views for providers and staff.",
   },
   {
-    q: "Can I find healthcare providers on HealthLink?",
+    q: "Can I find healthcare providers on CareNBuddi?",
     a: "Yes. Find Care lists hospitals, clinics, primary healthcare centres, laboratories, pharmacies and diagnostic centres, with the location and contact details of each so you can reach them directly.",
   },
   {
@@ -23,20 +23,20 @@ const ITEMS: Item[] = [
     a: "Yes. You can request an appointment with a provider and keep track of what is coming up in one place, so your healthcare activities stay organised.",
   },
   {
-    q: "Is HealthLink available on mobile?",
-    a: "HealthLink is built mobile-first. Open it on your phone and add it to your home screen — on Android you can install it from the browser menu, and on iPhone or iPad you add it from the Safari share sheet. There is no app store download required.",
+    q: "Is CareNBuddi available on mobile?",
+    a: "CareNBuddi is built mobile-first. Open it on your phone and add it to your home screen — on Android you can install it from the browser menu, and on iPhone or iPad you add it from the Safari share sheet. There is no app store download required.",
   },
   {
     q: "How do I create an account?",
-    a: "Tap Get Started and follow the short setup steps to create your HealthLink profile. You can also browse as a guest and create an account later.",
+    a: "Tap Get Started and follow the short setup steps to create your CareNBuddi profile. You can also browse as a guest and create an account later.",
   },
   {
-    q: "Can healthcare providers join HealthLink?",
-    a: "Yes. Providers and facilities can register on HealthLink to build a digital presence, be discovered by patients searching for care, and manage appointment requests in one place.",
+    q: "Can healthcare providers join CareNBuddi?",
+    a: "Yes. Providers and facilities can register on CareNBuddi to build a digital presence, be discovered by patients searching for care, and manage appointment requests in one place.",
   },
   {
     q: "How is my information handled?",
-    a: "HealthLink keeps the health information you enter so you can review and manage it, and the app shows you what has been saved. Our privacy and terms pages set out what we store, why we store it, and how to ask us to remove it.",
+    a: "CareNBuddi keeps the health information you enter so you can review and manage it, and the app shows you what has been saved. Our privacy and terms pages set out what we store, why we store it, and how to ask us to remove it.",
   },
 ];
 

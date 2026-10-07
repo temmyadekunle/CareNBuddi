@@ -82,7 +82,7 @@ function match(t: (key: string, fallback?: string) => string, q: string): string
   return reply(
     t,
     "askx_a_default",
-    "I can help you navigate HealthLink: finding care, understanding conditions, preparing for a visit, or using your journal and passport. Try asking about blood pressure, diabetes, costs, or where to get care.",
+    "I can help you navigate CareNBuddi: finding care, understanding conditions, preparing for a visit, or using your journal and passport. Try asking about blood pressure, diabetes, costs, or where to get care.",
   );
 }
 
@@ -93,7 +93,7 @@ export default function AskPage() {
       role: "bot",
       text: t(
         "askx_greeting",
-        "Hello! I am Ask HealthLink. I can help you understand health topics and use the app — I am not a doctor. What would you like to know?",
+        "Hello! I am Ask CareNBuddi. I can help you understand health topics and use the app — I am not a doctor. What would you like to know?",
       ),
     },
   ]);
@@ -114,7 +114,7 @@ export default function AskPage() {
   return (
     <Screen>
       <SectionHeader
-        title={t("ask_title", "Ask HealthLink")}
+        title={t("ask_title", "Ask CareNBuddi")}
         subtitle={t("askx_disclaimer", "Educational information only — it does not replace professional medical care.")}
       />
 

@@ -78,12 +78,12 @@ export function Nav() {
     <>
       <header className="z-30 shrink-0 border-b border-slate-200/70 bg-white/92 backdrop-blur-md">
         <div className="flex items-center gap-2.5 px-4 py-2.5">
-          <Link href="/app" aria-label="HealthLink home" className="tap shrink-0">
+          <Link href="/app" aria-label="CareNBuddi home" className="tap shrink-0">
             <LogoMark className="h-9 w-9 rounded-xl" />
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-slate-900">
-              {match ? t(match.titleKey) : "HealthLink"}
+              {match ? t(match.titleKey) : "CareNBuddi"}
             </h1>
             {match?.subKey && (
               <p className="truncate text-[11px] leading-tight text-slate-500">{t(match.subKey)}</p>

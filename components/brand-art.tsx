@@ -11,18 +11,18 @@
 import type { ReactNode } from "react";
 
 const BRAND = {
-  50: "#eef7f7",
-  100: "#daeff0",
-  200: "#c0e4e5",
-  300: "#93d0d1",
-  500: "#0f8b8d",
-  600: "#0d7476",
-  700: "#0b6b6d",
+  50: "#EAF7F5",
+  100: "#D3EDEA",
+  200: "#A6DCD5",
+  300: "#65D6C0",
+  500: "#129484",
+  600: "#0B8778",
+  700: "#087F8C",
 } as const;
 
 const GREEN = { 100: "#d7eed8", 200: "#b7e0b9", 500: "#4caf50" } as const;
 
-const CORAL = { 100: "#f9dceb", 200: "#f2bcd6", 500: "#ec4899", 700: "#be185d" } as const;
+const CORAL = { 100: "#FFE1D9", 200: "#FFC7BA", 500: "#FF7A6B", 700: "#C24834" } as const;
 
 const SLATE = { 200: "#e2e8f0" } as const;
 

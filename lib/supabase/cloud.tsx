@@ -55,7 +55,7 @@ const PUSH_DEBOUNCE_MS = 900;
 function localUserFor(user: SupabaseUser, profile: CloudProfile | null): User {
   return {
     id: user.id,
-    name: profile?.full_name || (user.user_metadata?.name as string) || "HealthLink Member",
+    name: profile?.full_name || (user.user_metadata?.name as string) || "CareNBuddi Member",
     email: user.email ?? profile?.email ?? "",
     phone: profile?.phone ?? ((user.user_metadata?.phone as string) || undefined),
     role: profile?.role ?? ((user.user_metadata?.role as Role) ?? "consumer"),

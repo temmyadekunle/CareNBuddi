@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #dfe5ee;
-  --foreground: #0f172a;
+  --background: #FAFCFC;
+  --foreground: #123B4A;
 }
 
 @theme inline {
@@ -11,17 +11,17 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* HealthLink Teal — primary */
-  --color-brand-50: #eef7f7;
-  --color-brand-100: #daeff0;
-  --color-brand-200: #c0e4e5;
-  --color-brand-300: #93d0d1;
-  --color-brand-400: #3fa9ab;
-  --color-brand-500: #0f8b8d;
-  --color-brand-600: #0d7476;
-  --color-brand-700: #0b6b6d; /* button fill + links — 6.3:1 AA with white */
-  --color-brand-800: #095355;
-  --color-brand-900: #0a4143;
+  /* CareNBuddi Deep Teal — primary */
+  --color-brand-50: #EAF7F5;
+  --color-brand-100: #D3EDEA;
+  --color-brand-200: #A6DCD5;
+  --color-brand-300: #65D6C0;
+  --color-brand-400: #38B5A1;
+  --color-brand-500: #129484;
+  --color-brand-600: #0B8778;
+  --color-brand-700: #087F8C; /* button fill + links — ~4.8:1 AA with white */
+  --color-brand-800: #066B70;
+  --color-brand-900: #123B4A; /* navy — headings, navigation text */
 
   /* Health Green — secondary / success */
   --color-green-50: #edf7ed;
@@ -33,16 +33,16 @@
   --color-green-800: #276b2a;
   --color-green-900: #1e4d21;
 
-  /* Warm Coral — accent (used sparingly) */
-  --color-coral-50: #fdf0f6;
-  --color-coral-100: #f9dceb;
-  --color-coral-200: #f2bcd6;
-  --color-coral-500: #ec4899;
-  --color-coral-700: #be185d; /* 6.0:1 AA with white */
+  /* Coral — accent (used sparingly) */
+  --color-coral-50: #FFF1EE;
+  --color-coral-100: #FFE1D9;
+  --color-coral-200: #FFC7BA;
+  --color-coral-500: #FF7A6B;
+  --color-coral-700: #C24834; /* ~4.9:1 AA with white */
 }
 
 body {
-  background: #ffffff;
+  background: #FAFCFC;
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
@@ -54,7 +54,7 @@ body {
    fills the viewport, which is what a real installed app does. */
 .app-canvas {
   min-height: 100dvh;
-  background: #ffffff;
+  background: #FAFCFC;
 }
 
 /* Tablet: wider than phone but not full desktop frame */
@@ -64,7 +64,7 @@ body {
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    background: #e6ecf3;
+    background: #E8F8F6;
     padding: 28px 16px;
   }
 
@@ -88,7 +88,7 @@ body {
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    background: #e6ecf3;
+    background: #E8F8F6;
     padding: 28px 16px;
   }
 
@@ -109,7 +109,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: #f6f8fb;
+  background: #ffffff;
   min-height: 100dvh;
 }
 
@@ -180,7 +180,7 @@ body {
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: #e8edf3;
+  background: #E3EFEC;
 }
 
 .skeleton::after {

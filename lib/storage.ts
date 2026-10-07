@@ -368,7 +368,7 @@ export type ContentItem = (typeof TOPICS)[number] & { id: string; status: "publi
 
 export const seedUsers: User[] = [
   {
-    id: "u-admin", name: "HealthLink Admin", email: "admin@healthlink.ng", role: "admin",
+    id: "u-admin", name: "CareNBuddi Admin", email: "admin@healthlink.ng", role: "admin",
     lang: "en", createdAt: `2026-08-01T09:00:00.000Z`,
   },
   {
