@@ -104,7 +104,9 @@ if (-not (Test-Path (Join-Path $outWeb "index.html"))) { throw "out\index.html m
 Step "Syncing out\ -> android assets"
 if (Test-Path $assets) { Remove-Item $assets -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $assets | Out-Null
-robocopy $outWeb $assets /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+# The web download files (public\CareNBuddi-*.zip/.apk) are copied into out\ by
+# Next but must never be packaged inside the APK itself.
+robocopy $outWeb $assets /MIR /XF *.zip *.apk /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed with code $LASTEXITCODE" }
 $global:LASTEXITCODE = 0
 

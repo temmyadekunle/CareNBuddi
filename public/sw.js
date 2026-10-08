@@ -101,6 +101,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // App downloads (zip/apk) are big, one-shot files: never time them out and
+  // never answer them with a cached page — let the browser fetch them straight
+  // from the network so the origin's attachment headers always apply.
+  if (/\.(zip|apk)$/i.test(url.pathname)) return;
+
   // Page navigations: go to the network first so the user always gets the
   // latest deploy, but never wait longer than NAV_TIMEOUT_MS — a slow or dead
   // connection falls back to the cached copy instead of hanging the tap.
