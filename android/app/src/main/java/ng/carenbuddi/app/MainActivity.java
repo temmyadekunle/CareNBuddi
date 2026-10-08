@@ -98,7 +98,9 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
-            webView.loadUrl(APP_ORIGIN + "/");
+            // The installed app opens straight into the product (/app); the
+            // marketing website (/) stays a browser-only thing.
+            webView.loadUrl(APP_ORIGIN + "/app");
         }
     }
 

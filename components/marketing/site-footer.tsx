@@ -93,12 +93,13 @@ export function SiteFooter() {
               <Logo className="h-[46px] w-auto md:h-[60px]" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-slate-600">Your Health, Your Buddi.</p>
-            <Link
-              href="/app"
+            <a
+              href="/CareNBuddi-1.0.0-release-signed.apk"
+              download
               className="mt-4 inline-flex rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
             >
-              Open the app
-            </Link>
+              Download the app
+            </a>
           </div>
 
           {COLUMNS.map((col) => (

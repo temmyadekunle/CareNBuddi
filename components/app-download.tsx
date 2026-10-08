@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type InstallPrompt = Event & {
@@ -29,12 +28,13 @@ export function AppDownload() {
 
   return (
     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-      <Link
-        href="/app"
+      <a
+        href="/CareNBuddi-1.0.0-release-signed.apk"
+        download
         className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
       >
-        Open the app
-      </Link>
+        Download the app
+      </a>
       {prompt ? (
         <button
           onClick={install}
