@@ -1,5 +1,9 @@
-# Force the APK to download as a file everywhere: this URL must never render
-# as a page (the website and the app stay strictly separate).
+# Force the app downloads to be files, never pages: the website and the app
+# stay strictly separate.
+/CareNBuddi-1.0.0.zip
+  Content-Disposition: attachment; filename="CareNBuddi-1.0.0.zip"
+  Content-Type: application/zip
+
 /CareNBuddi-1.0.0-release-signed.apk
   Content-Disposition: attachment; filename="CareNBuddi-1.0.0-release-signed.apk"
   Content-Type: application/vnd.android.package-archive

@@ -29,7 +29,7 @@ export function AppDownload() {
   return (
     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
       <a
-        href="/CareNBuddi-1.0.0-release-signed.apk"
+        href="/CareNBuddi-1.0.0.zip"
         download
         className="rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
       >
