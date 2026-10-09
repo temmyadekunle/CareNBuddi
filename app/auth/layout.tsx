@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ToastProvider } from "@/components/app-ui";
 import { ChevronLeftIcon } from "@/components/icons";
 import { LogoMark } from "@/components/logo";
+import { Splash } from "@/components/splash";
 import { LangSwitcher } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { CloudProvider } from "@/lib/supabase/cloud";
@@ -16,7 +17,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const t = useT();
 
   return (
-    <div className="app-canvas">
+    <>
+      <Splash />
+      <div className="app-canvas">
       <CloudProvider>
         <ToastProvider>
           <div id="app-shell">
@@ -43,6 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
         </ToastProvider>
       </CloudProvider>
-    </div>
+      </div>
+    </>
   );
 }
