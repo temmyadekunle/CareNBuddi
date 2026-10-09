@@ -209,11 +209,61 @@ body {
   animation: shimmer 1.4s infinite;
 }
 
+/* ---------- startup splash ---------- */
+
+@keyframes splash-mark {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.splash-mark {
+  animation: splash-mark 900ms ease-out both;
+}
+
+.splash-text {
+  animation: splash-fade 650ms ease-out 150ms both;
+}
+
+.splash-text-late {
+  animation-delay: 350ms;
+}
+
+/* Safety net: if the JS bundle never boots (broken deploy, dead device),
+   the splash still hides itself ~1.7s after first paint instead of blocking
+   the app forever. The normal path dismisses via React long before this. */
+@keyframes splash-autohide {
+  to {
+    visibility: hidden;
+  }
+}
+
+.splash-autohide {
+  animation: splash-autohide 0ms linear 1700ms forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-sheet-in,
   .animate-backdrop-in,
   .animate-toast-in,
   .animate-fade-rise,
+  .splash-mark,
+  .splash-text,
+  .splash-autohide,
   .skeleton::after {
     animation: none;
   }
