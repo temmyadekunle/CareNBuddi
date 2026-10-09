@@ -40,9 +40,11 @@ const readServer = () => false;
 export function ProviderCard({
   provider,
   onBook,
+  onDetails,
 }: {
   provider: Provider;
   onBook?: () => void;
+  onDetails?: () => void;
 }) {
   const t = useT();
   const lang = useLang();
@@ -135,6 +137,7 @@ export function ProviderCard({
         </a>
         <Link
           href={`/find-care/${provider.id}`}
+          onClick={onDetails}
           aria-label={t("fc_details", "Details")}
           title={t("fc_details", "Details")}
           className={ICON_ACTION}

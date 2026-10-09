@@ -51,6 +51,10 @@ tmp-*.txt
 # cloudflare
 .wrangler/
 .open-next/
+# wrangler dev local secrets + dev logs
+.dev.vars
+wrangler-*.log
+deploy.log
 
 # android
 /android/local.properties

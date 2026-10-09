@@ -1,4 +1,5 @@
 import type { Lang } from "./lang";
+import { GUIDE_CATEGORIES, type GuideCategory } from "./guide-core";
 import { yoTopicLocales } from "./locales/yo";
 import { haTopicLocales } from "./locales/ha";
 import { igTopicLocales } from "./locales/ig";
@@ -37,16 +38,9 @@ export interface Topic {
   reviewedOn: string;
 }
 
-export type ProviderCategory =
-  | "Hospital"
-  | "Clinic"
-  | "Primary health centre"
-  | "Laboratory"
-  | "Pharmacy"
-  | "Diagnostic centre"
-  | "Mental health service"
-  | "Maternal health service"
-  | "Professional";
+/** Canonical list lives in guide-core so the AI Health Guide Worker validates
+ * against exactly the same categories the directory uses. */
+export type ProviderCategory = GuideCategory;
 
 export interface Provider {
   id: string;
@@ -1485,17 +1479,7 @@ export const EMERGENCY_CONTACTS: EmergencyContact[] = [
   { name: "Police emergency", number: "199", note: "" },
 ];
 
-export const PROVIDER_CATEGORIES: ProviderCategory[] = [
-  "Hospital",
-  "Clinic",
-  "Primary health centre",
-  "Laboratory",
-  "Pharmacy",
-  "Diagnostic centre",
-  "Mental health service",
-  "Maternal health service",
-  "Professional",
-];
+export const PROVIDER_CATEGORIES: ProviderCategory[] = [...GUIDE_CATEGORIES];
 
 export const ALL_CATEGORIES: string[] = PROVIDER_CATEGORIES;
 

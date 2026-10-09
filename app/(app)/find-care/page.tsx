@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Badge,
   BottomSheet,
@@ -43,14 +44,43 @@ const ANY_STATE = "__any_state__";
 const ANY_CATEGORY = "__any_category__";
 type CostFilter = "any" | CostTier;
 
+/**
+ * Deep links from the AI Health Guide land here with ?category=&state=&q=.
+ * The params are read once, validated against the real category/state lists,
+ * and applied as the initial filters — the existing UI then owns them.
+ * useSearchParams needs a Suspense boundary in a static export build.
+ */
 export default function FindCarePage() {
+  return (
+    <Suspense
+      fallback={
+        <Screen>
+          <div className="mt-2 h-11 w-full animate-pulse rounded-xl bg-slate-200/70" />
+        </Screen>
+      }
+    >
+      <FindCareInner />
+    </Suspense>
+  );
+}
+
+function FindCareInner() {
   const t = useT();
   const lang = useLang();
   const [providers] = useStoredCollection(KEYS.providers, seedProviders);
+  const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState("");
-  const [state, setState] = useState(ANY_STATE);
-  const [category, setCategory] = useState(ANY_CATEGORY);
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [state, setState] = useState(() => {
+    const value = searchParams.get("state");
+    return value && (ALL_STATES as readonly string[]).includes(value) ? value : ANY_STATE;
+  });
+  const [category, setCategory] = useState(() => {
+    const value = searchParams.get("category");
+    return value && (PROVIDER_CATEGORIES as readonly string[]).includes(value)
+      ? value
+      : ANY_CATEGORY;
+  });
   const [cost, setCost] = useState<CostFilter>("any");
   const [open24, setOpen24] = useState(false);
 

@@ -26,6 +26,7 @@ import {
   SearchIcon,
   StethoscopeIcon,
 } from "@/components/icons";
+import { HealthGuide } from "@/components/health-guide";
 import { useT } from "@/lib/i18n";
 import { KEYS, seedBookings, seedJournal, seedProviders, seedReminders, seedTopics, seedUsers, todayIso, useSession, useStoredCollection } from "@/lib/storage";
 import {
@@ -115,6 +116,11 @@ export default function HomeScreen() {
           </Link>
         )}
       </section>
+
+      {/* AI health guide ------------------------------------------------ */}
+      <div className="mt-4">
+        <HealthGuide />
+      </div>
 
       {/* health overview ------------------------------------------------ */}
       <SectionHeader title={t("home_overview", "Health overview")} />
