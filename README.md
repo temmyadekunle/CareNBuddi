@@ -48,16 +48,16 @@ directory (the same data Find Care uses), so nothing is ever invented.
 All AI configuration lives in Cloudflare, never in the frontend bundle:
 
 ```bash
-# OpenAI-compatible API key, stored as a Worker secret
+# OpenAI-compatible API key (Google AI Studio / Gemini key), stored as a Worker secret
 npx wrangler@4 secret put AI_API_KEY
 ```
 
 Optional `wrangler.jsonc` `vars` (defaults shown):
 
-- `AI_BASE_URL` — OpenAI-compatible base URL (`https://api.openai.com/v1`)
-- `AI_MODEL` — model id (`gpt-4o-mini`)
+- `AI_BASE_URL` — OpenAI-compatible base URL (`https://generativelanguage.googleapis.com/v1beta/openai`)
+- `AI_MODEL` — model id (`gemini-flash-lite-latest`)
 
-Any OpenAI-compatible provider works via `AI_BASE_URL`.
+Any OpenAI-compatible provider works via `AI_BASE_URL` (Gemini, OpenAI, etc.).
 
 ### Behaviour without a key (by design)
 

@@ -43,7 +43,7 @@ const MAX_BODY_CHARS = 8_192;
 const MAX_MESSAGE_CHARS = 1_500;
 const MAX_HISTORY_ITEMS = 8;
 const MAX_HISTORY_TEXT = 400;
-const AI_TIMEOUT_MS = 12_000;
+const AI_TIMEOUT_MS = 25_000;
 
 const rateBuckets = new Map<string, number[]>();
 
@@ -191,33 +191,62 @@ const worker = {
       return json({ ok: true, configured: false });
     }
 
-    const baseUrl = (env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+    const baseUrl = (
+      env.AI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai"
+    ).replace(/\/+$/, "");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
+    const key = env.AI_API_KEY.trim();
+    const model = env.AI_MODEL || "gemini-flash-lite-latest";
+    const aiBody = JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 500,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt() },
+        ...history.map((item) => ({ role: item.role, content: item.content })),
+        { role: "user", content: message },
+      ],
+    });
+
     try {
-      const aiResponse = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${env.AI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: env.AI_MODEL || "gpt-4o-mini",
-          temperature: 0.2,
-          max_tokens: 500,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt() },
-            ...history.map((item) => ({ role: item.role, content: item.content })),
-            { role: "user", content: message },
-          ],
-        }),
-        signal: controller.signal,
-      });
+      const doFetch = () =>
+        fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${key}`,
+          },
+          body: aiBody,
+          signal: controller.signal,
+        });
+      let aiResponse = await doFetch();
+      if (aiResponse.status === 429 || aiResponse.status === 503) {
+        aiResponse.body?.cancel();
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        aiResponse = await doFetch();
+      }
 
       if (!aiResponse.ok) {
-        console.error(`health-guide ai_http status=${aiResponse.status}`);
+        const detail = await aiResponse.text().catch(() => "");
+        let info = "";
+        try {
+          const parsed = JSON.parse(detail) as Record<string, unknown>;
+          const e = (parsed.error ?? parsed) as Record<string, unknown>;
+          info = [e.type, e.code, e.message]
+            .filter((v): v is string => typeof v === "string" && v.length > 0)
+            .join(" | ");
+        } catch {
+          info = detail.slice(0, 200);
+        }
+        if (!info) info = detail.slice(0, 200);
+        console.error(
+          `health-guide ai_http status=${aiResponse.status} err=${info
+            .replace(/[\r\n"]/g, " ")
+            .slice(0, 300)}`,
+        );
         return json({ ok: false, error: "ai_error" }, 502);
       }
 

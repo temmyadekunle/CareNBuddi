@@ -10,11 +10,12 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
-  // Non-secret AI defaults. The API key is NEVER set here —
+  // Non-secret AI defaults (Google Gemini via its OpenAI-compatible
+  // endpoint). The API key is NEVER set here —
   // put it in a secret: `npx wrangler secret put AI_API_KEY`.
   "vars": {
-    "AI_BASE_URL": "https://api.openai.com/v1",
-    "AI_MODEL": "gpt-4o-mini"
+    "AI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "AI_MODEL": "gemini-flash-lite-latest"
   },
   "observability": {
     "enabled": true
