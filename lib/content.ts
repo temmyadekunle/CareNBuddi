@@ -1602,6 +1602,7 @@ export const OPERATING_STATES: string[] = [
   "Zamfara",
   "Nasarawa",
   "Ekiti",
+  "Kogi",
 ];
 
 export const ALL_STATES: string[] = Array.from(
