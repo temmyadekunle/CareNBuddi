@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   AvatarLarge,
   Badge,
@@ -53,6 +53,7 @@ import {
 } from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
 import { fileToSquareDataUrl, readPhoto, removePhoto, savePhoto } from "@/lib/profile-photo";
+import { ProfileCropper } from "@/components/profile-cropper";
 import { useCloud } from "@/lib/supabase/cloud";
 import {
   KEYS,
@@ -113,6 +114,19 @@ export default function ProfilePage() {
   const [soon, setSoon] = useState<null | "payments" | "wallet">(null);
   const [confirmOut, setConfirmOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
+    const saved = localStorage.getItem("healthlink:theme") as "light" | "dark" | null;
+    if (saved) return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(theme);
+    localStorage.setItem("healthlink:theme", theme);
+  }, [theme]);
 
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoState, setPhotoState] = useState(() => ({
@@ -139,19 +153,13 @@ export default function ProfilePage() {
 
   const onPhotoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    // Reset first, so choosing the same file twice still fires a change.
     event.target.value = "";
     if (!file || !me) return;
 
     setPhotoBusy(true);
     try {
       const dataUrl = await fileToSquareDataUrl(file);
-      if (savePhoto(me.id, dataUrl)) {
-        setPhotoState({ userId: me.id, src: dataUrl });
-        push(t("prof_photo_saved", "Photo updated"), "success");
-      } else {
-        push(t("prof_photo_no_room", "This device is out of storage space."), "error");
-      }
+      setCropperImage(dataUrl);
     } catch (err) {
       const code = err instanceof Error ? err.message : "";
       push(
@@ -209,6 +217,21 @@ export default function ProfilePage() {
     }));
     setEmergencyOpen(false);
     push(t("prof_emergency_saved", "Emergency contact updated"), "success");
+  };
+
+  const handleCropSave = (dataUrl: string) => {
+    if (!me) return;
+    if (savePhoto(me.id, dataUrl)) {
+      setPhotoState({ userId: me.id, src: dataUrl });
+      push(t("prof_photo_saved", "Photo updated"), "success");
+    } else {
+      push(t("prof_photo_no_room", "This device is out of storage space."), "error");
+    }
+    setCropperImage(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropperImage(null);
   };
 
   const telHref = `tel:${(passport.emergencyPhone ?? "").replace(/[^\d+]/g, "")}`;
@@ -369,6 +392,20 @@ export default function ProfilePage() {
           </Card>
 
           <Card padded={false} className={menuCard}>
+            <ListRow
+              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+              icon={<ActivityIcon className="h-5 w-5" />}
+              tone="slate"
+              title={t("prof_theme", theme === "light" ? "Dark mode" : "Light mode")}
+              meta={
+                theme === "light"
+                  ? <span className="text-xs text-slate-500">{t("prof_theme_light", "Light")}</span>
+                  : <span className="text-xs text-slate-500">{t("prof_theme_dark", "Dark")}</span>
+              }
+            />
+          </Card>
+
+          <Card padded={false} className={menuCard}>
             {me.role === "provider" ? (
               <ListRow
                 href="/provider"
@@ -470,6 +507,44 @@ export default function ProfilePage() {
               className={`${inputClass} min-h-11 opacity-70`}
             />
           </Field>
+
+          <Field
+            label={t("a_email", "Email")}
+            hint={t("prof_email_fixed", "Email cannot be changed here")}
+          >
+            <input
+              value={me?.email ?? ""}
+              readOnly
+              className={`${inputClass} min-h-11 opacity-70`}
+            />
+          </Field>
+
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-sm font-semibold text-slate-900">{t("prof_govt_id", "Government ID")}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{t("prof_govt_id_d", "Used for verification and secure access to health services.")}</p>
+            <div className="mt-3 space-y-3">
+              <Field label={t("prof_nin", "NIN (National Identification Number)")} hint={t("prof_nin_hint", "11-digit National Identity Number")}>
+                <input
+                  value={passport.nin ?? ""}
+                  onChange={(e) => setPassport((p) => ({ ...p, nin: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="12345678901"
+                  className={`${inputClass} min-h-11`}
+                />
+              </Field>
+              <Field label={t("prof_bvn", "BVN (Bank Verification Number)")} hint={t("prof_bvn_hint", "11-digit Bank Verification Number")}>
+                <input
+                  value={passport.bvn ?? ""}
+                  onChange={(e) => setPassport((p) => ({ ...p, bvn: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="12345678901"
+                  className={`${inputClass} min-h-11`}
+                />
+              </Field>
+            </div>
+          </div>
 
           <div className="border-t border-slate-100 pt-4">
             <p className="text-sm font-semibold text-slate-900">{t("prof_units", "Units")}</p>
@@ -757,6 +832,15 @@ export default function ProfilePage() {
         onConfirm={() => void signOut()}
         onCancel={() => setConfirmOut(false)}
       />
+
+      {/* profile cropper ------------------------------------------------------- */}
+      {cropperImage && (
+        <ProfileCropper
+          imageSrc={cropperImage}
+          onCrop={handleCropSave}
+          onCancel={handleCropCancel}
+        />
+      )}
     </Screen>
   );
 }

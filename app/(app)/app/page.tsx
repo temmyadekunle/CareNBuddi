@@ -46,7 +46,10 @@ import {
 import { useLang } from "@/lib/i18n";
 
 function greetingKey(): string {
-  const hour = new Date().getHours();
+  const now = new Date();
+  const watOffset = 1 * 60 * 60 * 1000;
+  const watTime = new Date(now.getTime() + watOffset);
+  const hour = watTime.getUTCHours();
   if (hour < 12) return "home_good_morning";
   if (hour < 17) return "home_good_afternoon";
   return "home_good_evening";

@@ -3,7 +3,7 @@
   "short_name": "CareNBuddi",
   "description": "CareNBuddi is your healthcare companion, helping you access, manage, and stay connected to the care you need.",
   "start_url": "/app",
-  "scope": "/",
+  "scope": "/app",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FAFCFC",

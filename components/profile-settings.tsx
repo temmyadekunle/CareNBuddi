@@ -18,12 +18,16 @@ export interface PassportPrefs {
   hmo: string;
   emergencyContact: string;
   emergencyPhone: string;
+  nin: string;
+  bvn: string;
 }
 
 export const PASSPORT_DEFAULTS: PassportPrefs = {
   hmo: "",
   emergencyContact: "",
   emergencyPhone: "",
+  nin: "",
+  bvn: "",
 };
 
 export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {

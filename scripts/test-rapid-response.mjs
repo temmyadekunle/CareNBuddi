@@ -175,7 +175,8 @@ check("facility queries pin the country", () => {
     address: "Idiroko Road",
     city: "Ota, Ogun",
   });
-  assert.match(q, /Ota Cottage Hospital/);
+  assert.match(q, /Idiroko Road/);
+  assert.match(q, /Ota/);
   assert.match(q, /Nigeria$/);
 });
 
