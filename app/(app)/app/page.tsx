@@ -21,6 +21,7 @@ import {
   EmergencyIcon,
   FileTextIcon,
   HeartPulseIcon,
+  PhoneIcon,
   PillIcon,
   PinIcon,
   SearchIcon,
@@ -297,22 +298,28 @@ export default function HomeScreen() {
             <AlertIcon className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-rose-900">{t("em_call", "Call an emergency number immediately")}</p>
+            <p className="text-sm font-semibold text-rose-900">
+              {t("home_emergency_title", "Need Emergency Help?")}
+            </p>
             <p className="mt-0.5 text-xs text-rose-800">
-              {t("home_emergency_d", "Do not wait for an app. Call first, then use CareNBuddi after.")}
+              {t(
+                "home_emergency_desc",
+                "Call 112 first — do not wait for an app. Nearby emergency care is one tap away.",
+              )}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               <a
                 href="tel:112"
                 className="tap inline-flex min-h-9 items-center rounded-xl bg-rose-600 px-3.5 text-xs font-semibold text-white"
               >
-                {t("home_call_112", "Call 112")}
+                <PhoneIcon className="mr-1.5 h-3.5 w-3.5" />
+                {t("home_call_emergency", "Call Emergency Services")}
               </a>
               <Link
-                href="/emergency"
+                href="/emergency#nearby"
                 className="tap inline-flex min-h-9 items-center rounded-xl border border-rose-300 bg-white px-3.5 text-xs font-semibold text-rose-700"
               >
-                {t("em_title", "Get Help Now")}
+                {t("home_find_emergency_care", "Find Nearby Emergency Care")}
               </Link>
             </div>
           </div>

@@ -369,6 +369,7 @@ export function Segmented<T extends string>({
     <div className="flex rounded-xl bg-slate-100 p-1">
       {options.map((opt) => (
         <button
+          type="button"
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`tap min-h-9 flex-1 rounded-lg text-xs font-semibold ${

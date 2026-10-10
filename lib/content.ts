@@ -60,12 +60,6 @@ export interface Provider {
   emergency?: boolean;
 }
 
-export interface EmergencyContact {
-  name: string;
-  number: string;
-  note: string;
-}
-
 export type CostTier = "low" | "mid" | "high";
 
 export const COST_TIER_LABELS: Record<CostTier, string> = {
@@ -1471,12 +1465,6 @@ export const PROVIDERS: Provider[] = [
     verified: true, rating: 4.6,
     description: "Consultant cardiologist for heart checks and blood pressure care.",
   },
-];
-
-export const EMERGENCY_CONTACTS: EmergencyContact[] = [
-  { name: "National emergency line", number: "112", note: "Works from any phone" },
-  { name: "Fire & rescue", number: "199", note: "Reports and rescue" },
-  { name: "Police emergency", number: "199", note: "" },
 ];
 
 export const PROVIDER_CATEGORIES: ProviderCategory[] = [...GUIDE_CATEGORIES];
