@@ -41,6 +41,7 @@ const FOCUS =
 type Copy = { key: string; fallback: string };
 type Screen = {
   art: ComponentType<{ className?: string }>;
+  eyebrow: Copy;
   title: Copy;
   body: Copy;
   bullets: Copy[];
@@ -49,70 +50,73 @@ type Screen = {
 const SCREENS: Screen[] = [
   {
     art: ConnectedArt,
-    title: { key: "onb_1_title", fallback: "Your health, connected." },
+    eyebrow: { key: "onb_r1_eyebrow", fallback: "Your Health, All in One Place" },
+    title: { key: "onb_r1_title", fallback: "Your Health. Your Care. Your Way." },
     body: {
-      key: "onb_1_body",
+      key: "onb_r1_body",
       fallback:
-        "Keep your records, results and care team together in one secure place.",
+        "Find healthcare services, connect with healthcare professionals, manage appointments and keep track of your personal health in one place.",
     },
     bullets: [
       {
-        key: "onb_1_b1",
-        fallback: "Save your health details once and share them with any provider.",
+        key: "onb_r1_b1",
+        fallback: "Find verified hospitals, clinics and pharmacies near you.",
       },
       {
-        key: "onb_1_b2",
-        fallback: "Your information stays on your device and is private by default.",
+        key: "onb_r1_b2",
+        fallback: "Connect with professionals and manage appointments.",
       },
       {
-        key: "onb_1_b3",
-        fallback: "Use CareNBuddi in English, Yoruba, Hausa or Igbo.",
-      },
-    ],
-  },
-  {
-    art: FindCareArt,
-    title: { key: "onb_2_title", fallback: "Find the care you need." },
-    body: {
-      key: "onb_2_body",
-      fallback:
-        "Search verified hospitals, clinics, laboratories and pharmacies near you.",
-    },
-    bullets: [
-      {
-        key: "onb_2_b1",
-        fallback: "Filter by state, LGA, service and what you can afford.",
-      },
-      {
-        key: "onb_2_b2",
-        fallback: "Call, WhatsApp or request a visit in a few taps.",
-      },
-      {
-        key: "onb_2_b3",
-        fallback: "The CareNBuddi team checks every provider before you see them.",
+        key: "onb_r1_b3",
+        fallback: "Your records stay on your device and are private by default.",
       },
     ],
   },
   {
     art: ManageArt,
-    title: { key: "onb_3_title", fallback: "Manage your health in one place." },
+    eyebrow: { key: "onb_r2_eyebrow", fallback: "Healthcare That Understands You" },
+    title: { key: "onb_r2_title", fallback: "Care Designed Around You." },
     body: {
-      key: "onb_3_body",
+      key: "onb_r2_body",
       fallback:
-        "Reminders, journal entries, test results and your care circle, side by side.",
+        "Track your mood, symptoms and menstrual cycle where relevant. Access health information and discover care options suited to your needs.",
     },
     bullets: [
       {
-        key: "onb_3_b1",
-        fallback: "Never miss a medication or screening reminder.",
+        key: "onb_r2_b1",
+        fallback: "Mood, symptom, sleep and energy tracking you control.",
       },
       {
-        key: "onb_3_b2",
-        fallback: "Follow your whole health journey on one timeline.",
+        key: "onb_r2_b2",
+        fallback: "Menstrual tracking is optional — for anyone who needs it.",
       },
       {
-        key: "onb_3_b3",
-        fallback: "Look after the health of your family with Care Circle.",
+        key: "onb_r2_b3",
+        fallback: "Health information in English, Yoruba, Hausa or Igbo.",
+      },
+    ],
+  },
+  {
+    art: FindCareArt,
+    eyebrow: { key: "onb_r3_eyebrow", fallback: "Help When It Matters Most" },
+    title: { key: "onb_r3_title", fallback: "When You Need Help, Start Here." },
+    body: {
+      key: "onb_r3_body",
+      fallback:
+        "Find nearby healthcare facilities, access emergency contact information and connect with participating emergency services through CareNBuddi Rapid Response.",
+    },
+    bullets: [
+      {
+        key: "onb_r3_b1",
+        fallback: "Call verified emergency numbers first — right from the app.",
+      },
+      {
+        key: "onb_r3_b2",
+        fallback: "Find nearby emergency-ready facilities, list and map.",
+      },
+      {
+        key: "onb_r3_b3",
+        fallback: "Real options only — never a simulated ambulance dispatch.",
       },
     ],
   },
@@ -178,8 +182,13 @@ export function OnboardingFlow() {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [step]);
 
-  const { art: Art, title, body, bullets } = SCREENS[step];
+  const { art: Art, eyebrow, title, body, bullets } = SCREENS[step];
   const isLast = step >= LAST_STEP;
+
+  const goSignIn = useCallback(() => {
+    if (readLocal<string>(ONBOARDED_KEY) !== "1") writeLocal(ONBOARDED_KEY, "1");
+    router.push("/auth/sign-in");
+  }, [router]);
 
   return (
     <>
@@ -211,7 +220,10 @@ export function OnboardingFlow() {
               <Art className="h-auto w-full" />
             </div>
             <div aria-live="polite" className="mt-5">
-              <h1 className="text-[26px] font-bold leading-[1.15] tracking-tight text-slate-900">
+              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-brand-700">
+                {t(eyebrow.key, eyebrow.fallback)}
+              </p>
+              <h1 className="mt-1.5 text-[26px] font-bold leading-[1.15] tracking-tight text-slate-900">
                 {t(title.key, title.fallback)}
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">
@@ -256,26 +268,34 @@ export function OnboardingFlow() {
                   : t("onb_step_3", "3 of 3")}
             </span>
           </div>
-          <div className="flex items-center gap-2.5">
-            {step > 0 && (
-              <button
-                type="button"
-                onClick={goBack}
-                aria-label={t("onb_back", "Go back")}
-                className={`tap flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700 ${FOCUS}`}
-              >
-                <ChevronLeftIcon className="h-5 w-5" />
-              </button>
-            )}
-            <Button full onClick={goNext} className={FOCUS}>
-              {isLast ? t("onb_start", "Get started") : t("onb_next", "Next")}
-              {isLast ? (
+          {isLast ? (
+            <div className="flex flex-col gap-2">
+              <Button full onClick={goNext} className={FOCUS}>
+                {t("onb_start", "Get started")}
                 <CheckIcon className="h-4 w-4" />
-              ) : (
-                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+              <Button full tone="secondary" onClick={goSignIn} className={FOCUS}>
+                {t("onb_signin", "Sign In")}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  aria-label={t("onb_back", "Go back")}
+                  className={`tap flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700 ${FOCUS}`}
+                >
+                  <ChevronLeftIcon className="h-5 w-5" />
+                </button>
               )}
-            </Button>
-          </div>
+              <Button full onClick={goNext} className={FOCUS}>
+                {t("onb_next", "Next")}
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </footer>
       </div>
     </>
