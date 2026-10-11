@@ -3,6 +3,7 @@ import type { Dict } from "../i18n";
 export const haDict: Dict = {
     n_home: "Gida", n_explore: "Binciko", n_find: "Nemi Kula", n_services: "Ayyuka",
     n_health: "Lafiya", n_profile: "Bayanan", n_provider: "Mai bayarwa", n_admin: "Gudanarwa", n_account: "Asusu",
+    mh_title: "Littafin Lafiya Na", mh_sub: "Bi zagayowar haila, yanayi da alamomi.",
     home_good_morning: "Ina kwana",
     home_good_afternoon: "Barka da rana",
     home_good_evening: "Barka da yamma",

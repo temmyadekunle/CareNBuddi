@@ -450,6 +450,22 @@ export default function HealthDashboardPage() {
         </div>
       </Card>
 
+      <Link href="/health/diary" className="tap mt-2.5 block">
+        <Card className="flex items-center gap-3 hover:border-brand-300">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-700">
+            <CalendarIcon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {t("mh_title", "My Health Diary")}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-slate-500">
+              {t("mh_sub", "Track your cycle, mood, symptoms and wellbeing in one place.")}
+            </p>
+          </div>
+        </Card>
+      </Link>
+
       {/* medications ------------------------------------------------------ */}
       <SectionHeader
         title={t("hd_meds", "Medications")}

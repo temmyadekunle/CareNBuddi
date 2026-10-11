@@ -12,6 +12,7 @@ export type Dicts = Record<Lang, Dict>;
 const en: Dict = {
   n_home: "Home", n_explore: "Explore", n_find: "Find Care", n_services: "Services",
   n_health: "Health", n_profile: "Profile", n_provider: "Provider", n_admin: "Admin", n_account: "Account",
+  mh_title: "My Health Diary", mh_sub: "Track your cycle, mood, symptoms and wellbeing in one place.",
   home_good_morning: "Good morning",
   home_good_afternoon: "Good afternoon",
   home_good_evening: "Good evening",

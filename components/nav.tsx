@@ -41,6 +41,7 @@ const TITLES: { prefix: string; titleKey: string; subKey?: string }[] = [
   { prefix: "/appointments", titleKey: "n_appts" },
   { prefix: "/find-care/", titleKey: "f_title" },
   { prefix: "/find-care", titleKey: "n_find" },
+  { prefix: "/health/diary", titleKey: "mh_title", subKey: "mh_sub" },
   { prefix: "/health/exercise", titleKey: "hx_title", subKey: "hx_sub" },
   { prefix: "/health/chronic", titleKey: "n_chronic", subKey: "n_chronic_d" },
   { prefix: "/health/journey", titleKey: "jt_title", subKey: "jt_sub" },
@@ -186,6 +187,7 @@ function MoreSheet({
     {
       titleKey: "n_my_health",
       items: [
+        { href: "/health/diary", titleKey: "mh_title", icon: <CalendarIcon className="h-5 w-5" /> },
         { href: "/passport", titleKey: "pp_title", icon: <ShieldIcon className="h-5 w-5" /> },
         { href: "/records", titleKey: "hh_records", icon: <RecordsIcon className="h-5 w-5" /> },
         { href: "/journal", titleKey: "hh_journal", icon: <FileTextIcon className="h-5 w-5" /> },

@@ -436,3 +436,57 @@ export function AppleIcon(props: IconProps) {
     </Base>
   );
 }
+
+export function BrainIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 5a3 3 0 1 1-6 0v4a5 5 0 0 0 10 0V5a3 3 0 1 1-6 0Z" />
+      <path d="M12 21c-4.5 0-6-2.5-6-5.5V9c0-1.7 2.2-3 5-3s5 1.3 5 3v5.5c0 3-1.5 5.5-6 5.5Z" />
+      <path d="M8 14c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2Zm8 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2Z" />
+    </Base>
+  );
+}
+
+export function SunIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.06 1.06M18.07 18.07l1.06 1.06M2 12h2M20 12h2M4.93 19.07l1.06-1.06M18.07 5.93l1.06-1.06" />
+    </Base>
+  );
+}
+
+export function MoonIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />
+    </Base>
+  );
+}
+
+export function ZapIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M13 2 3 14h9l-1 8 10-17h-9l1-8Z" />
+    </Base>
+  );
+}
+
+export function ClipboardListIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4a3 3 0 0 1 6 0" />
+      <path d="M9 10h6M9 14h6M9 18h3" />
+    </Base>
+  );
+}
+
+export function SparklesIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 3v1m0 16v1m9-9h-1m-16 0h-1m15.1-7.1-.7.7M7.6 17.6l-.7.7M17.6 6.9l.7.7M6.9 17.6l.7.7" />
+      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+    </Base>
+  );
+}

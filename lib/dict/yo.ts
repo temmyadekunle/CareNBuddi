@@ -3,6 +3,7 @@ import type { Dict } from "../i18n";
 export const yoDict: Dict = {
     n_home: "Ile", n_explore: "Ṣàwárí", n_find: "Wá Ìtọ́jú", n_services: "Àwọn Iṣẹ́",
     n_health: "Ìlera", n_profile: "Àkọọ́lẹ̀", n_provider: "Olùpèsè", n_admin: "Ìdarí", n_account: "Àkọọ́lẹ̀ mi",
+    mh_title: "Ìwé Ìlera Mi", mh_sub: "Tẹ́lé ìṣẹ̀lẹ̀ ọjọ́, ìmọ̀lára àti àmì àrùn.",
     home_good_morning: "Ẹ káárọ̀",
     home_good_afternoon: "Ẹ káàsán",
     home_good_evening: "Ẹ káálẹ́",

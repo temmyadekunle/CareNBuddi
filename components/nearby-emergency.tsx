@@ -39,7 +39,11 @@ export function NearbyEmergency() {
 
   const [view, setView] = useState<"list" | "map">("list");
   const [origin, setOrigin] = useState<LatLon | null>(null);
+  const [originLabel, setOriginLabel] = useState<string | null>(null);
   const [loc, setLoc] = useState<LocState>("idle");
+  const [manualQuery, setManualQuery] = useState("");
+  const [manualSearching, setManualSearching] = useState(false);
+  const [manualError, setManualError] = useState(false);
   const [coords, setCoords] = useState<Record<string, GeocodeResult>>(() =>
     readGeocodeCache(),
   );
@@ -124,11 +128,36 @@ export function NearbyEmergency() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        setOriginLabel(null);
+        setManualError(false);
         setLoc("granted");
       },
       () => setLoc("denied"),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
     );
+  };
+
+  const clearOrigin = () => {
+    setOrigin(null);
+    setOriginLabel(null);
+    setManualError(false);
+    setLoc("idle");
+  };
+
+  const searchManual = async () => {
+    const query = manualQuery.trim();
+    if (!query) return;
+    setManualSearching(true);
+    setManualError(false);
+    const found = await geocodeAddress(`${query}, Nigeria`);
+    setManualSearching(false);
+    if (found) {
+      setOrigin({ lat: found.lat, lng: found.lng });
+      setOriginLabel(found.label.split(",").slice(0, 2).join(","));
+      setLoc("granted");
+    } else {
+      setManualError(true);
+    }
   };
 
   const categoryLabel = (provider: Provider) =>
@@ -159,7 +188,9 @@ export function NearbyEmergency() {
           </p>
           <p className="mt-0.5 truncate text-xs text-slate-500">
             {origin
-              ? t("er_sorted", "Sorted by distance from you")
+              ? originLabel
+                ? t("er_sorted_place", "Sorted by distance from {place}").replace("{place}", originLabel)
+                : t("er_sorted", "Sorted by distance from you")
               : t("er_no_loc", "Share your location to sort by distance")}
           </p>
         </div>
@@ -180,7 +211,7 @@ export function NearbyEmergency() {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {origin ? (
-          <Button tone="secondary" onClick={() => { setOrigin(null); setLoc("idle"); }}>
+          <Button tone="secondary" onClick={clearOrigin}>
             {t("er_clear_loc", "Clear location")}
           </Button>
         ) : (
@@ -216,6 +247,43 @@ export function NearbyEmergency() {
           </span>
         )}
       </div>
+
+      {!origin && (
+        <div className="mt-2.5">
+          <div className="flex gap-2">
+            <label htmlFor="er-manual-place" className="sr-only">
+              {t("er_manual_label", "Type a town or area")}
+            </label>
+            <input
+              id="er-manual-place"
+              type="search"
+              value={manualQuery}
+              onChange={(event) => {
+                setManualQuery(event.target.value);
+                setManualError(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void searchManual();
+                }
+              }}
+              placeholder={t("er_manual_ph", "Type a town or area, e.g. Sango Ota…")}
+              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300"
+            />
+            <Button tone="secondary" onClick={() => void searchManual()} disabled={manualSearching || !manualQuery.trim()}>
+              {manualSearching
+                ? t("er_searching", "Searching…")
+                : t("er_search", "Search")}
+            </Button>
+          </div>
+          {manualError && (
+            <p className="mt-1.5 text-xs font-medium text-amber-700">
+              {t("er_manual_error", "Could not find that place. Check the spelling or try a nearby town.")}
+            </p>
+          )}
+        </div>
+      )}
 
       {view === "map" ? (
         <div className="mt-3">

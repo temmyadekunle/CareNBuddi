@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import type { JournalEntry, MedicalRecord, Reminder } from "./types";
-import type { Booking, ProviderRequest, Report, User } from "./types";
+import type { Booking, ProviderRequest, Report, User, MenstrualCycle, MoodEntry, SymptomEntry, HealthTrackingPreferences } from "./types";
+import { DEFAULT_HEALTH_PREFERENCES } from "./types";
 import type { Lang } from "./lang";
 import { PROVIDERS, PROVIDER_SEED_ID, TOPICS } from "./content";
 
@@ -31,6 +32,11 @@ export const KEYS = {
   providerRequests: "healthlink:provider-requests",
   bookings: "healthlink:bookings",
   reports: "healthlink:reports",
+  // My Health Diary
+  menstrualCycles: "healthlink:menstrual-cycles",
+  moodEntries: "healthlink:mood-entries",
+  symptomEntries: "healthlink:symptom-entries",
+  healthPreferences: "healthlink:health-preferences",
 } as const;
 
 export function uid(): string {
@@ -419,5 +425,10 @@ export const seedReports: Report[] = [
     status: "open", createdAt: daysAgo(2),
   },
 ];
+
+export const seedMenstrualCycles: MenstrualCycle[] = [];
+export const seedMoodEntries: MoodEntry[] = [];
+export const seedSymptomEntries: SymptomEntry[] = [];
+export const seedHealthPreferences: HealthTrackingPreferences = DEFAULT_HEALTH_PREFERENCES;
 
 export { todayIso };

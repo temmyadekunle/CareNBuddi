@@ -3,6 +3,7 @@ import type { Dict } from "../i18n";
 export const igDict: Dict = {
     n_home: "Ụlọ", n_explore: "Chọpụta", n_find: "Chọọ Nlekọta", n_services: "Ọrụ",
     n_health: "Ahụike", n_profile: "Profaịlụ", n_provider: "Onye nye", n_admin: "Nchịkwa", n_account: "Akaụntụ",
+    mh_title: "Akwụkwọ Ahụike M", mh_sub: "Dekọọ nsọ, ọnọdụ na mgbaàmà.",
     home_good_morning: "Ụtụtụ ọma",
     home_good_afternoon: "Ehihie ọma",
     home_good_evening: "Mgbede ọma",
