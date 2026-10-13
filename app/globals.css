@@ -1,8 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAFCFC;
-  --foreground: #123B4A;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-border: #e2e8f0;
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px -18px rgba(15, 23, 42, 0.25);
+  --screen-bg: #f8fafc;
+  --phone-frame-bg: #e6ecf3;
+  --divider: #e2e8f0;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-focus-ring: #daeff0;
+  --toast-success: #111827;
+  --toast-success-text: #ffffff;
+  --toast-error: #dc2626;
+  --toast-error-text: #ffffff;
+  --toast-info: #1e293b;
+  --toast-info-text: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --surface-elevated: #f1f5f9;
+  --surface-hover: #f1f5f9;
+  --skeleton-bg: #e8edf3;
+}
+
+[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-border: #334159;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 24px -18px rgba(0, 0, 0, 0.5);
+  --screen-bg: #181826;
+  --phone-frame-bg: #0f172a;
+  --divider: #334159;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --input-focus-ring: #1a3a3b;
+  --toast-success: #111827;
+  --toast-success-text: #ffffff;
+  --toast-error: #dc2626;
+  --toast-error-text: #ffffff;
+  --toast-info: #1e293b;
+  --toast-info-text: #ffffff;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --surface-elevated: #293548;
+  --surface-hover: #293548;
+  --skeleton-bg: #334159;
 }
 
 @theme inline {
@@ -41,8 +88,12 @@
   --color-coral-700: #C24834; /* ~4.9:1 AA with white */
 }
 
+.themes-enabled {
+  color-scheme: light dark;
+}
+
 body {
-  background: #FAFCFC;
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
@@ -50,21 +101,18 @@ body {
 
 /* ---------- app shell ---------- */
 
-/* The phone frame only exists on large screens. On a phone the app simply
-   fills the viewport, which is what a real installed app does. */
 .app-canvas {
   min-height: 100dvh;
-  background: #FAFCFC;
+  background: var(--background);
 }
 
-/* Tablet: wider than phone but not full desktop frame */
 @media (min-width: 768px) and (max-width: 1023px) {
   .app-canvas {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    background: #E8F8F6;
+    background: var(--phone-frame-bg);
     padding: 28px 16px;
   }
 
@@ -73,7 +121,7 @@ body {
     max-width: 520px;
     height: min(900px, calc(100vh - 56px));
     border-radius: 2rem;
-    border: 1px solid #dbe3ec;
+    border: 1px solid var(--card-border);
     box-shadow:
       0 0 0 8px #10192b,
       0 0 0 9px #2b3a52,
@@ -81,14 +129,13 @@ body {
   }
 }
 
-/* Desktop: full phone frame */
 @media (min-width: 1024px) {
   .app-canvas {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    background: #E8F8F6;
+    background: var(--phone-frame-bg);
     padding: 28px 16px;
   }
 
@@ -96,7 +143,7 @@ body {
     width: 420px;
     height: min(880px, calc(100vh - 56px));
     border-radius: 2.25rem;
-    border: 1px solid #dbe3ec;
+    border: 1px solid var(--card-border);
     box-shadow:
       0 0 0 10px #10192b,
       0 0 0 11px #2b3a52,
@@ -109,7 +156,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--screen-bg);
   min-height: 100dvh;
 }
 
@@ -197,7 +244,7 @@ body {
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: #E3EFEC;
+  background: var(--skeleton-bg);
 }
 
 .skeleton::after {
@@ -298,8 +345,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Only hide revealed content once JS has confirmed it can reveal it again,
-   so the landing page is fully readable without JavaScript. */
 .has-reveal .reveal {
   opacity: 0;
   transform: translateY(14px);

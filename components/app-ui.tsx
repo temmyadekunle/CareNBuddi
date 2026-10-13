@@ -39,7 +39,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-18px_rgba(15,23,42,0.25)] ${padded ? "p-4" : ""} ${className}`}
+      className={`rounded-2xl border border-slate-200/80 bg-white dark:bg-slate-800 dark:border-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-18px_rgba(15,23,42,0.25)] ${padded ? "p-4" : ""} ${className}`}
     >
       {children}
     </section>
@@ -83,11 +83,11 @@ export function SectionHeader({
 
 type ButtonTone = "primary" | "secondary" | "ghost" | "danger";
 
-const TONES: Record<ButtonTone, string> = {
+  const TONES: Record<ButtonTone, string> = {
   primary: "bg-brand-700 text-white shadow-sm hover:bg-brand-800 active:bg-brand-900",
-  secondary: "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700",
-  ghost: "text-slate-600 hover:bg-slate-100",
-  danger: "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100",
+  secondary: "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200",
+  ghost: "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+  danger: "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-700/50 dark:bg-rose-900/20 dark:text-rose-300",
 };
 
 export function Button({
@@ -117,7 +117,7 @@ export function IconButton({
     <button
       aria-label={label}
       {...props}
-      className={`tap inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 ${className}`}
+      className={`tap inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${className}`}
     >
       {children}
     </button>
@@ -176,7 +176,7 @@ export function ListRow({
     brand: "bg-brand-50 text-brand-700",
     green: "bg-green-50 text-green-700",
     coral: "bg-coral-50 text-coral-700",
-    slate: "bg-slate-100 text-slate-600",
+    slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
     rose: "bg-rose-50 text-rose-700",
   };
   const inner = (
@@ -187,15 +187,15 @@ export function ListRow({
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-slate-900">{title}</span>
-        {subtitle && <span className="mt-0.5 block truncate text-xs text-slate-500">{subtitle}</span>}
+        <span className="block truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</span>
+        {subtitle && <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">{subtitle}</span>}
       </span>
       {meta}
-      {chevron && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />}
+      {chevron && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-500" />}
     </>
   );
   const cls =
-    "tap flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50";
+    "tap flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60";
 
   if (href)
     return (
@@ -280,12 +280,12 @@ export function EmptyState({
   return (
     <Card className="flex flex-col items-center gap-2 py-10 text-center">
       {icon && (
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500">
           {icon}
         </span>
       )}
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {body && <p className="max-w-[16rem] text-xs text-slate-500">{body}</p>}
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      {body && <p className="max-w-[16rem] text-xs text-slate-500 dark:text-slate-400">{body}</p>}
       {action}
     </Card>
   );
@@ -304,11 +304,11 @@ export function ErrorState({
 }) {
   return (
     <Card className="flex flex-col items-center gap-2 py-10 text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-900/30">
         <AlertIcon className="h-6 w-6" />
       </span>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {body && <p className="max-w-[16rem] text-xs text-slate-500">{body}</p>}
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      {body && <p className="max-w-[16rem] text-xs text-slate-500 dark:text-slate-400">{body}</p>}
       {onRetry && (
         <Button tone="secondary" onClick={onRetry} className="mt-2">
           {retryLabel}
@@ -341,8 +341,8 @@ export function Tabs<T extends string>({
             onClick={() => onChange(tab.value)}
             className={`tap relative min-h-9 shrink-0 rounded-full px-4 text-xs font-semibold ${
               active
-                ? "bg-slate-900 text-white"
-                : "border border-slate-200 bg-white text-slate-600"
+                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                : "border border-slate-200 bg-white text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
             }`}
           >
             {tab.label}
@@ -366,14 +366,14 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex rounded-xl bg-slate-100 p-1">
+    <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
       {options.map((opt) => (
         <button
           type="button"
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`tap min-h-9 flex-1 rounded-lg text-xs font-semibold ${
-            value === opt.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            value === opt.value ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"
           }`}
         >
           {opt.label}
@@ -419,12 +419,12 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="animate-sheet-in relative max-h-[85%] overflow-y-auto rounded-t-3xl bg-white px-4 pb-5 pt-3 shadow-2xl"
+        className="animate-sheet-in relative max-h-[85%] overflow-y-auto rounded-t-3xl bg-white px-4 pb-5 pt-3 shadow-2xl dark:bg-slate-800"
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-600" />
         {title && (
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
             <IconButton label="Close" onClick={onClose} className="h-8 w-8">
               <CloseIcon className="h-4 w-4" />
             </IconButton>
@@ -460,9 +460,9 @@ export function ConfirmDialog({
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-6">
       <button aria-label="Close" onClick={onCancel} className="animate-backdrop-in absolute inset-0 bg-slate-900/45" />
-      <div className="animate-sheet-in relative w-full max-w-[19rem] rounded-2xl bg-white p-5 shadow-2xl">
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-        {body && <p className="mt-1.5 text-sm text-slate-600">{body}</p>}
+      <div className="animate-sheet-in relative w-full max-w-[19rem] rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-800">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+        {body && <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">{body}</p>}
         <div className="mt-5 flex gap-2">
           <Button tone="secondary" full onClick={onCancel}>
             {cancelLabel}
@@ -541,7 +541,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-slate-600">{label}</span>
+      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{label}</span>
       <div className="mt-1.5">{children}</div>
       {hint && !error && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
       {error && <span className="mt-1 block text-[11px] font-medium text-rose-600">{error}</span>}
@@ -550,7 +550,7 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
+  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100";
 
 export function Switch({
   checked,
@@ -588,17 +588,21 @@ const HAIR = ["#1c1310", "#2b1b12", "#3d2415", "#120d0b"];
  * Original flat illustrations rather than stock photography: no licensing
  * questions, no network requests, and they read clearly at 40px.
  */
+export interface AvatarProps {
+  name: string;
+  role?: "doctor" | "nurse" | "patient";
+  size?: number;
+  seed?: number;
+  src?: string | null;
+}
+
 export function Avatar({
   name,
   role = "patient",
   size = 44,
   seed = 0,
-}: {
-  name: string;
-  role?: "doctor" | "nurse" | "patient";
-  size?: number;
-  seed?: number;
-}) {
+  src,
+}: AvatarProps) {
   const initials = name
     .split(" ")
     .filter(Boolean)
@@ -610,6 +614,19 @@ export function Avatar({
   const hair = HAIR[(seed + 1) % HAIR.length];
   const coat = role === "doctor" ? "#ffffff" : role === "nurse" ? "#e8f6f4" : "#dbe7f5";
   const coatEdge = role === "doctor" ? "#cbd5e1" : role === "nurse" ? "#bfe3df" : "#c7d7ea";
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover ring-4 ring-white dark:ring-slate-900"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
 
   return (
     <span
@@ -660,15 +677,12 @@ export function AvatarLarge({
 
   if (src) {
     return (
-      // A profile photo is a data URL the user just picked on this device, so
-      // there is no network request to optimise and next/image cannot process it.
-      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt=""
         width={size}
         height={size}
-        className="shrink-0 rounded-full object-cover ring-4 ring-white"
+        className="shrink-0 rounded-full object-cover ring-4 ring-white dark:ring-slate-900"
         style={{ width: size, height: size }}
       />
     );

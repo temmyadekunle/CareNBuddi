@@ -131,7 +131,7 @@ export function OnboardingFlow() {
 
   const finish = useCallback(() => {
     if (readLocal<string>(ONBOARDED_KEY) !== "1") writeLocal(ONBOARDED_KEY, "1");
-    router.push("/app");
+    router.push("/auth/choice");
   }, [router]);
 
   const goTo = useCallback(
@@ -156,6 +156,11 @@ export function OnboardingFlow() {
     setDirection(-1);
     setStep((prev) => Math.max(0, prev - 1));
   }, []);
+
+  const goSignIn = useCallback(() => {
+    finish();
+    router.push("/auth/sign-in");
+  }, [finish, router]);
 
   const skip = useCallback(() => {
     setDirection(1);
@@ -185,22 +190,17 @@ export function OnboardingFlow() {
   const { art: Art, eyebrow, title, body, bullets } = SCREENS[step];
   const isLast = step >= LAST_STEP;
 
-  const goSignIn = useCallback(() => {
-    if (readLocal<string>(ONBOARDED_KEY) !== "1") writeLocal(ONBOARDED_KEY, "1");
-    router.push("/auth/sign-in");
-  }, [router]);
-
   return (
     <>
       <style>{STAGE_CSS}</style>
-      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-white">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-white dark:bg-slate-950">
         {/* top bar — brand + out */}
         <header className="flex shrink-0 items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <LogoMark className="h-10 w-10" />
           <button
             type="button"
             onClick={skip}
-            className={`tap min-h-10 rounded-lg px-2 text-sm font-semibold text-slate-500 hover:text-brand-700 ${FOCUS}`}
+            className={`tap min-h-10 rounded-lg px-2 text-sm font-semibold text-slate-500 hover:text-brand-700 dark:text-slate-400 ${FOCUS}`}
           >
             {t("onb_skip", "Skip")}
           </button>
@@ -219,14 +219,14 @@ export function OnboardingFlow() {
             <div className="mx-auto w-full max-w-[19rem] pt-2">
               <Art className="h-auto w-full" />
             </div>
-            <div aria-live="polite" className="mt-5">
+             <div aria-live="polite" className="mt-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-brand-700">
                 {t(eyebrow.key, eyebrow.fallback)}
               </p>
-              <h1 className="mt-1.5 text-[26px] font-bold leading-[1.15] tracking-tight text-slate-900">
+              <h1 className="mt-1.5 text-[26px] font-bold leading-[1.15] tracking-tight text-slate-900 dark:text-slate-100">
                 {t(title.key, title.fallback)}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                 {t(body.key, body.fallback)}
               </p>
               <ul className="mt-5 space-y-2.5">
@@ -235,7 +235,7 @@ export function OnboardingFlow() {
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
                       <CheckIcon className="h-3 w-3" />
                     </span>
-                    <span className="text-[13px] leading-snug text-slate-600">
+                    <span className="text-[13px] leading-snug text-slate-600 dark:text-slate-300">
                       {t(bullet.key, bullet.fallback)}
                     </span>
                   </li>
@@ -246,7 +246,7 @@ export function OnboardingFlow() {
         </div>
 
         {/* bottom bar — progress + primary action, inside thumb reach */}
-        <footer className="safe-bottom shrink-0 px-5 pt-3">
+        <footer className="safe-bottom shrink-0 px-5 pt-3 dark:bg-slate-950">
           <div className="mb-3 flex items-center gap-1.5">
             {SCREENS.map((screen, i) => (
               <button
@@ -256,11 +256,11 @@ export function OnboardingFlow() {
                 aria-current={i === step ? "step" : undefined}
                 aria-label={`${t("onb_step_word", "Step")} ${i + 1}`}
                 className={`tap h-2 rounded-full ${FOCUS} ${
-                  i === step ? "w-7 bg-brand-700" : i < step ? "w-2 bg-brand-300" : "w-2 bg-slate-200"
+                  i === step ? "w-7 bg-brand-700" : i < step ? "w-2 bg-brand-300" : "w-2 bg-slate-200 dark:bg-slate-600"
                 }`}
               />
             ))}
-            <span className="ml-auto text-[11px] font-semibold tabular-nums text-slate-400">
+            <span className="ml-auto text-[11px] font-semibold tabular-nums text-slate-400 dark:text-slate-500">
               {step === 0
                 ? t("onb_step_1", "1 of 3")
                 : step === 1
@@ -285,7 +285,7 @@ export function OnboardingFlow() {
                   type="button"
                   onClick={goBack}
                   aria-label={t("onb_back", "Go back")}
-                  className={`tap flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700 ${FOCUS}`}
+                  className={`tap flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 ${FOCUS}`}
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                 </button>

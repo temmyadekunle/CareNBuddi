@@ -1573,41 +1573,42 @@ export const OPERATING_STATES: string[] = [
   "Rivers",
   "Abuja",
   "Ondo",
-  "Kano",
-  "Kaduna",
-  "Delta",
-  "Edo",
-  "Anambra",
-  "Enugu",
-  "Katsina",
-  "Borno",
-  "Plateau",
-  "Kwara",
-  "Sokoto",
-  "Niger",
-  "Imo",
-  "Benue",
-  "Cross River",
-  "Akwa Ibom",
-  "Ebonyi",
   "Abia",
-  "Bayelsa",
-  "Jigawa",
-  "Gombe",
-  "Yobe",
-  "Taraba",
   "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
   "Bauchi",
-  "Kebbi",
-  "Zamfara",
-  "Nasarawa",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
   "Ekiti",
+  "FCT",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
   "Kogi",
-];
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+].sort();
 
-export const ALL_STATES: string[] = Array.from(
-  new Set(PROVIDERS.map((p) => p.state)),
-).sort();
+export { NIGERIAN_STATES as ALL_STATES } from "./states";
+
 
 export function directionsUrl(provider: Provider): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -1625,5 +1626,5 @@ export function whatsappUrl(provider: Provider): string {
 export const PROVIDER_SEED_ID = "ogu-05";
 
 export function seedProviderFor(email: string): Provider | undefined {
-  return email.endsWith("@provider.healthlink.ng") ? PROVIDERS.find((p) => p.id === PROVIDER_SEED_ID) : undefined;
+  return email.endsWith("@carenbuddi.ng") ? PROVIDERS.find((p) => p.id === PROVIDER_SEED_ID) : undefined;
 }

@@ -44,16 +44,8 @@ import {
   toAppointment,
 } from "@/lib/appointments";
 import { useLang } from "@/lib/i18n";
-
-function greetingKey(): string {
-  const now = new Date();
-  const watOffset = 1 * 60 * 60 * 1000;
-  const watTime = new Date(now.getTime() + watOffset);
-  const hour = watTime.getUTCHours();
-  if (hour < 12) return "home_good_morning";
-  if (hour < 17) return "home_good_afternoon";
-  return "home_good_evening";
-}
+import { useGreeting } from "@/lib/use-greeting";
+import { readPhoto } from "@/lib/profile-photo";
 
 const QUICK_ACTIONS = [
   { href: "/find-care", key: "home_find_doctor", icon: SearchIcon, tone: "bg-brand-50 text-brand-700" },
@@ -77,6 +69,7 @@ export default function HomeScreen() {
 
   const me = users.find((u) => u.id === session.userId);
   const firstName = me?.name?.split(" ")[0] ?? t("home_guest", "Guest");
+  const greeting = useGreeting(firstName);
 
   const appointments = useMemo(
     () =>
@@ -103,14 +96,14 @@ export default function HomeScreen() {
       {/* greeting ------------------------------------------------------- */}
       <section className="flex items-center gap-3 pt-1">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-slate-500">{t(greetingKey(), "Good morning")},</p>
-          <h2 className="truncate text-[22px] font-bold leading-tight tracking-tight text-slate-900">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{greeting}</p>
+          <h2 className="truncate text-[22px] font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
             {firstName}
           </h2>
         </div>
         {me ? (
           <Link href="/profile" className="tap shrink-0">
-            <Avatar name={me.name} size={44} />
+            <Avatar name={me.name} size={44} src={readPhoto(me.id)} />
           </Link>
         ) : (
           <Link href="/auth/sign-in" className="shrink-0">
