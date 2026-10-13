@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card, Screen, SectionHeader } from "@/components/app-ui";
+import { Screen, SectionHeader } from "@/components/app-ui";
 import { StethoscopeIcon, UserIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 
