@@ -12,6 +12,7 @@ import {
   BookIcon as RecordsIcon,
   CalendarIcon,
   ChatIcon,
+  ClipboardListIcon,
   FileTextIcon,
   GridIcon,
   HeartPulseIcon,
@@ -223,7 +224,11 @@ function MoreSheet({
     groups.push({
       titleKey: "n_staff",
       items: [
+        // The application itself comes first: a new provider needs to find
+        // their status and next step without already knowing the URL.
+        { href: "/provider/status", titleKey: "pr_nav_application", icon: <ClipboardListIcon className="h-5 w-5" /> },
         { href: "/provider", titleKey: "pv_title", icon: <StethoscopeIcon className="h-5 w-5" /> },
+        { href: "/admin/providers", titleKey: "apr_title", icon: <SettingsIcon className="h-5 w-5" /> },
         { href: "/admin", titleKey: "ad_title", icon: <SettingsIcon className="h-5 w-5" /> },
       ],
     });

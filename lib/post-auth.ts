@@ -61,6 +61,53 @@ export function landingPathFor(
 }
 
 /**
+ * What the provider registration screen should do when it opens.
+ *
+ * Four cases, and getting them right is what stops anyone registering twice:
+ *
+ * - an account with an application  → resume it, never a second form
+ * - a signed-in account with none   → skip straight to onboarding
+ * - an email that already exists    → sign in first, on the same account
+ * - a genuinely new email           → create the account
+ */
+export type ProviderRegisterEntry =
+  | { action: "resume"; path: string }
+  | { action: "start"; path: string }
+  | { action: "sign-in"; path: string }
+  | { action: "create"; path: string };
+
+export function providerRegisterEntry(args: {
+  account: AccountLike | null | undefined;
+  application: ProviderApplication | null | undefined;
+  /** Whether an account already uses the email being entered. */
+  emailExists: boolean;
+}): ProviderRegisterEntry {
+  const { account, application, emailExists } = args;
+
+  // Already have an application: send them to wherever it actually is. This is
+  // what makes re-visiting the registration page safe.
+  if (account && application) {
+    return { action: "resume", path: providerLandingPath(application) };
+  }
+
+  // Signed in but never applied — no need to ask for the account again.
+  if (account) {
+    return { action: "start", path: "/provider/onboarding" };
+  }
+
+  // The address belongs to somebody. Send them to sign in on that same account
+  // and come straight back, rather than creating a second one.
+  if (emailExists) {
+    return {
+      action: "sign-in",
+      path: `/auth/sign-in?next=${encodeURIComponent("/provider/register")}`,
+    };
+  }
+
+  return { action: "create", path: "/provider/register" };
+}
+
+/**
  * Why a provider-only screen refused the current account, and where to go
  * instead. A patient is offered the provider application route on their
  * existing account; they are never silently upgraded.

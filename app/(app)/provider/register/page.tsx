@@ -12,7 +12,7 @@ import {
   AuthSwitch,
   OfflineNote,
 } from "@/components/auth-form";
-import { Card, Field, inputClass, Screen, SectionHeader, useToast } from "@/components/app-ui";
+import { Button, Card, Field, Screen, SectionHeader, inputClass, useToast } from "@/components/app-ui";
 import { ChevronLeftIcon, StethoscopeIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import {
@@ -20,6 +20,7 @@ import {
   newApplication,
   type ProviderCategoryId,
 } from "@/lib/provider-application";
+import { providerRegisterEntry } from "@/lib/post-auth";
 import { KEYS, seedUsers, uid, useSession, useStoredCollection } from "@/lib/storage";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
@@ -29,12 +30,19 @@ import type { User } from "@/lib/types";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * Create Account as Health Provider.
+ * Create Account as Health Provider — and resume, when there is already an
+ * application.
  *
- * This creates the account *and* the first slice of the professional
- * application in one step, then hands the applicant to onboarding. It mirrors
- * the account creation in /auth/sign-up rather than inventing a second one, and
- * it never marks anybody verified: a new account is a draft application.
+ * This screen has four jobs, decided by `providerRegisterEntry`, and getting
+ * them right is what stops anyone applying twice:
+ *
+ *   - an account with an application  → send them back to it
+ *   - a signed-in account with none   → skip the form, start onboarding
+ *   - an email that already exists    → sign in on that same account first
+ *   - a genuinely new email           → create the account
+ *
+ * Account creation mirrors /auth/sign-up rather than inventing a second system,
+ * and it never marks anybody verified: a new account gets a draft application.
  */
 export default function ProviderRegisterPage() {
   const t = useT();
@@ -45,9 +53,12 @@ export default function ProviderRegisterPage() {
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
   const { forUser, upsert } = useProviderApplications();
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const account = users.find((u) => u.id === session.userId) ?? null;
+  const application = forUser(session.userId);
+
+  const [fullName, setFullName] = useState(account?.name ?? "");
+  const [email, setEmail] = useState(account?.email ?? "");
+  const [phone, setPhone] = useState(account?.phone ?? "");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [category, setCategory] = useState<ProviderCategoryId | "">("");
@@ -60,6 +71,68 @@ export default function ProviderRegisterPage() {
   const [pending, setPending] = useState(false);
 
   const cloudMode = isCloudEnabled;
+
+  /* The two signed-in cases are decided by the same tested helper the rest of
+     the app uses, so "do I already have an application?" is answered in one
+     place. `emailExists` only matters while signed out, and is checked on
+     submit instead. */
+  const entry = providerRegisterEntry({ account, application, emailExists: false });
+
+  /* Already have an application — do not offer a second form. */
+  if (entry.action === "resume") {
+    return (
+      <Screen>
+        <SectionHeader
+          title={t("pr_already_title", "You already have an application")}
+          subtitle={t(
+            "pr_already_d",
+            "We are not going to ask you twice. Pick up where you left off.",
+          )}
+        />
+        <Link href={entry.path} className="tap mt-4 inline-block">
+          <Button>{t("pr_resume", "Continue my application")}</Button>
+        </Link>
+      </Screen>
+    );
+  }
+
+  /* Signed in but never applied: the account already exists, so skip the
+     account form. A patient upgrading keeps everything they already have —
+     we add the provider role to this same account rather than creating one. */
+  if (account) {
+    const isPatient = account.role === "consumer";
+    return (
+      <Screen>
+        <SectionHeader
+          title={t("pr_start_title", "Apply as a healthcare professional")}
+          subtitle={
+            isPatient
+              ? t(
+                  "pr_start_patient",
+                  "You are signed in. We will add the provider role to this account, so you keep your health records, bookings and Care Circle.",
+                )
+              : t(
+                  "pr_start_d",
+                  "You are signed in, so we will use this account. Next we will collect your professional details.",
+                )
+          }
+        />
+        <div className="mt-4 flex flex-col gap-2">
+          <Button
+            onClick={() => {
+              if (isPatient) upgradeExistingAccount(account);
+              router.push("/provider/onboarding");
+            }}
+          >
+            {t("pr_begin", "Start your application")}
+          </Button>
+          <Link href="/app" className="tap text-center text-xs font-semibold text-slate-500 underline">
+            {t("pr_stay_patient", "No thanks, keep using CareNBuddi as a patient")}
+          </Link>
+        </div>
+      </Screen>
+    );
+  }
 
   function validate(): boolean {
     const next: Record<string, string | null> = {};
@@ -82,6 +155,31 @@ export default function ProviderRegisterPage() {
     return Object.values(next).every((v) => !v);
   }
 
+  /** Adopt an existing account as a provider and start the application. */
+  function upgradeExistingAccount(existing: User): string {
+    const now = new Date().toISOString();
+    const upgraded: User = {
+      ...existing,
+      role: "provider",
+      phone: existing.phone ?? (phone.trim() || undefined),
+    };
+    setUsers((prev) => prev.map((u) => (u.id === existing.id ? upgraded : u)));
+    setSession((prev) => ({ ...prev, userId: existing.id }));
+
+    const carried = forUser(existing.id);
+    upsert({
+      ...(carried ?? newApplication({ id: uid(), userId: existing.id, email: existing.email })),
+      fullName: fullName.trim() || existing.name,
+      phone: upgraded.phone ?? "",
+      category,
+      trainee,
+      acceptedTerms,
+      acceptedPrivacy,
+      updatedAt: now,
+    });
+    return existing.id;
+  }
+
   async function submit() {
     setFormError(null);
     if (!validate()) return;
@@ -92,9 +190,15 @@ export default function ProviderRegisterPage() {
 
     try {
       if (existing) {
-        // Scenario D: never create a second account for the same address.
+        // The address already has an account. Never make a second one, and
+        // never hand the account over on the strength of an email address
+        // alone — that would let anyone claim somebody else's account. Send
+        // them to sign in on that account and come straight back here, where
+        // the signed-in branch below performs the upgrade.
         push(t("pr_existing_title", "You already have a CareNBuddi account"), "info");
-        router.push(`/auth/sign-in?email=${encodeURIComponent(key)}`);
+        router.push(
+          `/auth/sign-in?next=${encodeURIComponent("/provider/register")}&email=${encodeURIComponent(key)}`,
+        );
         return;
       }
 

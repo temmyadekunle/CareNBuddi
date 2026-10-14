@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import {
   AuthError,
   AuthField,
@@ -25,13 +25,23 @@ const PHONE_PATTERN = /^\+?[\d][\d\s()-]{6,19}$/;
 
 type SignupRole = Extract<Role, "consumer" | "provider">;
 
-export default function SignUpPage() {
+/** Same-site destinations only; see the same guard in the sign-in screen. */
+function safeNext(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//")) return null;
+  return value;
+}
+
+function SignUpInner() {
   const t = useT();
   const { push } = useToast();
   const router = useRouter();
   const cloud = useCloud();
   const [session, setSession] = useSession();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
+
+  const next = safeNext(useSearchParams().get("next"));
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -148,8 +158,13 @@ export default function SignUpPage() {
           router.push("/auth/verify");
         } else {
           push(t("auth_account_created", "Account created"), "success");
-          // A provider account lands in onboarding, not the patient home. The
-          // application is created by the onboarding screen's own draft.
+          // Honour an explicit same-site destination first, then fall back to
+          // the role-aware landing so a provider lands in onboarding, not the
+          // patient home screen.
+          if (next) {
+            router.push(next);
+            return;
+          }
           router.push(role === "provider" ? "/provider/onboarding" : "/app");
         }
       } else {
@@ -160,6 +175,10 @@ export default function SignUpPage() {
             : t("auth_account_created", "Account created"),
           "success",
         );
+        if (next) {
+          router.push(next);
+          return;
+        }
         router.push(role === "provider" ? "/provider/onboarding" : "/app");
       }
     } catch (error) {
@@ -285,5 +304,14 @@ export default function SignUpPage() {
         />
       </form>
     </div>
+  );
+}
+
+/** `useSearchParams` needs a Suspense boundary in a static export. */
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-full" />}>
+      <SignUpInner />
+    </Suspense>
   );
 }

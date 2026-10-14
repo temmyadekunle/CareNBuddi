@@ -7,6 +7,7 @@ import {
   landingPathFor,
   providerAccessRefusal,
   providerLandingPath,
+  providerRegisterEntry,
 } from "./post-auth";
 
 const NOW = "2026-10-13T10:00:00.000Z";
@@ -80,4 +81,57 @@ test("an unverified provider is pointed at their own status, not the workspace",
   const refusal = providerAccessRefusal(PROVIDER, app({ status: "under-review" }));
   assert.equal(refusal.reason, "awaiting-verification");
   assert.equal(refusal.path, "/provider/status");
+});
+test("revisiting the registration page never starts a second application", () => {
+  // An account that already applied is sent back to where it actually is.
+  const entry = providerRegisterEntry({
+    account: PROVIDER,
+    application: app({ status: "under-review", submittedAt: NOW }),
+    emailExists: true,
+  });
+  assert.equal(entry.action, "resume");
+  assert.equal(entry.path, "/provider/status");
+});
+
+test("a signed-in applicant with no application skips the account form", () => {
+  const entry = providerRegisterEntry({
+    account: CONSUMER,
+    application: null,
+    emailExists: true,
+  });
+  assert.equal(entry.action, "start");
+  assert.equal(entry.path, "/provider/onboarding");
+});
+
+test("an email that already has an account is sent to sign in, not registered again", () => {
+  const entry = providerRegisterEntry({
+    account: null,
+    application: null,
+    emailExists: true,
+  });
+  assert.equal(entry.action, "sign-in");
+  // The destination survives the detour so they land back on this page, where
+  // the signed-in branch performs the upgrade.
+  assert.match(entry.path, /^\/auth\/sign-in\?next=/);
+  assert.match(decodeURIComponent(entry.path), /next=\/provider\/register/);
+});
+
+test("a genuinely new email gets the registration form", () => {
+  const entry = providerRegisterEntry({
+    account: null,
+    application: null,
+    emailExists: false,
+  });
+  assert.equal(entry.action, "create");
+  assert.equal(entry.path, "/provider/register");
+});
+
+test("a draft applicant is resumed at their first outstanding step", () => {
+  const entry = providerRegisterEntry({
+    account: PROVIDER,
+    application: app({ acceptedTerms: true, acceptedPrivacy: true }),
+    emailExists: true,
+  });
+  assert.equal(entry.action, "resume");
+  assert.equal(entry.path, "/provider/onboarding?step=profile");
 });

@@ -205,8 +205,12 @@ function StatusBody({ app }: { app: ProviderApplication }) {
             {t("pr_enter_workspace", "Enter provider workspace")}
           </Button>
         ) : next ? (
-          <Button full onClick={() => router.push(`/provider/onboarding`)}>
+          <Button full onClick={() => router.push(`/provider/onboarding?step=${next}`)}>
             {t("pr_continue", "Continue your application")}
+          </Button>
+        ) : app.status === "draft" ? (
+          <Button full onClick={() => router.push("/provider/onboarding?step=review")}>
+            {t("pr_go_submit", "Review and submit")}
           </Button>
         ) : null}
         <Link href="/support" className="tap mt-1 inline-block text-center text-xs font-semibold text-brand-700 underline">

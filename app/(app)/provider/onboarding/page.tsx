@@ -120,16 +120,40 @@ export default function ProviderOnboardingPage() {
         )}
       />
 
+      {/* What happens next, on every step. This sat inside the first step
+          originally, which meant an applicant whose consent was already
+          captured during registration landed on "Profile" and never saw it —
+          the exact person who most needs to know what they have signed up for. */}
+      <ol className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600">
+        <li className="flex gap-2">
+          <span className="font-semibold">1.</span>
+          <span>{t("pr_next_1", "Tell us who you are and what you do — about 5 minutes. You can stop and come back at any time.")}</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="font-semibold">2.</span>
+          <span>{t("pr_next_2", "Add your identity document and your professional registration. We keep both private.")}</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="font-semibold">3.</span>
+          <span>{t("pr_next_3", "Submit. Our review team checks your application and updates your status — you can follow it at any time.")}</span>
+        </li>
+      </ol>
+
       <ol className="mt-4 flex items-center gap-1.5" aria-label={t("pr_progress", "Progress")}>
         {ONBOARDING_STEPS.map((s) => {
           const done = isStepComplete(app, s);
           const current = s === step;
+          const label = STEP_LABELS[s];
           return (
             <li key={s} className="flex-1">
               <button
                 type="button"
                 onClick={() => setStep(s)}
                 aria-current={current ? "step" : undefined}
+                /* A completed step renders as a tick, so the label has to live
+                   in the accessible name or the control is announced blank. */
+                aria-label={`${label}${done ? " (done)" : ""}${current ? " (current)" : ""}`}
+                title={label}
                 className={`tap w-full rounded-full px-1 py-1.5 text-[10px] font-semibold ${
                   current
                     ? "bg-brand-600 text-white"
@@ -138,7 +162,7 @@ export default function ProviderOnboardingPage() {
                       : "bg-slate-100 text-slate-500"
                 }`}
               >
-                {done && !current ? <CheckIcon className="mx-auto h-3 w-3" /> : STEP_LABELS[s]}
+                {done && !current ? <CheckIcon className="mx-auto h-3 w-3" /> : label}
               </button>
             </li>
           );
@@ -199,6 +223,8 @@ function StepWelcome({ app, onNext }: { app: ProviderApplication; onNext: () => 
   const [privacy, setPrivacy] = useState(app.acceptedPrivacy);
   const complete = terms && privacy;
 
+  const savedStep = nextIncompleteStep(app);
+
   return (
     <Card className="space-y-3">
       <p className="text-sm leading-relaxed text-slate-600">
@@ -207,6 +233,12 @@ function StepWelcome({ app, onNext }: { app: ProviderApplication; onNext: () => 
           "Before you apply we need your consent to process the information and documents you provide for verification.",
         )}
       </p>
+
+      {savedStep && savedStep !== "welcome" ? (
+        <p className="rounded-xl bg-brand-50 px-3 py-2 text-[11px] leading-relaxed text-brand-700">
+          {t("pr_resumed", "Picking up where you left off.")}
+        </p>
+      ) : null}
 
       <label className="flex items-start gap-2.5 text-xs leading-relaxed text-slate-600">
         <input

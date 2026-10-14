@@ -3,7 +3,29 @@
  *
  * Pure functions for cycle calculations - no React, no DOM, no external deps.
  * All logic is testable and documented.
+ *
+ * Cycle dates are plain calendar days ("YYYY-MM-DD"), not instants. They are
+ * read and written with `parseCycleDay` / `formatCycleDay`, which work in the
+ * reader's local time. Using `new Date("2026-10-12")` instead parses the string
+ * as UTC midnight, which is the previous day for anyone west of Greenwich —
+ * inflating the cycle day and shifting every predicted date. The reverse trap
+ * is `toISOString().slice(0, 10)` on a local date, which does the same to
+ * readers east of Greenwich, such as Lagos (UTC+1).
  */
+
+/** Read a "YYYY-MM-DD" calendar day in the reader's own timezone. */
+function parseCycleDay(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
+
+/** Write a local Date back out as a "YYYY-MM-DD" calendar day. */
+function formatCycleDay(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export interface CycleCalculations {
   averageCycleLength: number | null;
@@ -49,8 +71,8 @@ export function calculateCycleStats(cycles: Array<{ startDate: string; endDate?:
   // Calculate average cycle length (start to start)
   const cycleLengths: number[] = [];
   for (let i = 1; i < completedCycles.length; i++) {
-    const prevStart = new Date(completedCycles[i - 1].startDate);
-    const currStart = new Date(completedCycles[i].startDate);
+    const prevStart = parseCycleDay(completedCycles[i - 1].startDate);
+    const currStart = parseCycleDay(completedCycles[i].startDate);
     const diffDays = Math.round((currStart.getTime() - prevStart.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays > 0 && diffDays < 60) cycleLengths.push(diffDays);
   }
@@ -59,8 +81,8 @@ export function calculateCycleStats(cycles: Array<{ startDate: string; endDate?:
   const periodLengths: number[] = [];
   for (const cycle of completedCycles) {
     if (cycle.endDate) {
-      const start = new Date(cycle.startDate);
-      const end = new Date(cycle.endDate);
+      const start = parseCycleDay(cycle.startDate);
+      const end = parseCycleDay(cycle.endDate);
       const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       if (diffDays > 0 && diffDays <= 14) periodLengths.push(diffDays);
     }
@@ -86,30 +108,30 @@ export function calculateCycleStats(cycles: Array<{ startDate: string; endDate?:
   let ovulationDate: string | null = null;
 
   if (avgCycleLength && lastCycle) {
-    const lastStart = new Date(lastCycle.startDate);
+    const lastStart = parseCycleDay(lastCycle.startDate);
     const nextStart = new Date(lastStart);
     nextStart.setDate(nextStart.getDate() + avgCycleLength);
-    nextPeriodStart = nextStart.toISOString().slice(0, 10);
+    nextPeriodStart = formatCycleDay(nextStart);
 
     // Estimate period end
     const avgPeriod = avgPeriodLength ?? 5;
     const nextEnd = new Date(nextStart);
     nextEnd.setDate(nextEnd.getDate() + avgPeriod - 1);
-    nextPeriodEnd = nextEnd.toISOString().slice(0, 10);
+    nextPeriodEnd = formatCycleDay(nextEnd);
 
     // Estimate ovulation (typically 14 days before next period)
     const ovulation = new Date(nextStart);
     ovulation.setDate(ovulation.getDate() - 14);
-    ovulationDate = ovulation.toISOString().slice(0, 10);
+    ovulationDate = formatCycleDay(ovulation);
 
     // Fertile window: 5 days before ovulation to 1 day after
     const fwStart = new Date(ovulation);
     fwStart.setDate(fwStart.getDate() - 5);
-    fertileWindowStart = fwStart.toISOString().slice(0, 10);
+    fertileWindowStart = formatCycleDay(fwStart);
 
     const fwEnd = new Date(ovulation);
     fwEnd.setDate(fwEnd.getDate() + 1);
-    fertileWindowEnd = fwEnd.toISOString().slice(0, 10);
+    fertileWindowEnd = formatCycleDay(fwEnd);
   }
 
   // Calculate current cycle day and phase
@@ -119,7 +141,7 @@ export function calculateCycleStats(cycles: Array<{ startDate: string; endDate?:
   if (lastCycle) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const lastStart = new Date(lastCycle.startDate);
+    const lastStart = parseCycleDay(lastCycle.startDate);
     lastStart.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((today.getTime() - lastStart.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -220,7 +242,7 @@ export function formatDateWithDay(dateStr: string, locale = "en-GB"): string {
  * Check if a date is today
  */
 export function isToday(dateStr: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCycleDay(new Date());
   return dateStr === today;
 }
 
@@ -228,7 +250,7 @@ export function isToday(dateStr: string): boolean {
  * Check if a date is in the past
  */
 export function isPast(dateStr: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCycleDay(new Date());
   return dateStr < today;
 }
 
@@ -236,6 +258,6 @@ export function isPast(dateStr: string): boolean {
  * Check if a date is in the future
  */
 export function isFuture(dateStr: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCycleDay(new Date());
   return dateStr > today;
 }

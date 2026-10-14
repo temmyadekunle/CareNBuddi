@@ -35,16 +35,22 @@ function check(name, fn) {
   }
 }
 
-const isoToday = () => new Date().toISOString().slice(0, 10);
+// Cycle dates are calendar days, so every helper works and formats in local
+// time. Mixing local setDate with UTC toISOString made these tests return a
+// different answer depending on the runner's timezone — they failed for part
+// of every day in some zones.
+const pad = (n) => String(n).padStart(2, "0");
+const localIso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+const isoToday = () => localIso(new Date());
 const daysAgoIso = (n) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 };
 const plusDays = (iso, n) => {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = iso.split("-").map(Number);
+  return localIso(new Date(y, m - 1, d + n));
 };
 
 console.log("health-diary: cycle calculations");

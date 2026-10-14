@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, OfflineNote, SocialLoginButtons } from "@/components/auth-form";
 import { Card, useToast } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
@@ -15,16 +15,32 @@ import { useProviderApplications } from "@/lib/use-provider-application";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export default function SignInPage() {
+/**
+ * Only same-site paths may be used as a post-sign-in destination. Without this
+ * an attacker could send someone to `?next=https://elsewhere.example` and have
+ * the app navigate off-origin after a successful sign-in.
+ */
+function safeNext(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//")) return null;
+  return value;
+}
+
+function SignInInner() {
   const t = useT();
   const { push } = useToast();
   const router = useRouter();
+  const params = useSearchParams();
   const cloud = useCloud();
   const [, setSession] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const { forUser } = useProviderApplications();
 
-  const [email, setEmail] = useState("");
+  const next = safeNext(params.get("next"));
+  const prefilledEmail = params.get("email") ?? "";
+
+  const [email, setEmail] = useState(prefilledEmail);
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -88,10 +104,15 @@ export default function SignInPage() {
       }
       push(t("auth_signed_in", "You are signed in"), "success");
 
-      // Role-aware landing. A provider resumes onboarding or sees their
-      // application status; a patient goes to the patient home screen. Reading
-      // the account back from storage keeps this correct in the offline build,
-      // where sign-in does not hand us a profile object.
+      // Where they were going before the detour wins, as long as it is a
+      // same-site path. Otherwise fall back to the role-aware landing so a
+      // provider resumes onboarding or sees their application status rather
+      // than the patient home screen.
+      if (next) {
+        router.push(next);
+        return;
+      }
+
       const key = email.trim().toLowerCase();
       const account = users.find((u) => u.email.toLowerCase() === key) ?? null;
       router.push(landingPathFor(account, forUser(account?.id ?? null)));
@@ -173,7 +194,7 @@ export default function SignInPage() {
         <AuthSwitch
           question={t("auth_no_account", "New to CareNBuddi?")}
           actionLabel={t("a_signup", "Create account")}
-          href="/auth/sign-up"
+          href={next ? `/auth/sign-up?next=${encodeURIComponent(next)}` : "/auth/sign-up"}
         />
         <AuthSwitch
           question={t("auth_demo_link", "Just browsing?")}
@@ -182,5 +203,17 @@ export default function SignInPage() {
         />
       </form>
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` needs a Suspense boundary in a static export, otherwise the
+ * route is forced to render dynamically and cannot be prerendered at all.
+ */
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-full" />}>
+      <SignInInner />
+    </Suspense>
   );
 }
