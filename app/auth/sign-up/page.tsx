@@ -41,12 +41,18 @@ function SignUpInner() {
   const [session, setSession] = useSession();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
 
-  const next = safeNext(useSearchParams().get("next"));
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
+  // The role-selection screen links here with ?role=consumer so the choice is
+  // already made. It used to be ignored, so picking "Patient" silently landed
+  // on the default anyway.
+  const roleParam = params.get("role");
+  const initialRole: SignupRole = roleParam === "provider" ? "provider" : "consumer";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<SignupRole>("consumer");
+  const [role, setRole] = useState<SignupRole>(initialRole);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 

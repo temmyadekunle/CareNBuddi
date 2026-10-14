@@ -46,6 +46,45 @@ check("role selection loads", roleText.includes("Create your account"));
 check("role selection offers patient", roleText.includes("Patient"));
 check("role selection offers provider", roleText.includes("Healthcare provider"));
 
+/* Both options must be real, keyboard-reachable controls. They were
+   <div onClick>, which put the most important choice on the screen out of
+   reach for anyone not using a mouse. */
+const cardTags = await page.evaluate(() => {
+  const link = (needle) =>
+    [...document.querySelectorAll("main a, main button")].find((a) =>
+      (a.innerText || "").includes(needle),
+    );
+  const patient = link("Track your health");
+  const provider = link("Register your practice");
+  return {
+    patient: patient ? patient.tagName : null,
+    provider: provider ? provider.tagName : null,
+  };
+});
+check("patient option is a real control", cardTags.patient === "A", String(cardTags.patient));
+check("provider option is a real control", cardTags.provider === "A", String(cardTags.provider));
+
+await page.goto(`${BASE}/auth/sign-up/role`, { waitUntil: "networkidle" });
+let keyboardReached = false;
+for (let i = 0; i < 25; i += 1) {
+  await page.keyboard.press("Tab");
+  const txt = await page.evaluate(() => (document.activeElement?.innerText || "").trim());
+  if (txt.includes("Register your practice")) { keyboardReached = true; break; }
+}
+check("provider option is reachable by keyboard", keyboardReached);
+
+/* Choosing Patient must actually preselect Patient. */
+await page.goto(`${BASE}/auth/sign-up?role=consumer`, { waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+const selectedRole = await page.evaluate(() => {
+  const pressed = [...document.querySelectorAll("main button")].find(
+    (b) => b.getAttribute("aria-pressed") === "true",
+  );
+  return pressed ? pressed.innerText.trim() : null;
+});
+check("?role=consumer preselects Patient", selectedRole === "Patient", String(selectedRole));
+
+await page.goto(`${BASE}/auth/sign-up/role`, { waitUntil: "networkidle" });
 await page.getByText("Register your practice and start accepting patients.").click();
 await page.waitForURL("**/provider/register", { timeout: 15000 });
 

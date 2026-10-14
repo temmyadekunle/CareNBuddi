@@ -366,12 +366,15 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+    <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group">
       {options.map((opt) => (
         <button
           type="button"
           key={opt.value}
           onClick={() => onChange(opt.value)}
+          /* Selection was conveyed by background colour alone, so a screen
+             reader could not tell which option was active. */
+          aria-pressed={value === opt.value}
           className={`tap min-h-9 flex-1 rounded-lg text-xs font-semibold ${
             value === opt.value ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"
           }`}
