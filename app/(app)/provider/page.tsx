@@ -17,6 +17,7 @@ import {
 import { CheckIcon, ClockIcon, PinIcon, StethoscopeIcon } from "@/components/icons";
 import { seedProviderFor } from "@/lib/content";
 import { useT } from "@/lib/i18n";
+import { useProviderApplications } from "@/lib/use-provider-application";
 import {
   KEYS,
   seedBookings,
@@ -44,9 +45,11 @@ export default function ProviderPortalPage() {
   const [providers, setProviders] = useStoredCollection(KEYS.providers, seedProviders);
   const [requests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
   const [bookings, setBookings] = useStoredCollection(KEYS.bookings, seedBookings);
+  const { forUser } = useProviderApplications();
 
   const me = users.find((u) => u.id === session.userId);
   const isStaff = me?.role === "provider" || me?.role === "admin";
+  const application = forUser(me?.id ?? null);
 
   const email = me?.email.toLowerCase() ?? "";
   const approvedReq = requests.find((r) => r.email.toLowerCase() === email && r.status === "approved");
@@ -76,6 +79,44 @@ export default function ProviderPortalPage() {
             action={
               <Link href="/account" className="inline-block min-h-11">
                 <Button className="min-h-11">{t("a_signin", "Sign in")}</Button>
+              </Link>
+            }
+          />
+        </Card>
+      </Screen>
+    );
+  }
+
+  /* An applicant who has an application that has not been verified belongs on
+     the status screen, not the professional workspace. Accounts with no
+     application record at all — the seeded provider demo, and admins — keep the
+     existing behaviour, so this does not lock anyone out of a working screen. */
+  if (me.role === "provider" && application && application.status !== "verified") {
+    const submitted = application.submittedAt !== null;
+    return (
+      <Screen>
+        <SectionHeader
+          title={t("pv_title", "Provider")}
+          subtitle={t(
+            submitted
+              ? "pr_under_review"
+              : "pr_draft",
+            submitted
+              ? "Your application is under review"
+              : "Your application is not finished",
+          )}
+        />
+        <Card className="mt-4">
+          <EmptyState
+            icon={<ClockIcon className="h-6 w-6" />}
+            title={t("pr_workspace_locked", "Provider workspace not available yet")}
+            body={t(
+              "pr_workspace_locked_d",
+              "The professional workspace opens once your application has been verified by the CareNBuddi review team.",
+            )}
+            action={
+              <Link href="/provider/status" className="inline-block min-h-11">
+                <Button className="min-h-11">{t("pr_view_status", "View application status")}</Button>
               </Link>
             }
           />

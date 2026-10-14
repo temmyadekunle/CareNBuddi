@@ -18,9 +18,40 @@ const PRIVATE_PATHS = [
   "/health/exercise",
   "/appointments",
   "/profile",
+  // Onboarding and the status screen read the applicant's own application, so
+  // they need a session. /provider/register is deliberately NOT here: it is the
+  // page where an account is created, so requiring a session would lock out
+  // exactly the person who needs it.
+  "/provider/onboarding",
+  "/provider/status",
 ];
 
-const STAFF_PATHS = ["/worker", "/provider", "/admin"];
+/**
+ * Staff areas, matched as an exact path or as a parent of it.
+ */
+const STAFF_PATHS = ["/worker", "/admin"];
+
+/**
+ * The professional workspace only, matched exactly.
+ *
+ * Its children are applicant routes (/provider/register, /provider/onboarding,
+ * /provider/status), not staff areas. Treating them as staff is what sent new
+ * applicants back to the sign-in screen, so `/provider` must not be used as a
+ * prefix here.
+ */
+const STAFF_EXACT = ["/provider"];
+
+/**
+ * Exact segment match, not a prefix test.
+ *
+ * `pathname.startsWith("/provider")` also matched `/provider/register`, so an
+ * unauthenticated applicant following "Create account as Health provider" was
+ * told to sign in and could never reach the registration form.
+ */
+function matchesPath(pathname: string, base: string): boolean {
+  if (pathname === base) return true;
+  return pathname.startsWith(`${base}/`);
+}
 
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,8 +60,9 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   const gate = useGateStrings();
   const me = users.find((u) => u.id === session.userId);
 
-  const isPrivate = PRIVATE_PATHS.some((p) => pathname.startsWith(p));
-  const isStaff = STAFF_PATHS.some((p) => pathname.startsWith(p));
+  const isPrivate = PRIVATE_PATHS.some((p) => matchesPath(pathname, p));
+  const isStaff =
+    STAFF_PATHS.some((p) => matchesPath(pathname, p)) || STAFF_EXACT.includes(pathname);
 
   if (isStaff && me && me.role === "consumer") {
     return (

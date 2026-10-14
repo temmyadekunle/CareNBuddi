@@ -10,6 +10,8 @@ import { useT } from "@/lib/i18n";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
 import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { landingPathFor } from "@/lib/post-auth";
+import { useProviderApplications } from "@/lib/use-provider-application";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -20,6 +22,7 @@ export default function SignInPage() {
   const cloud = useCloud();
   const [, setSession] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const { forUser } = useProviderApplications();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -84,7 +87,14 @@ export default function SignInPage() {
         return;
       }
       push(t("auth_signed_in", "You are signed in"), "success");
-      router.push("/app");
+
+      // Role-aware landing. A provider resumes onboarding or sees their
+      // application status; a patient goes to the patient home screen. Reading
+      // the account back from storage keeps this correct in the offline build,
+      // where sign-in does not hand us a profile object.
+      const key = email.trim().toLowerCase();
+      const account = users.find((u) => u.email.toLowerCase() === key) ?? null;
+      router.push(landingPathFor(account, forUser(account?.id ?? null)));
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : t("a_bad_login", "Email or password is incorrect."),

@@ -30,6 +30,9 @@ export const KEYS = {
   providers: "healthlink:providers",
   topics: "healthlink:topics",
   providerRequests: "healthlink:provider-requests",
+  // Structured provider applications (onboarding, verification, review).
+  // Same string as PROVIDER_APPLICATIONS_KEY in lib/provider-application.ts.
+  providerApplications: "healthlink:provider-applications",
   bookings: "healthlink:bookings",
   reports: "healthlink:reports",
   // My Health Diary

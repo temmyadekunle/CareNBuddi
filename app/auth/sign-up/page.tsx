@@ -148,7 +148,9 @@ export default function SignUpPage() {
           router.push("/auth/verify");
         } else {
           push(t("auth_account_created", "Account created"), "success");
-          router.push("/app");
+          // A provider account lands in onboarding, not the patient home. The
+          // application is created by the onboarding screen's own draft.
+          router.push(role === "provider" ? "/provider/onboarding" : "/app");
         }
       } else {
         const alreadyRegistered = signUpOffline();
@@ -158,7 +160,7 @@ export default function SignUpPage() {
             : t("auth_account_created", "Account created"),
           "success",
         );
-        router.push("/app");
+        router.push(role === "provider" ? "/provider/onboarding" : "/app");
       }
     } catch (error) {
       setFormError(
