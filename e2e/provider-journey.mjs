@@ -209,6 +209,11 @@ check("a different visitor is not gated", !freshText.includes("Sign in to contin
 await fresh.close();
 
 /* 10. Patient routes are untouched. */
+/* The route sweep runs in its own page with the journey page closed first.
+   Reusing one page for ~40 navigations made the last route intermittently time
+   out for reasons unrelated to the routes themselves. */
+await page.close();
+const sweep = await context.newPage();
 for (const [label, url] of [
   ["patient home", "/app"],
   ["find care", "/find-care"],
@@ -217,9 +222,24 @@ for (const [label, url] of [
   ["profile", "/profile"],
   ["support", "/support"],
 ]) {
-  await page.goto(`${BASE}${url}`, { waitUntil: "domcontentloaded" });
-  check(`${label} still loads`, !page.url().includes("_not-found"));
+  let ok = false;
+  let why = "";
+  for (let attempt = 0; attempt < 3 && !ok; attempt += 1) {
+    try {
+      /* "commit" resolves as soon as the navigation commits, which is exactly
+         the question being asked: does this route resolve to a real document
+         rather than the 404 page. Waiting for the full load made this
+         intermittent on routes the service worker fetches network-first. */
+      const res = await sweep.goto(`${BASE}${url}`, { waitUntil: "commit", timeout: 30000 });
+      ok = res?.status() === 200 && !res.url().includes("_not-found");
+      if (!ok) why = `status ${res?.status()} at ${res?.url()}`;
+    } catch (err) {
+      why = String(err).split("\n")[0];
+    }
+  }
+  check(`${label} still loads`, ok, why);
 }
+await sweep.close();
 
 check(
   "no failed requests during the journey",
