@@ -728,7 +728,7 @@ export default function LandingPage() {
                 CEO / Co-founder, CareNBuddi
               </p>
               <p className="mt-0.5 text-xs text-slate-500">
-                Health Educator &amp; Mental Health Counselor
+                Product Developer, Health Educator &amp; Mental Health Counselor
               </p>
             </div>
           </Reveal>
