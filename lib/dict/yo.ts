@@ -551,6 +551,7 @@ a_sync_off: "Àkójọ ọ̀fẹ́ — ìwé rẹ ń gùn nínú ẹ̀rọ yìí
   auth_reset_cta_resend: "Tún rán ìtọ́ka ìtúntò ṣe",
   auth_back_signin: "Pàdà sí ibi wọlé",
   auth_back: "Pàdà sí CareNBuddi",
+  auth_back_prev: "Pàdà",
   auth_home: "Ile-iṣẹ́ CareNBuddi",
   brand_name: "CareNBuddi",
   auth_err_password_required: "Tẹ ọ̀rọ̀ ìpamọ́ rẹ.",
