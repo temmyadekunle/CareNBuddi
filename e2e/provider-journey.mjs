@@ -192,6 +192,51 @@ const revisit = await page.locator("body").innerText();
 check("revisit does not show a fresh form", revisit.includes("You already have an application"));
 check("revisit offers to resume", revisit.includes("Continue my application"));
 
+/* The server renders the sign-in gate for private routes, so reading the DOM
+   at domcontentloaded only proves the static shell arrived - the real screen
+   appears only once React has hydrated. Every private-route check has to wait
+   for hydration, otherwise it is testing the shell and not the screen. */
+async function readHydrated(page, path) {
+  await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page
+    .waitForFunction(() => !document.body?.innerText?.includes("Sign in to continue"), null, {
+      timeout: 20000,
+    })
+    .catch(() => {});
+  return page.locator("body").innerText();
+}
+
+/* 7. The profile screen, for this signed-in provider. It is the largest screen
+      in the app and the one reported as hanging, so it is checked for real
+      content rather than just a 200. */
+const profileText = await readHydrated(page, "/profile");
+check("provider profile renders", profileText.trim().length > 40, `${profileText.trim().length} chars`);
+check("provider profile is not blank", !profileText.includes("Sign in to continue"));
+
+/* 7b. Patient profile. A separate account, so the page is exercised for a
+       plain patient too. */
+const patCtx = await context.browser().newContext();
+const patPage = await patCtx.newPage();
+await patPage.goto(`${BASE}/auth/sign-up?role=consumer`, { waitUntil: "domcontentloaded", timeout: 30000 });
+await patPage.waitForTimeout(1500);
+await patPage.getByLabel(/Full name/i).fill("Pat Profile");
+await patPage.getByLabel(/^Email/i).fill(`pat-prof-${Date.now()}@example.com`);
+await patPage.getByLabel(/^Password/i).fill("correct-horse-1");
+await patPage.getByLabel(/Confirm password/i).fill("correct-horse-1");
+const patBoxes = patPage.locator('input[type="checkbox"]');
+for (let i = 0; i < (await patBoxes.count()); i += 1) await patBoxes.nth(i).check();
+await patPage.getByRole("button", { name: /Create account/i }).last().click();
+await patPage.waitForURL("**/app", { timeout: 30000 });
+
+const patProfile = await readHydrated(patPage, "/profile");
+check("patient profile renders", patProfile.trim().length > 40, `${patProfile.trim().length} chars`);
+check("patient profile is not blank", !patProfile.includes("Sign in to continue"));
+await patCtx.close();
+
+/* 7c. Reload it again. A screen that only renders once is the symptom. */
+const profileAgain = await readHydrated(page, "/profile");
+check("profile survives a reload", profileAgain.trim().length > 40, `${profileAgain.trim().length} chars`);
+
 /* 8. Exactly one application exists for the account. */
 const stored = await page.evaluate(() =>
   JSON.parse(localStorage.getItem("healthlink:provider-applications") ?? "[]"),

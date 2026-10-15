@@ -92,6 +92,7 @@ export default function ProfilePage() {
   const t = useT();
   const router = useRouter();
   const { push } = useToast();
+
   const cloud = useCloud();
   const [session, setSession] = useSession();
   const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
@@ -143,11 +144,13 @@ export default function ProfilePage() {
    * The photo lives in device storage rather than in React state, because a
    * data URL is far too large to keep in a module-level cache. Re-read it
    * whenever the signed-in account changes, and after every save or removal.
+   *
+   * Reading during render keeps this to a single source of truth. It used to
+   * call setPhotoState here instead, which React tolerates but which throws
+   * away the render pass and immediately re-runs it.
    */
-  if (photoState.userId !== session.userId) {
-    setPhotoState({ userId: session.userId, src: readPhoto(session.userId) });
-  }
-  const photo = photoState.userId === session.userId ? photoState.src : null;
+  const storedPhoto = readPhoto(session.userId);
+  const photo = photoState.userId === session.userId ? photoState.src : storedPhoto;
 
   const pickPhoto = () => fileRef.current?.click();
 
@@ -263,6 +266,11 @@ export default function ProfilePage() {
   };
 
   const menuCard = "mt-3 overflow-hidden divide-y divide-slate-100";
+
+  // TEMPORARY DIAGNOSTIC — remove before commit.
+  if (typeof window !== "undefined" && window.location.search.includes("bisect=1")) {
+    return <div>bisect-ok</div>;
+  }
 
   return (
     <Screen>

@@ -35,7 +35,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const handler = (e: MediaQueryListEvent) => setSystemTheme(e.matches ? "dark" : "light");
     media.addEventListener("change", handler);
 
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((records) => {
+      // Setting an attribute always queues a mutation record, even when the
+      // value is identical, so writing "data-theme" from inside this callback
+      // used to wake the observer up again immediately and spin forever without
+      // ever yielding. Ignore records this observer produced itself.
+      if (records.every((record) => record.attributeName === "data-theme")) return;
       document.documentElement.setAttribute("data-theme", effective);
     });
 

@@ -1,4 +1,4 @@
-const CACHE = "healthlink-v3";
+const CACHE = "healthlink-v4";
 
 /**
  * Everything needed to open the app without a network. An installed HealthLink
@@ -105,6 +105,19 @@ self.addEventListener("fetch", (event) => {
   // never answer them with a cached page — let the browser fetch them straight
   // from the network so the origin's attachment headers always apply.
   if (/\.(zip|apk)$/i.test(url.pathname)) return;
+
+  /* Next.js App Router data, not a static asset.
+     Prefetches arrive as `?_rsc=…` and per-route segment files end in
+     `__next.…__PAGE__.txt`. They used to fall through to the cache-first branch
+     below, which on a slow request resolved to a 504 with an empty body after
+     ASSET_TIMEOUT_MS. An RSC payload that arrives empty is worse than one that
+     never arrives: the router has no data to hydrate from, so the page renders
+     blank and never fires DOMContentLoaded. Let these go straight to the
+     network — they are already content-hashed and cheap, and the browser HTTP
+     cache still covers repeat visits. */
+  if (url.searchParams.has("_rsc") || /__next\..*\.txt$/.test(url.pathname)) {
+    return;
+  }
 
   // Page navigations: go to the network first so the user always gets the
   // latest deploy, but never wait longer than NAV_TIMEOUT_MS — a slow or dead
