@@ -1,33 +1,50 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+
 import {
   Badge,
   Button,
   Card,
   EmptyState,
-  Field,
   ListRow,
   Screen,
   SectionHeader,
-  inputClass,
   useToast,
 } from "@/components/app-ui";
-import { CheckIcon, ClockIcon, PinIcon, StethoscopeIcon } from "@/components/icons";
-import { seedProviderFor } from "@/lib/content";
+import {
+  BellIcon,
+  CalendarIcon,
+  CheckIcon,
+  ClockIcon,
+  MessageIcon,
+  StethoscopeIcon,
+  UserIcon,
+} from "@/components/icons";
+import { ProviderShell, useProviderContext } from "@/components/provider-shell";
 import { useT } from "@/lib/i18n";
-import { useProviderApplications } from "@/lib/use-provider-application";
 import {
   KEYS,
   seedBookings,
-  seedProviderRequests,
-  seedProviders,
   seedUsers,
+  todayIso,
   useSession,
   useStoredCollection,
 } from "@/lib/storage";
+import {
+  bookingsForProvider,
+  isUpcoming,
+} from "@/lib/provider-workspace";
 import type { Booking } from "@/lib/types";
+
+/**
+ * The provider dashboard.
+ *
+ * Every number here is counted from the bookings already in this account. A
+ * zero means there is nothing in your records; it is never replaced with a
+ * sample figure, and there is no seeded patient, consultation or alert to make
+ * the screen look busier than it is.
+ */
 
 const STATUS_TONE: Record<Booking["status"], "amber" | "brand" | "green" | "slate"> = {
   new: "amber",
@@ -37,133 +54,52 @@ const STATUS_TONE: Record<Booking["status"], "amber" | "brand" | "green" | "slat
   cancelled: "slate",
 };
 
-export default function ProviderPortalPage() {
+export default function ProviderDashboardPage() {
+  return (
+    <ProviderShell>
+      <Dashboard />
+    </ProviderShell>
+  );
+}
+
+function Dashboard() {
   const t = useT();
   const { push } = useToast();
+  const ctx = useProviderContext();
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
-  const [providers, setProviders] = useStoredCollection(KEYS.providers, seedProviders);
-  const [requests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
   const [bookings, setBookings] = useStoredCollection(KEYS.bookings, seedBookings);
-  const { forUser } = useProviderApplications();
 
+  const today = todayIso();
+  const mine = bookingsForProvider(bookings, ctx.providerId);
+  const open = mine.filter((b) => b.status !== "cancelled" && b.status !== "completed");
+  const upcoming = open
+    .filter((b) => isUpcoming(b, today))
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
   const me = users.find((u) => u.id === session.userId);
-  const isStaff = me?.role === "provider" || me?.role === "admin";
-  const application = forUser(me?.id ?? null);
-
-  const email = me?.email.toLowerCase() ?? "";
-  const approvedReq = requests.find((r) => r.email.toLowerCase() === email && r.status === "approved");
-  const myId = approvedReq ? `prv-${approvedReq.id}` : seedProviderFor(email)?.id;
-  const myProvider = myId ? providers.find((p) => p.id === myId) : undefined;
-
-  const [name, setName] = useState(() => myProvider?.name ?? "");
-  const [phone, setPhone] = useState(() => myProvider?.phone ?? "");
-  const [hours, setHours] = useState(() => myProvider?.hours ?? "");
-  const [address, setAddress] = useState(() => myProvider?.address ?? "");
-  const [description, setDescription] = useState(() => myProvider?.description ?? "");
-  const [servicesText, setServicesText] = useState(() => myProvider?.services.join(", ") ?? "");
-
-  const myRequests = bookings.filter((b) => b.providerId === myId);
-  const hasRequest = requests.some((r) => r.email.toLowerCase() === email);
-  const newCount = myRequests.filter((b) => b.status === "new").length;
-
-  if (!session.userId || !me || !isStaff) {
-    return (
-      <Screen>
-        <SectionHeader title={t("pv_title", "Provider")} subtitle={t("pv_guard", "Sign in as a provider or admin to continue.")} />
-        <Card className="mt-4 text-center">
-          <EmptyState
-            icon={<StethoscopeIcon className="h-6 w-6" />}
-            title={t("pvx_staff_only", "Provider access only")}
-            body={t("pv_guard", "Sign in as a provider or admin to continue.")}
-            action={
-              <Link href="/account" className="inline-block min-h-11">
-                <Button className="min-h-11">{t("a_signin", "Sign in")}</Button>
-              </Link>
-            }
-          />
-        </Card>
-      </Screen>
-    );
-  }
-
-  /* An applicant who has an application that has not been verified belongs on
-     the status screen, not the professional workspace. Accounts with no
-     application record at all — the seeded provider demo, and admins — keep the
-     existing behaviour, so this does not lock anyone out of a working screen. */
-  if (me.role === "provider" && application && application.status !== "verified") {
-    const submitted = application.submittedAt !== null;
-    return (
-      <Screen>
-        <SectionHeader
-          title={t("pv_title", "Provider")}
-          subtitle={t(
-            submitted
-              ? "pr_under_review"
-              : "pr_draft",
-            submitted
-              ? "Your application is under review"
-              : "Your application is not finished",
-          )}
-        />
-        <Card className="mt-4">
-          <EmptyState
-            icon={<ClockIcon className="h-6 w-6" />}
-            title={t("pr_workspace_locked", "Provider workspace not available yet")}
-            body={t(
-              "pr_workspace_locked_d",
-              "The professional workspace opens once your application has been verified by the CareNBuddi review team.",
-            )}
-            action={
-              <Link href="/provider/status" className="inline-block min-h-11">
-                <Button className="min-h-11">{t("pr_view_status", "View application status")}</Button>
-              </Link>
-            }
-          />
-        </Card>
-      </Screen>
-    );
-  }
-
-  const save = () => {
-    if (!myProvider) return;
-    setProviders((prev) =>
-      prev.map((p) =>
-        p.id === myProvider.id
-          ? {
-              ...p,
-              name: name || p.name,
-              phone: phone || p.phone,
-              hours: hours || p.hours,
-              address: address || p.address,
-              description: description || p.description,
-              services: servicesText
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-            }
-          : p,
-      ),
-    );
-    push(t("c_status", "Updated"), "success");
-  };
 
   const setBookingStatus = (id: string, status: Booking["status"]) => {
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+    push(t("prv_updated", "Updated"), "success");
   };
 
-  if (!myProvider) {
+  /* No facility linked at all: say so plainly instead of showing an empty
+     dashboard with zeroes that look like bad news. */
+  if (!ctx.providerId) {
     return (
       <Screen>
         <SectionHeader
-          title={t("pv_title", "Provider")}
+          title={t("pws_dash", "Dashboard")}
           subtitle={t("pv_sub", "Manage your profile and requests.")}
         />
         <Card className="mt-4 text-center">
           <EmptyState
             icon={<StethoscopeIcon className="h-6 w-6" />}
-            title={hasRequest ? t("pv_pending", "Registration pending") : t("pv_none", "No facility linked")}
-            body={t("pv_pending_d", "Our team reviews each registration before the portal opens.")}
+            title={t("pv_none", "No facility linked")}
+            body={t(
+              "pv_pending_d",
+              "Our team reviews each registration before the portal opens.",
+            )}
             action={
               <Link href="/provider/register" className="inline-block min-h-11">
                 <Button className="min-h-11">{t("pv_register", "Register your facility")}</Button>
@@ -175,112 +111,247 @@ export default function ProviderPortalPage() {
     );
   }
 
+  const tiles = [
+    {
+      key: "pws_new_requests",
+      fallback: "New care requests",
+      value: ctx.counts.newRequests,
+      href: "/provider/patients",
+      icon: BellIcon,
+    },
+    {
+      key: "pws_upcoming",
+      fallback: "Upcoming appointments",
+      value: ctx.counts.upcoming,
+      href: "/provider/patients",
+      icon: CalendarIcon,
+    },
+    {
+      key: "pws_confirm",
+      fallback: "Awaiting confirmation",
+      value: ctx.counts.awaitingConfirmation,
+      href: "/provider/patients",
+      icon: ClockIcon,
+    },
+    {
+      key: "pws_followups",
+      fallback: "Follow-up tasks",
+      value: ctx.counts.followUpsDue,
+      href: "/provider/patients",
+      icon: CheckIcon,
+    },
+    {
+      key: "pws_patients",
+      fallback: "Patients in your care",
+      value: ctx.counts.patients,
+      href: "/provider/patients",
+      icon: UserIcon,
+    },
+    {
+      key: "pws_messages",
+      fallback: "Unread messages",
+      value: 0,
+      href: "/provider/patients",
+      icon: MessageIcon,
+    },
+  ];
+
+  const none = ctx.counts.newRequests + ctx.counts.awaitingConfirmation + ctx.counts.upcoming;
+
   return (
     <Screen>
       <SectionHeader
-        title={t("pv_title", "Provider")}
-        subtitle={`${t("pv_sub", "Manage your profile and requests.")} · ${me.name}`}
+        title={t("pws_dash", "Dashboard")}
+        subtitle={
+          ctx.facilityName
+            ? `${ctx.facilityName}${me?.name ? ` · ${me.name}` : ""}`
+            : (me?.name ?? t("pv_sub", "Manage your profile and requests."))
+        }
       />
 
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {tiles.map((tile) => (
+          <Link
+            key={tile.key}
+            href={tile.href}
+            className="tap rounded-xl border border-slate-200 bg-white p-3 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <tile.icon className="h-3.5 w-3.5" />
+              <span className="truncate">{t(tile.key, tile.fallback)}</span>
+            </span>
+            <span className="mt-1 block text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+              {tile.value}
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* Verification status, stated from the application record only. */}
       <Card className="mt-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">{t("pv_profile", "Profile")}</h2>
-          <Badge tone="green">
-            <CheckIcon className="mr-1 h-3 w-3" />
-            {t("f_verified", "Verified")}
-          </Badge>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {t("pws_verification", "Verification status")}
+          </h2>
+          <Badge tone="slate">{t("pr_identity", "Identity")}</Badge>
         </div>
-
-        <div className="mt-3 space-y-3">
-          <Field label={t("a_name", "Full name")}>
-            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-          </Field>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label={t("a_phone", "Phone")}>
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
-            </Field>
-            <Field label={t("f_hours", "Hours")}>
-              <input value={hours} onChange={(e) => setHours(e.target.value)} className={inputClass} />
-            </Field>
-          </div>
-          <Field label={t("prg_address", "Address")}>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} />
-          </Field>
-          <Field label={t("pv_services_label", "Services (comma separated)")}>
-            <input value={servicesText} onChange={(e) => setServicesText(e.target.value)} className={inputClass} />
-          </Field>
-          <Field label={t("pv_about", "About")}>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <Button full className="mt-4" onClick={save}>
-          {t("pv_save", "Save changes")}
-        </Button>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          {t(
+            "pws_verification_d",
+            "Your verification status is shown on your application. It is never editable from this workspace.",
+          )}
+        </p>
+        <Link href="/provider/profile" className="mt-3 inline-block">
+          <Button tone="secondary" className="min-h-11">
+            {t("pws_view_profile", "View verification")}
+          </Button>
+        </Link>
       </Card>
 
+      {/* Service availability: only ever what the provider configured. */}
+      <Card className="mt-4">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {t("pws_availability", "Service availability")}
+        </h2>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          {t(
+            "pws_availability_d",
+            "Set your opening hours in Practice. Until you do, we do not list you as available.",
+          )}
+        </p>
+        <Link href="/provider/practice" className="mt-3 inline-block">
+          <Button tone="secondary" className="min-h-11">
+            {t("pws_set_hours", "Set opening hours")}
+          </Button>
+        </Link>
+      </Card>
+
+      {/* Upcoming appointments, straight from the booking dates. */}
       <section className="mt-5">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">{t("pv_requests", "Requests")}</h2>
-          <Badge tone="amber">{`${newCount} ${t("pv_new_req", "new")}`}</Badge>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {t("pws_upcoming", "Upcoming appointments")}
+          </h2>
+          <Badge tone={upcoming.length ? "brand" : "slate"}>{upcoming.length}</Badge>
         </div>
 
         <div className="mt-2 space-y-2.5">
-          {myRequests.length === 0 ? (
+          {upcoming.length === 0 ? (
             <EmptyState
-              icon={<ClockIcon className="h-6 w-6" />}
-              title={t("c_none", "Nothing here yet")}
-              body={t("pvx_no_requests", "Patient requests for your facility appear here.")}
+              icon={<CalendarIcon className="h-6 w-6" />}
+              title={t("pws_no_upcoming", "No upcoming appointments")}
+              body={t(
+                "pws_no_upcoming_d",
+                "Appointments appear here once a patient books a date that has not passed.",
+              )}
             />
           ) : (
-            myRequests.map((b) => (
+            upcoming.map((b) => (
               <Card key={b.id}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-900">{b.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{b.phone}</p>
-                    <p className="mt-1 text-xs text-slate-600">{b.message || t("pv_no_message", "No message")}</p>
-                    {b.date && (
-                      <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
-                        <PinIcon className="h-3 w-3 shrink-0" />
-                        {b.date}
-                      </p>
-                    )}
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
+                      {b.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {b.date}
+                      {b.time ? ` · ${b.time}` : ""}
+                      {b.kind ? ` · ${b.kind}` : ""}
+                    </p>
                   </div>
                   <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
                 </div>
-
-                <div className="mt-3 flex gap-2">
-                  {b.status === "new" && (
-                    <Button full onClick={() => setBookingStatus(b.id, "contacted")}>
-                      {t("pv_confirm", "Mark contacted")}
-                    </Button>
-                  )}
-                  {b.status === "contacted" && (
-                    <Button full tone="secondary" onClick={() => setBookingStatus(b.id, "confirmed")}>
-                      {t("pv_confirm_done", "Mark confirmed")}
-                    </Button>
-                  )}
-                </div>
+                {b.status === "contacted" ? (
+                  <Button full className="mt-3" onClick={() => setBookingStatus(b.id, "confirmed")}>
+                    {t("pv_confirm_done", "Mark confirmed")}
+                  </Button>
+                ) : null}
               </Card>
             ))
           )}
         </div>
       </section>
 
-      <div className="mt-5">
-        <ListRow
-          title={t("pv_register", "Register your facility")}
-          subtitle={t("pvx_register_d", "Update or add another location")}
-          icon={<StethoscopeIcon className="h-5 w-5" />}
-          href="/provider/register"
-        />
-      </div>
+      {/* Anything needing the provider to act. */}
+      <section className="mt-5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {t("pws_needs_attention", "Needs your attention")}
+        </h2>
+        <div className="mt-2 space-y-2.5">
+          {none === 0 ? (
+            <EmptyState
+              icon={<CheckIcon className="h-6 w-6" />}
+              title={t("pws_all_clear", "Nothing waiting")}
+              body={t(
+                "pws_all_clear_d",
+                "When a patient books or replies, it appears here.",
+              )}
+            />
+          ) : (
+            open
+              .filter((b) => b.status === "new" || b.status === "contacted")
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+              .map((b) => (
+                <Card key={b.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
+                        {b.name}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-slate-500">{b.phone}</p>
+                      {b.message ? (
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                          {b.message}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    {b.status === "new" ? (
+                      <Button full onClick={() => setBookingStatus(b.id, "contacted")}>
+                        {t("pv_confirm", "Mark contacted")}
+                      </Button>
+                    ) : (
+                      <Button full onClick={() => setBookingStatus(b.id, "confirmed")}>
+                        {t("pv_confirm_done", "Mark confirmed")}
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              ))
+          )}
+        </div>
+      </section>
+
+      <section className="mt-5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {t("pws_shortcuts", "Shortcuts")}
+        </h2>
+        <div className="mt-2">
+          <ListRow
+            title={t("pws_care", "Patient Care")}
+            subtitle={t(
+              "pws_care_d",
+              "Requests and the patients connected to your practice.",
+            )}
+            icon={<UserIcon className="h-5 w-5" />}
+            href="/provider/patients"
+          />
+          <ListRow
+            title={t("pws_rapid", "Rapid Response")}
+            subtitle={t("pws_rapid_d", "Urgent care coordination.")}
+            icon={<BellIcon className="h-5 w-5" />}
+            href="/provider/rapid-response"
+          />
+          <ListRow
+            title={t("pws_notifs", "Notification centre")}
+            subtitle={t("pws_notifs_d", "Everything waiting on you.")}
+            icon={<MessageIcon className="h-5 w-5" />}
+            href="/provider/notifications"
+          />
+        </div>
+      </section>
     </Screen>
   );
 }
