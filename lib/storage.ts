@@ -6,6 +6,7 @@ import type { Booking, ProviderRequest, Report, User, MenstrualCycle, MoodEntry,
 import { DEFAULT_HEALTH_PREFERENCES } from "./types";
 import type { Lang } from "./lang";
 import { PROVIDERS, PROVIDER_SEED_ID, TOPICS } from "./content";
+import { currentScopedKey, isPrivateKey, privateKeys, quarantineLegacyData, type Principal } from "./storage-scope";
 
 export interface Session {
   userId: string | null;
@@ -182,7 +183,7 @@ const listeners = new Map<string, Set<() => void>>();
 const cache = new Map<string, unknown>();
 const changeListeners = new Set<(key: string) => void>();
 
-function notify(key: string) {
+export function notify(key: string) {
   listeners.get(key)?.forEach((cb) => cb());
   changeListeners.forEach((cb) => cb(key));
 }
@@ -200,13 +201,63 @@ export function onLocalChange(cb: (key: string) => void): () => void {
  * again, then wakes subscribers. Used by pull-to-refresh style buttons.
  */
 export function refreshLocal(key: string) {
-  cache.delete(key);
+  cache.delete(resolve(key));
   notify(key);
 }
 
+/**
+ * Drops the in-memory copies held for one principal and tells subscribers.
+ *
+ * `refreshLocal` cannot do this after a sign-out: it resolves through
+ * `currentPrincipal()`, which by then is the guest, so it would evict the
+ * guest's cache entry and leave the departing user's stale records sitting in
+ * memory where `useSyncExternalStore` would keep serving them.
+ *
+ * Returns the logical keys whose cache entries were dropped, so the caller can
+ * report what was invalidated.
+ */
+export function dropCacheForPrincipal(principal: Principal): string[] {
+  if (principal.kind === "none" || !principal.namespace) return [];
+  const dropped: string[] = [];
+  for (const key of privateKeys()) {
+    const scoped = principal.namespace + key.slice("healthlink:".length);
+    if (cache.delete(scoped)) {
+      dropped.push(key);
+      notify(key);
+    }
+  }
+  // Guest bookkeeping lives in sessionStorage, not this cache, but the guest id
+  // rotation means the next read resolves elsewhere anyway.
+  return dropped;
+}
+
+/**
+ * Every read and write of a private collection goes through here.
+ *
+ * Private keys are rewritten to the current principal's namespace, and the
+ * one-time legacy sweep runs first. Centralising this means no screen can
+ * forget to scope itself: the keys callers pass in (`KEYS.records`, and so on)
+ * are unchanged, they just stop being shared.
+ */
+function resolve(key: string): string {
+  if (!isPrivateKey(key)) return key;
+  if (!legacySwept) {
+    legacySwept = true;
+    try {
+      quarantineLegacyData();
+    } catch {
+      // A failed sweep must not break the app; legacy keys stay quarantined
+      // (that is, unreadable) either way because reads are scoped.
+    }
+  }
+  return currentScopedKey(key);
+}
+
+let legacySwept = false;
+
 export function readLocal<T>(key: string): T | null {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(resolve(key));
     return raw === null ? null : (JSON.parse(raw) as T);
   } catch {
     return null;
@@ -216,7 +267,7 @@ export function readLocal<T>(key: string): T | null {
 /** Writes straight to storage (used by cloud sync) and refreshes subscribers. */
 export function writeLocal<T>(key: string, value: T) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(resolve(key), JSON.stringify(value));
     cache.delete(key);
     notify(key);
   } catch {
@@ -241,28 +292,35 @@ function subscribe(key: string, cb: () => void): () => void {
   };
 }
 
+/**
+ * Note the cache is keyed by the *scoped* key, not the logical one. Keying it
+ * by `KEYS.records` would let a cache entry created for one account be served
+ * to the next, which is exactly the leak this module exists to prevent.
+ */
 function readCollection<T extends { id: string }>(key: string, seed: T[]): T[] {
-  if (cache.has(key)) return cache.get(key) as T[];
+  const scoped = resolve(key);
+  if (cache.has(scoped)) return cache.get(scoped) as T[];
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(scoped);
     if (raw) {
       const parsed = JSON.parse(raw) as T[];
       if (Array.isArray(parsed)) {
-        cache.set(key, parsed);
+        cache.set(scoped, parsed);
         return parsed;
       }
     }
   } catch {
     // ignore malformed storage
   }
-  cache.set(key, seed);
+  cache.set(scoped, seed);
   return seed;
 }
 
 function writeCollection<T extends { id: string }>(key: string, items: T[]) {
-  cache.set(key, items);
+  const scoped = resolve(key);
+  cache.set(scoped, items);
   try {
-    localStorage.setItem(key, JSON.stringify(items));
+    localStorage.setItem(scoped, JSON.stringify(items));
   } catch {
     // storage may be unavailable
   }
@@ -276,7 +334,7 @@ function writeCollection<T extends { id: string }>(key: string, items: T[]) {
  */
 export function readCollectionFresh<T>(key: string): T | null {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(resolve(key));
     if (raw === null) return null;
     const parsed = JSON.parse(raw) as T;
     return parsed ?? null;
@@ -294,13 +352,14 @@ export function readCollectionFresh<T>(key: string): T | null {
  * gone after a reload.
  */
 export function writeValueChecked<T>(key: string, value: T): boolean {
-  cache.set(key, value);
+  const scoped = resolve(key);
+  cache.set(scoped, value);
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(scoped, JSON.stringify(value));
     notify(key);
     return true;
   } catch {
-    cache.delete(key);
+    cache.delete(scoped);
     return false;
   }
 }
@@ -325,25 +384,27 @@ export function useStoredCollection<T extends { id: string }>(
 }
 
 function readValue<T>(key: string, seed: T): T {
-  if (cache.has(key)) return cache.get(key) as T;
+  const scoped = resolve(key);
+  if (cache.has(scoped)) return cache.get(scoped) as T;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(scoped);
     if (raw !== null) {
       const parsed = JSON.parse(raw) as T;
-      cache.set(key, parsed);
+      cache.set(scoped, parsed);
       return parsed;
     }
   } catch {
     // ignore malformed storage
   }
-  cache.set(key, seed);
+  cache.set(scoped, seed);
   return seed;
 }
 
 function writeValue<T>(key: string, value: T) {
-  cache.set(key, value);
+  const scoped = resolve(key);
+  cache.set(scoped, value);
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(scoped, JSON.stringify(value));
   } catch {
     // storage may be unavailable
   }

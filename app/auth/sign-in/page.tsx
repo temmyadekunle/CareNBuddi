@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, OfflineNote, SocialLoginButtons } from "@/components/auth-form";
+import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, SocialLoginButtons } from "@/components/auth-form";
+import { AuthUnavailableNote } from "@/components/auth-unavailable";
 import { Card, useToast } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
-import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { KEYS, seedUsers, useStoredCollection } from "@/lib/storage";
 import { landingPathFor } from "@/lib/post-auth";
 import { useProviderApplications } from "@/lib/use-provider-application";
 
@@ -33,7 +34,6 @@ function SignInInner() {
   const router = useRouter();
   const params = useSearchParams();
   const cloud = useCloud();
-  const [, setSession] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const { forUser } = useProviderApplications();
 
@@ -76,32 +76,33 @@ function SignInInner() {
     return ok;
   };
 
-  const signInOffline = (): boolean => {
-    const key = email.trim().toLowerCase();
-    const existing = users.find((u) => u.email.toLowerCase() === key);
-    if (!existing) {
-      setFormError(
-        t(
-          "auth_signin_no_account",
-          "No offline account uses that email yet. Create an account first.",
-        ),
-      );
-      return false;
-    }
-    setSession((prev) => ({ ...prev, userId: existing.id }));
-    return true;
-  };
-
+  /**
+   * There is deliberately no offline sign-in.
+   *
+   * This used to look the account up by email and set a session without ever
+   * reading `password`, which meant knowledge of an email address was enough
+   * to reach that account's health records. Verifying a password in the browser
+   * would not have fixed it - there is nothing trusted to check against - so
+   * the path is removed rather than repaired. Without a configured
+   * authentication service, sign-in is refused.
+   */
   const submit = async () => {
     setFormError(null);
+
+    if (!cloudMode) {
+      setFormError(
+        t(
+          "auth_signin_unavailable",
+          "Secure sign-in is temporarily unavailable. You can continue as a guest.",
+        ),
+      );
+      return;
+    }
+
     if (!validate()) return;
     setPending(true);
     try {
-      if (cloudMode) {
-        await cloud.signIn(email, password);
-      } else if (!signInOffline()) {
-        return;
-      }
+      await cloud.signIn(email, password);
       push(t("auth_signed_in", "You are signed in"), "success");
 
       // Where they were going before the detour wins, as long as it is a
@@ -144,7 +145,20 @@ function SignInInner() {
         }}
         className="mt-6 space-y-4"
       >
-        <Card className="space-y-4">
+        {!cloudMode ? (
+          <>
+            <AuthUnavailableNote action={t("a_signin", "Sign in")} className="mt-3" />
+            {/* Guest entry stays available: it is an explicit, unauthenticated
+                mode, not a fallback for a failed sign-in. */}
+            <Link
+              href="/app"
+              className="tap mt-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:border-brand-300 hover:text-brand-700 dark:border-slate-600 dark:text-slate-200"
+            >
+              {t("gate_continue_guest", "Continue as guest")}
+            </Link>
+          </>
+        ) : (
+          <Card className="space-y-4">
           <AuthField
             label={t("a_email", "Email")}
             type="email"
@@ -186,20 +200,13 @@ function SignInInner() {
           </AuthSubmit>
 
           {cloudMode && <SocialLoginButtons />}
-
-        </Card>
-
-        {!cloudMode && <OfflineNote />}
+          </Card>
+        )}
 
         <AuthSwitch
           question={t("auth_no_account", "New to CareNBuddi?")}
           actionLabel={t("a_signup", "Create account")}
           href={next ? `/auth/sign-up?next=${encodeURIComponent(next)}` : "/auth/sign-up"}
-        />
-        <AuthSwitch
-          question={t("auth_demo_link", "Just browsing?")}
-          actionLabel={t("gate_continue_guest", "Continue as guest")}
-          href="/app"
         />
       </form>
     </div>

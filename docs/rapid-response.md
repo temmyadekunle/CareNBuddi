@@ -125,9 +125,27 @@ For when a partner exists, the coordination model is already defined in
 
 | Actor | `emergency_requests` | `emergency_request_events` | `provider_emergency_participation` |
 | --- | --- | --- | --- |
-| Anonymous / requester | INSERT own (`user_id = auth.uid()` or null), SELECT own | SELECT own request's history | SELECT (public) |
-| Provider / admin (`is_staff()`) | SELECT, UPDATE (status machine) | SELECT all, INSERT | SELECT, all writes |
+| Anonymous / requester | INSERT own (`user_id = auth.uid()` or null), SELECT own | SELECT own request's history | none (base table) |
+| Provider | none | none | none |
+| Administrator (`is_staff()`) | SELECT, UPDATE (status machine) | SELECT all, INSERT | SELECT, all writes |
 | Browser (RLS enforced) | cannot move statuses | cannot append events | cannot self-activate |
+
+The public badge capability the previous revision documented as "SELECT (public)"
+is now a **projection**, not a table read. Anonymous callers select from
+`provider_emergency_participation_public`, which exposes only `provider_id`,
+`display_name`, `accepts_emergency_requests` and `coverage_area`. `phone` and
+`last_seen_at` stay on the base table, which is administrator-only. Rationale and
+the verification are in `CARENBUDDI_ANONYMOUS_ACCESS_PRIVACY_FIX_REPORT.md`.
+
+Anonymous callers can also evaluate `is_staff()` now, because RLS evaluates policy
+expressions as the querying role and seven policies OR that function in. For an
+anonymous caller `auth.uid()` is `NULL`, so `is_staff()` is always `false` — the
+grant turns a permission *error* into an empty result, and grants nothing else.
+
+Known gap: `insert ... returning` on `emergency_requests` is refused for an
+anonymous requester, because PostgreSQL applies the table's SELECT policies to a
+`RETURNING` clause and an anonymous caller cannot be distinguished from any other
+anonymous caller when `user_id IS NULL`. See §"Unresolved" in the report above.
 
 The app enforces the same boundary client-side: `/worker`, `/provider`,
 `/admin` remain behind `AppGuard`'s `STAFF_PATHS` role gate. `/emergency`

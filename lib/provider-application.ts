@@ -113,6 +113,8 @@ export interface DocumentRef {
   sizeBytes: number;
   mimeType: string;
   addedAt: string;
+  /** Supabase Storage path, populated only after a successful upload. */
+  storagePath?: string;
 }
 
 export interface ProviderApplication {
@@ -210,6 +212,33 @@ export function newApplication(params: {
 }
 
 /* ------------------------------------------------------------------ helpers */
+
+/**
+ * The authoritative status-transition matrix.
+ *
+ * This is the single list both halves of the workflow read:
+ *  - the reviewer UI builds its decision buttons from the current status;
+ *  - the database function `review_provider_application` (migration 0007)
+ *    enforces exactly these pairs inside PostgreSQL, where the caller cannot
+ *    be trusted.
+ *
+ * The applicant path is deliberately narrow: only `draft -> submitted` and
+ * `needs-info -> submitted` (resubmission after a request for information).
+ * Everything else is an administrator decision. `rejected` is terminal.
+ */
+export const APPLICATION_TRANSITIONS: Record<ProviderApplicationStatus, ProviderApplicationStatus[]> = {
+  draft: ["submitted"],
+  submitted: ["under-review", "needs-info", "verified", "rejected"],
+  "under-review": ["needs-info", "verified", "rejected", "suspended"],
+  "needs-info": ["under-review", "verified", "rejected", "suspended"],
+  verified: ["suspended"],
+  rejected: [],
+  suspended: ["verified", "rejected"],
+};
+
+export function canTransition(from: ProviderApplicationStatus, to: ProviderApplicationStatus): boolean {
+  return (APPLICATION_TRANSITIONS[from] ?? []).includes(to);
+}
 
 export function isLicensedCategory(app: ProviderApplication): boolean {
   return categoryById(app.category)?.requiresLicence ?? false;

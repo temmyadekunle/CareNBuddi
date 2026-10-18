@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
+import { endSession, endUserSession } from "@/lib/session";
 import { getSupabase, isCloudEnabled } from "./client";
 import {
   fetchProfile,
@@ -52,17 +53,42 @@ const CloudContext = createContext<CloudValue | null>(null);
 const SYNCABLE = new Set<string>(SYNCED_KEYS);
 const PUSH_DEBOUNCE_MS = 900;
 
+/**
+ * The local mirror of a cloud account.
+ *
+ * `role` is taken from the server profile only. It used to fall back to
+ * `user.user_metadata.role`, which is client-supplied, so a user who asked for
+ * 'admin' at signup would have been mirrored locally as an administrator even
+ * though the database never granted it - enough to show staff-only screens
+ * locally while every query behind them was denied. The profile row is the
+ * only authority for a role.
+ */
 function localUserFor(user: SupabaseUser, profile: CloudProfile | null): User {
   return {
     id: user.id,
     name: profile?.full_name || (user.user_metadata?.name as string) || "CareNBuddi Member",
     email: user.email ?? profile?.email ?? "",
     phone: profile?.phone ?? ((user.user_metadata?.phone as string) || undefined),
-    role: profile?.role ?? ((user.user_metadata?.role as Role) ?? "consumer"),
+    role: profile?.role ?? "consumer",
     lang: profile?.lang ?? "en",
     createdAt: user.created_at,
   };
 }
+
+/**
+ * Which auth events mean "this session is no longer valid".
+ *
+ * Supabase emits `SIGNED_OUT` when it establishes the session is gone - an
+ * expired refresh token, a revocation, or a sign-out from another device. It
+ * does not emit it for a failed network call, so a flaky connection cannot
+ * destroy a valid user's records.
+ *
+ * `INITIAL_SESSION` with a null session is explicitly NOT in this list. That
+ * is simply "nobody is signed in", and it fires on every page load for anyone
+ * using a local profile rather than a cloud account. Purging on it would delete
+ * their data on the first refresh.
+ */
+const REVOKING_EVENTS = new Set<string>(["SIGNED_OUT", "USER_SIGNED_OUT"]);
 
 /** Keeps the existing local session/users collections in step with the cloud account. */
 function adoptCloudUser(user: SupabaseUser, profile: CloudProfile | null) {
@@ -120,11 +146,19 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
     let active = true;
 
+    /* The user id of the cloud session we are currently acting for. Tracked
+       separately from React state because by the time a SIGNED_OUT event
+       arrives the SDK has already dropped the session, and `healthlink:session`
+       may have been rewritten - so the owner of the data has to be remembered
+       from before the event, not rediscovered after it. */
+    let cloudUserId: string | null = null;
+
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       const current = data.session?.user ?? null;
       setUser(current);
       if (current) {
+        cloudUserId = current.id;
         try {
           const p = await fetchProfile(current.id);
           if (!active) return;
@@ -138,17 +172,29 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
       setReady(true);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session: SupabaseSession | null) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session: SupabaseSession | null) => {
       const next = session?.user ?? null;
       setUser(next);
       setProfile(null);
+
       if (!next) {
-        const session_ = readLocal<{ userId: string | null; lang: string }>(KEYS.session);
-        writeLocal(KEYS.session, { userId: null, lang: session_?.lang ?? "en" });
+        /* Only a confirmed revocation clears data. A transient network failure
+           does not raise SIGNED_OUT, and INITIAL_SESSION with no session just
+           means nobody is signed in - neither should cost anyone their records. */
+        if (REVOKING_EVENTS.has(event) && cloudUserId) {
+          endUserSession(cloudUserId, "expired");
+        } else {
+          // Not a revocation: keep the data, just drop the session pointer.
+          const session_ = readLocal<{ userId: string | null; lang: string }>(KEYS.session);
+          writeLocal(KEYS.session, { userId: null, lang: session_?.lang ?? "en" });
+        }
+        cloudUserId = null;
         setSyncState("idle");
         setLastSyncedAt(null);
         return;
       }
+
+      cloudUserId = next.id;
       fetchProfile(next.id)
         .then(async (p) => {
           adoptCloudUser(next, p);
@@ -183,10 +229,15 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) throw new Error("Cloud sign-in is not configured");
     setError(null);
     setNotice(null);
+    // Defence in depth, NOT the control. The database trigger is what actually
+    // refuses to create an administrator (migration 0003); this just stops the
+    // browser from claiming one in the first place. A caller could always edit
+    // the request by hand, which is why the trigger matters.
+    const requestedRole: Role = meta.role === "provider" ? "provider" : "consumer";
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { name: meta.name, phone: meta.phone ?? "", role: meta.role, lang: meta.lang } },
+      options: { data: { name: meta.name, phone: meta.phone ?? "", role: requestedRole, lang: meta.lang } },
     });
     if (signUpError) throw new Error(signUpError.message);
     return { needsConfirmation: !data.session };
@@ -208,6 +259,9 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     if (timer.current) clearTimeout(timer.current);
     await supabase?.auth.signOut();
+    // Clears this account's private collections from the device. Only the
+    // Supabase call is authentication; the rest is local data cleanup.
+    endSession("signout");
     setUser(null);
     setProfile(null);
     setSyncState("idle");

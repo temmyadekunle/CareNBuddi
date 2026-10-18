@@ -1,4 +1,5 @@
 import { uid } from "./storage";
+import { currentScopedKey } from "./storage-scope";
 
 /**
  * Practice settings a provider controls: what they offer, where, when, and for
@@ -119,7 +120,7 @@ export const PRACTICE_KEY = "healthlink:practice-settings";
 
 export function writePracticeMap(map: Record<string, PracticeSettings>): boolean {
   try {
-    localStorage.setItem(PRACTICE_KEY, JSON.stringify(map));
+    localStorage.setItem(currentScopedKey(PRACTICE_KEY), JSON.stringify(map));
     return true;
   } catch {
     return false;
@@ -128,7 +129,7 @@ export function writePracticeMap(map: Record<string, PracticeSettings>): boolean
 
 export function readPracticeMap(): Record<string, PracticeSettings> {
   try {
-    const raw = localStorage.getItem(PRACTICE_KEY);
+    const raw = localStorage.getItem(currentScopedKey(PRACTICE_KEY));
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed as Record<string, PracticeSettings>) : {};

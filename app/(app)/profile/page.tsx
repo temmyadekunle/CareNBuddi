@@ -52,6 +52,7 @@ import {
   type Units,
 } from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
+import { endSession } from "@/lib/session";
 import { fileToSquareDataUrl, readPhoto, removePhoto, savePhoto } from "@/lib/profile-photo";
 import { ProfileCropper } from "@/components/profile-cropper";
 import { useCloud } from "@/lib/supabase/cloud";
@@ -259,18 +260,15 @@ export default function ProfilePage() {
     } finally {
       setSigningOut(false);
     }
-    setSession((prev) => ({ ...prev, userId: null }));
+    // Removes this account's private collections from the device. Theme and
+    // language are kept: they are device preferences, not the user's data.
+    endSession("signout");
     setConfirmOut(false);
     push(t("prof_signed_out", "You are signed out"), "info");
     router.push("/auth/sign-in");
   };
 
   const menuCard = "mt-3 overflow-hidden divide-y divide-slate-100";
-
-  // TEMPORARY DIAGNOSTIC — remove before commit.
-  if (typeof window !== "undefined" && window.location.search.includes("bisect=1")) {
-    return <div>bisect-ok</div>;
-  }
 
   return (
     <Screen>
@@ -833,9 +831,9 @@ export default function ProfilePage() {
         title={t("prof_signout_title", "Sign out of CareNBuddi?")}
         body={t(
           "prof_signout_body",
-          "Your saved records stay on this device. You can sign back in at any time.",
+          "Your saved records will be removed from this device. Theme and language stay as they are.",
         )}
-        confirmLabel={t("prof_logout", "Log Out")}
+        confirmLabel={t("a_signout", "Sign out")}
         cancelLabel={t("c_cancel", "Cancel")}
         onConfirm={() => void signOut()}
         onCancel={() => setConfirmOut(false)}

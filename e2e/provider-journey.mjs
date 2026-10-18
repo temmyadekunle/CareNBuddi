@@ -10,6 +10,21 @@
  * Run with:  node e2e/provider-journey.mjs http://127.0.0.1:8795
  */
 import { chromium } from "playwright";
+/**
+ * Reads a collection out of the current principal's namespace.
+ *
+ * Private collections are stored per account since storage scoping landed, so
+ * tests must resolve the same key the app does rather than reading a legacy
+ * unscoped key that no longer holds anything.
+ */
+async function readPrivate(page, collection) {
+  return page.evaluate((name) => {
+    const session = JSON.parse(localStorage.getItem("healthlink:session") ?? "null");
+    const ns = session?.userId ? `healthlink:u:${encodeURIComponent(session.userId)}:` : "healthlink:guest::";
+    const raw = localStorage.getItem(ns + name);
+    return raw === null ? [] : JSON.parse(raw);
+  }, collection);
+}
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:8795";
 const results = [];
@@ -179,9 +194,7 @@ await page.locator("select").nth(1).selectOption("Lagos");
 await page.getByLabel(/^City/i).fill("Ikeja");
 await page.getByRole("button", { name: /^Continue/ }).click();
 await page.waitForTimeout(600);
-const storedAfterProfile = await page.evaluate(() =>
-  JSON.parse(localStorage.getItem("healthlink:provider-applications") ?? "[]"),
-);
+const storedAfterProfile = await readPrivate(page, "provider-applications");
 check("profile field persisted", storedAfterProfile[0]?.speciality === "Community paediatrics", storedAfterProfile[0]?.speciality);
 check("state selection persisted", storedAfterProfile[0]?.state === "Lagos", storedAfterProfile[0]?.state);
 check("moving on advances the step", (await page.locator("body").innerText()).includes("Identity verification"));
@@ -238,9 +251,7 @@ const profileAgain = await readHydrated(page, "/profile");
 check("profile survives a reload", profileAgain.trim().length > 40, `${profileAgain.trim().length} chars`);
 
 /* 8. Exactly one application exists for the account. */
-const stored = await page.evaluate(() =>
-  JSON.parse(localStorage.getItem("healthlink:provider-applications") ?? "[]"),
-);
+const stored = await readPrivate(page, "provider-applications");
 check("exactly one application exists", stored.length === 1, `${stored.length} application(s)`);
 check("it belongs to the new account", stored[0]?.email === EMAIL);
 

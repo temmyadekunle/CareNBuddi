@@ -23,12 +23,21 @@ import {
   useStoredCollection,
 } from "@/lib/storage";
 import {
-  PROVIDER_APPLICATIONS_KEY,
+  APPLICATION_TRANSITIONS,
   type ProviderApplication,
   type ProviderApplicationStatus,
   categoryById,
   isLicensedCategory,
 } from "@/lib/provider-application";
+import {
+  applyReviewDecision,
+  useServerApplications,
+  type ReviewDecision,
+} from "@/lib/server-provider-applications";
+import {
+  getDocumentUrl,
+  isDocumentStorageAvailable,
+} from "@/lib/storage/upload";
 
 type ApplicationFilter = "all" | "draft" | "submitted" | "under-review" | "needs-info" | "verified" | "rejected" | "suspended" | "expired";
 
@@ -65,6 +74,11 @@ export default function AdminProviderApplicationsPage() {
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const me = users.find((u) => u.id === session.userId);
 
+  /* Every hook this component calls sits above its first return, so the
+     hook order is identical whether the gate or the dashboard renders. The
+     dashboard body below only mounts once the administrator check has
+     passed; if the role changes between renders React unmounts and mounts
+     it as a fresh instance, which is safe. */
   if (me?.role !== "admin") {
     return (
       <Screen>
@@ -88,7 +102,28 @@ export default function AdminProviderApplicationsPage() {
     );
   }
 
-  const [apps] = useStoredCollection<ProviderApplication>(PROVIDER_APPLICATIONS_KEY, []);
+  return <AdminDashboard me={me} t={t} />;
+}
+
+/**
+ * The administrator dashboard itself.
+ *
+ * Split out of AdminProviderApplicationsPage so its hooks never depend on
+ * conditional rendering in the wrapper: this component is either mounted
+ * (authorised, hooks run unconditionally) or not mounted at all.
+ *
+ * Data comes from the `provider_applications` table via the server, with no
+ * localStorage fallback by design: a local review state was never a
+ * decision, and showing it as one would defeat the audit trail.
+ */
+function AdminDashboard({
+  me,
+  t,
+}: {
+  me: { id: string; name: string };
+  t: (key: string, fallback?: string) => string;
+}) {
+  const { apps, phase, error, reload } = useServerApplications();
   const [filter, setFilter] = useState<FilterState>({
     status: "all",
     category: "",
@@ -96,6 +131,7 @@ export default function AdminProviderApplicationsPage() {
   });
 
   const [selectedApp, setSelectedApp] = useState<ProviderApplication | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<Record<string, string>>({});
 
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
@@ -131,6 +167,46 @@ export default function AdminProviderApplicationsPage() {
     setSelectedApp(null);
   }, []);
 
+  const handleDownload = useCallback(
+    async (storagePath: string) => {
+      if (!isDocumentStorageAvailable()) {
+        // eslint-disable-next-line no-alert
+        alert(t("aa_storage_not_available"));
+        return;
+      }
+      const url = await getDocumentUrl(storagePath);
+      if (url) {
+        window.location.href = url;
+      } else {
+        // eslint-disable-next-line no-alert
+        alert(t("aa_download_failed"));
+      }
+    },
+    [t],
+  );
+
+  /**
+   * Records a decision through `review_provider_application`. The database
+   * owns the reviewer identity, the transition matrix and the audit row;
+   * this only forwards the application id, the decided status and the
+   * reason. Returns null on success, or the error copy for the modal.
+   */
+  const decide = useCallback(
+    async (
+      applicationId: string,
+      decision: ReviewDecision,
+      reason: string,
+    ): Promise<string | null> => {
+      const result = await applyReviewDecision(applicationId, decision, reason);
+      if (!result.ok) {
+        return result.error ?? t("aa_decision_failed", "The decision could not be saved. Try again.");
+      }
+      await reload();
+      return null;
+    },
+    [reload, t],
+  );
+
   return (
     <Screen>
       <SectionHeader
@@ -138,90 +214,126 @@ export default function AdminProviderApplicationsPage() {
         subtitle={t("aa_sub")}
       />
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        {[
-          { label: t("aa_total"), value: apps.length, icon: <UserIcon className="h-4 w-4" /> },
-          { label: t("aa_draft_count"), value: summaryCounts.draft ?? 0, icon: <FileTextIcon className="h-4 w-4" /> },
-          { label: t("aa_submitted_count"), value: summaryCounts.submitted ?? 0, icon: <CalendarIcon className="h-4 w-4" /> },
-          { label: t("aa_under_review_count"), value: summaryCounts["under-review"] ?? 0, icon: <CalendarIcon className="h-4 w-4" /> },
-          { label: t("aa_verified_count"), value: summaryCounts.verified ?? 0, icon: <ShieldIcon className="h-4 w-4" /> },
-          { label: t("aa_rejected_count"), value: summaryCounts.rejected ?? 0, icon: <FileTextIcon className="h-4 w-4" /> },
-        ].map((card) => (
-          <Card key={card.label} className="px-3 py-3">
-            <p className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-              {card.icon}
-              <span className="truncate">{card.label}</span>
-            </p>
-            <p className="mt-1 text-xl font-bold tabular-nums text-slate-900">{card.value}</p>
-          </Card>
-        ))}
-      </div>
+      {phase === "loading" ? (
+        <p className="mt-6 text-center text-sm text-slate-500">{t("app.loading", "Loading…")}</p>
+      ) : null}
 
-      <Card className="mt-4 px-4 py-3 space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
-          <Field label={t("aa_status")}>
-            <select
-              value={filter.status}
-              onChange={(e) =>
-                setFilter((prev) => ({ ...prev, status: e.target.value as ApplicationFilter }))
-              }
-              className={inputClass}
-            >
-              {FILTERS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {t(f.labelKey)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label={t("aa_category")}>
-            <select value={filter.category} onChange={(e) => setFilter((prev) => ({ ...prev, category: e.target.value }))} className={inputClass}>
-              <option value="">{t("aa_all_categories")}</option>
-              {categories.map((cat) => {
-                const c = categoryById(cat);
-                return (
-                  <option key={cat} value={cat}>
-                    {c?.label ?? cat}
-                  </option>
-                );
-              })}
-            </select>
-          </Field>
-          <Field label={t("aa_search")}>
-            <input
-              value={filter.search}
-              onChange={(e) => setFilter((prev) => ({ ...prev, search: e.target.value }))}
-              className={inputClass}
-              placeholder={t("aa_search_placeholder")}
-            />
-          </Field>
-          <div className="flex items-end">
-            <Button
-              full
-              onClick={() => setFilter({ status: "all", category: "", search: "" })}
-              tone="secondary"
-            >
-              {t("aa_clear")}
-            </Button>
-          </div>
-        </div>
-      </Card>
+      {phase === "offline" ? (
+        <Card className="mt-4">
+          <EmptyState
+            icon={<ShieldIcon className="h-6 w-6" />}
+            title={t("aa_offline_mode", "CareNBuddi cloud is not configured on this device.")}
+            body={t(
+              "aa_offline_note",
+              "Reviewing applications requires CareNBuddi cloud. No local data is shown, because local review state was never a decision.",
+            )}
+          />
+        </Card>
+      ) : null}
 
-      <div className="mt-4 space-y-2">
-        {filteredApps.length === 0 ? (
+      {phase === "error" ? (
+        <Card className="mt-4">
           <EmptyState
             icon={<SearchIcon className="h-6 w-6" />}
-            title={t("aa_none")}
-            body={t("aa_none_d")}
+            title={t("aa_load_error", "Applications could not be loaded from CareNBuddi cloud.")}
+            body={error ?? ""}
+            action={
+              <Button className="min-h-11" onClick={() => void reload()}>
+                {t("aa_retry", "Retry")}
+              </Button>
+            }
           />
-        ) : (
-          <div className="space-y-2">
-            {filteredApps.map((app) => (
-              <ApplicationCard key={app.id} app={app} me={me} t={t} onReview={openDetail} />
+        </Card>
+      ) : null}
+
+      {phase === "ready" ? (
+        <>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {[
+              { label: t("aa_total"), value: apps.length, icon: <UserIcon className="h-4 w-4" /> },
+              { label: t("aa_draft_count"), value: summaryCounts.draft ?? 0, icon: <FileTextIcon className="h-4 w-4" /> },
+              { label: t("aa_submitted_count"), value: summaryCounts.submitted ?? 0, icon: <CalendarIcon className="h-4 w-4" /> },
+              { label: t("aa_under_review_count"), value: summaryCounts["under-review"] ?? 0, icon: <CalendarIcon className="h-4 w-4" /> },
+              { label: t("aa_verified_count"), value: summaryCounts.verified ?? 0, icon: <ShieldIcon className="h-4 w-4" /> },
+              { label: t("aa_rejected_count"), value: summaryCounts.rejected ?? 0, icon: <FileTextIcon className="h-4 w-4" /> },
+            ].map((card) => (
+              <Card key={card.label} className="px-3 py-3">
+                <p className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                  {card.icon}
+                  <span className="truncate">{card.label}</span>
+                </p>
+                <p className="mt-1 text-xl font-bold tabular-nums text-slate-900">{card.value}</p>
+              </Card>
             ))}
           </div>
-        )}
-      </div>
+
+          <Card className="mt-4 px-4 py-3 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+              <Field label={t("aa_status")}>
+                <select
+                  value={filter.status}
+                  onChange={(e) =>
+                    setFilter((prev) => ({ ...prev, status: e.target.value as ApplicationFilter }))
+                  }
+                  className={inputClass}
+                >
+                  {FILTERS.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {t(f.labelKey)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label={t("aa_category")}>
+                <select value={filter.category} onChange={(e) => setFilter((prev) => ({ ...prev, category: e.target.value }))} className={inputClass}>
+                  <option value="">{t("aa_all_categories")}</option>
+                  {categories.map((cat) => {
+                    const c = categoryById(cat);
+                    return (
+                      <option key={cat} value={cat}>
+                        {c?.label ?? cat}
+                      </option>
+                    );
+                  })}
+                </select>
+              </Field>
+              <Field label={t("aa_search")}>
+                <input
+                  value={filter.search}
+                  onChange={(e) => setFilter((prev) => ({ ...prev, search: e.target.value }))}
+                  className={inputClass}
+                  placeholder={t("aa_search_placeholder")}
+                />
+              </Field>
+              <div className="flex items-end">
+                <Button
+                  full
+                  onClick={() => setFilter({ status: "all", category: "", search: "" })}
+                  tone="secondary"
+                >
+                  {t("aa_clear")}
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <div className="mt-4 space-y-2">
+            {filteredApps.length === 0 ? (
+              <EmptyState
+                icon={<SearchIcon className="h-6 w-6" />}
+                title={t("aa_none")}
+                body={t("aa_none_d")}
+              />
+            ) : (
+              <div className="space-y-2">
+                {filteredApps.map((app) => (
+                  <ApplicationCard key={app.id} app={app} me={me} t={t} onReview={openDetail} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
 
       {selectedApp && (
         <BottomSheet
@@ -229,7 +341,14 @@ export default function AdminProviderApplicationsPage() {
           onClose={closeDetail}
           title={t("aa_review_title")}
         >
-          <ApplicationDetailCard app={selectedApp} me={me} t={t} onClose={closeDetail} />
+          <ApplicationDetailCard
+            app={selectedApp}
+            me={me}
+            t={t}
+            onClose={closeDetail}
+            onDownload={handleDownload}
+            onDecide={decide}
+          />
         </BottomSheet>
       )}
     </Screen>
@@ -277,44 +396,64 @@ function ApplicationDetailCard({
   me,
   t,
   onClose,
+  onDownload,
+  onDecide,
 }: {
   app: ProviderApplication;
   me: { id: string; name: string };
-  t: (key: string) => string;
+  t: (key: string, fallback?: string) => string;
   onClose: () => void;
+  onDownload: (storagePath: string) => void;
+  onDecide: (id: string, decision: ReviewDecision, reason: string) => Promise<string | null>;
 }) {
-  const [decision, setDecision] = useState<"under-review" | "needs-info" | "verified" | "rejected" | "suspended" | null>(null);
+  const [decision, setDecision] = useState<ReviewDecision | null>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const category = categoryById(app.category);
   const isLicensed = isLicensedCategory(app);
+  const storageAvailable = isDocumentStorageAvailable();
 
-  const DECISIONS: { value: "under-review" | "needs-info" | "verified" | "rejected" | "suspended"; labelKey: string; tone: string }[] = [
-    { value: "under-review", labelKey: "aa_mark_under_review", tone: "secondary" },
-    { value: "needs-info", labelKey: "aa_request_info", tone: "secondary" },
-    { value: "verified", labelKey: "aa_approve_verify", tone: "primary" },
-    { value: "rejected", labelKey: "aa_reject", tone: "danger" },
-    { value: "suspended", labelKey: "aa_suspend", tone: "danger" },
-  ];
+  // Only decisions the server will accept for this application's current
+  // status are offered; the transition matrix is enforced by migration 0007.
+  const ALLOWED = APPLICATION_TRANSITIONS[app.status] ?? [];
+  const DECISIONS: { value: ReviewDecision; labelKey: string; tone: string }[] = (
+    [
+      { value: "under-review", labelKey: "aa_mark_under_review", tone: "secondary" },
+      { value: "needs-info", labelKey: "aa_request_info", tone: "secondary" },
+      { value: "verified", labelKey: "aa_approve_verify", tone: "primary" },
+      { value: "rejected", labelKey: "aa_reject", tone: "danger" },
+      { value: "suspended", labelKey: "aa_suspend", tone: "danger" },
+    ] as const
+  ).filter((d) => ALLOWED.includes(d.value));
 
   const handleDecision = useCallback(
-    (next: "under-review" | "needs-info" | "verified" | "rejected" | "suspended") => {
+    (next: ReviewDecision) => {
       if (submitting) return;
       setDecision(next);
       setReviewNote("");
+      setSubmitError(null);
     },
     [submitting],
   );
 
-  const handleSubmitDecision = useCallback(() => {
+  const handleSubmitDecision = useCallback(async () => {
     if (!reviewNote.trim() || submitting) return;
     setSubmitting(true);
+    setSubmitError(null);
+    const failure = await onDecide(app.id, decision as ReviewDecision, reviewNote.trim());
+    setSubmitting(false);
+    if (failure !== null) {
+      // The server refused the decision; nothing persisted. Keep the modal
+      // open so the administrator can correct and retry.
+      setSubmitError(failure);
+      return;
+    }
     setDecision(null);
     setReviewNote("");
-    setSubmitting(false);
     onClose();
-  }, [reviewNote, submitting, onClose]);
+  }, [reviewNote, submitting, decision, app.id, onDecide, onClose]);
 
   return (
     <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
@@ -370,6 +509,7 @@ function ApplicationDetailCard({
             doc={app.identityDocument}
             required={true}
             t={t}
+            onDownload={storageAvailable ? onDownload : undefined}
           />
           <DocumentCard
             title={t("aa_credential_evidence")}
@@ -377,6 +517,7 @@ function ApplicationDetailCard({
             doc={app.credentialEvidence}
             required={isLicensed}
             t={t}
+            onDownload={storageAvailable ? onDownload : undefined}
           />
         </div>
         {app.licenceExpiry && (
@@ -384,6 +525,9 @@ function ApplicationDetailCard({
             <p className="text-[11px] font-medium text-slate-500">{t("aa_licence_expiry")}</p>
             <p className="text-sm text-slate-900">{app.licenceExpiry}</p>
           </div>
+        )}
+        {!storageAvailable && (
+          <p className="mt-2 text-xs text-slate-500">{t("aa_storage_not_available_note")}</p>
         )}
       </Card>
 
@@ -412,16 +556,23 @@ function ApplicationDetailCard({
                   onChange={(e) => setReviewNote(e.target.value)}
                   rows={3}
                   className={inputClass}
-                  placeholder={t("aa_reason_placeholder")}
+                  placeholder={
+                    decision === "under-review"
+                      ? t("aa_reason_optional", "Optional while marking this application under review")
+                      : t("aa_reason_placeholder")
+                  }
                 />
               </Field>
+              {submitError ? (
+                <p className="text-xs font-medium text-rose-600">{submitError}</p>
+              ) : null}
               <div className="flex gap-2">
                 <Button
                   full
-                  onClick={handleSubmitDecision}
-                  disabled={!reviewNote.trim() || submitting}
+                  onClick={() => void handleSubmitDecision()}
+                  disabled={submitting || (decision !== "under-review" && !reviewNote.trim())}
                 >
-                  {t("aa_confirm")}
+                  {submitting ? t("aa_saving", "Saving…") : t("aa_confirm")}
                 </Button>
                 <Button
                   full
@@ -429,6 +580,7 @@ function ApplicationDetailCard({
                   onClick={() => {
                     setDecision(null);
                     setReviewNote("");
+                    setSubmitError(null);
                   }}
                 >
                   {t("aa_cancel")}
@@ -459,12 +611,14 @@ function DocumentCard({
   doc,
   required,
   t,
+  onDownload,
 }: {
   title: string;
   state: "not-started" | "submitted" | "verified" | "rejected";
-  doc: { docType: string; fileName: string; sizeBytes: number; mimeType: string; addedAt: string } | null;
+  doc: { docType: string; fileName: string; sizeBytes: number; mimeType: string; addedAt: string; storagePath?: string } | null;
   required: boolean;
   t: (key: string) => string;
+  onDownload?: (storagePath: string) => void;
 }) {
   const STATE_TONE: Record<string, "brand" | "green" | "amber" | "rose" | "slate"> = {
     "not-started": "slate",
@@ -472,6 +626,7 @@ function DocumentCard({
     verified: "green",
     rejected: "rose",
   };
+  const canDownload = Boolean(doc?.storagePath && onDownload);
   return (
     <Card className="p-3">
       <p className="text-[11px] font-medium text-slate-500 mb-1">{title}</p>
@@ -482,6 +637,20 @@ function DocumentCard({
             {doc.mimeType} . {(doc.sizeBytes / 1024).toFixed(0)} KB . {doc.addedAt.slice(0, 10)}
           </p>
           <Badge tone={STATE_TONE[state]}>{state}</Badge>
+          {canDownload && (
+            <Button
+              full
+              tone="secondary"
+              onClick={() => {
+                if (doc.storagePath && onDownload) {
+                  onDownload(doc.storagePath);
+                }
+              }}
+              disabled={!doc.storagePath || !onDownload}
+            >
+              {t("aa_download")}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-1">

@@ -28,13 +28,20 @@ import {
   missingRequirements,
   newApplication,
   nextIncompleteStep,
-  submitApplication,
   type DocumentRef,
   type OnboardingStep,
   type ProviderApplication,
 } from "@/lib/provider-application";
 import { KEYS, seedUsers, uid, useSession, useStoredCollection } from "@/lib/storage";
 import { useProviderApplications } from "@/lib/use-provider-application";
+import {
+  uploadDocument,
+  isDocumentStorageAvailable,
+  buildStoragePath,
+  type DocumentCategory,
+} from "@/lib/storage/upload";
+import { isCloudEnabled } from "@/lib/supabase/client";
+import { saveApplicationToServer } from "@/lib/server-provider-applications";
 import type { User } from "@/lib/types";
 
 const MAX_DOC_BYTES = 8 * 1024 * 1024;
@@ -70,6 +77,13 @@ function useApplication() {
       });
     const next: ProviderApplication = { ...base, ...patch, updatedAt: new Date().toISOString() };
     upsert(next);
+    // Best-effort draft sync. The device copy is the editable form; the
+    // server row is authority for status but never for in-progress edits.
+    // Failures are ignored here: drafts stay usable offline, and submission
+    // (StepReview) is the step that must actually reach the server.
+    if (isCloudEnabled) {
+      void saveApplicationToServer(next, false).then(() => undefined);
+    }
     return next;
   }
 
@@ -383,14 +397,24 @@ function DocumentPicker({
   value,
   onPick,
   error,
+  userId,
+  applicationId,
+  docType,
 }: {
   label: string;
   hint: string;
   value: DocumentRef | null;
   onPick: (ref: DocumentRef | null) => void;
   error?: string | null;
+  userId?: string;
+  applicationId?: string;
+  docType?: DocumentCategory;
 }) {
   const t = useT();
+  const [uploading, setUploading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(error ?? null);
+  const storageAvailable = isDocumentStorageAvailable();
+
   return (
     <Field label={label} hint={hint} error={error}>
       <div className="flex flex-wrap items-center gap-2">
@@ -400,23 +424,54 @@ function DocumentPicker({
             type="file"
             accept={ACCEPTED_MIME.join(",")}
             className="sr-only"
-            onChange={(e) => {
+            disabled={uploading}
+            onChange={async (e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (!file) return;
-              onPick({
-                docType: value?.docType ?? "",
-                fileName: file.name,
-                sizeBytes: file.size,
-                mimeType: file.type,
-                addedAt: new Date().toISOString(),
-              });
+
+              // Validate locally first
+              const problem = validateDocFromFile(file);
+              if (problem) {
+                setLocalError(problem);
+                return;
+              }
+
+              // If cloud storage is available and we have user/app context, upload
+              if (storageAvailable && userId && applicationId && docType) {
+                setUploading(true);
+                setLocalError(null);
+                try {
+                  const { documentRef, storagePath } = await uploadDocument(
+                    userId,
+                    applicationId,
+                    docType,
+                    file,
+                  );
+                  onPick({ ...documentRef, storagePath });
+                } catch (err) {
+                  setLocalError(
+                    err instanceof Error ? err.message : t("aa_download_failed"),
+                  );
+                } finally {
+                  setUploading(false);
+                }
+              } else {
+                // No cloud storage: store metadata only
+                onPick({
+                  docType: value?.docType ?? docType ?? "",
+                  fileName: file.name,
+                  sizeBytes: file.size,
+                  mimeType: file.type,
+                  addedAt: new Date().toISOString(),
+                });
+              }
             }}
           />
         </label>
         {value ? (
           <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
-            {value.fileName} · {Math.max(1, Math.round(value.sizeBytes / 1024))} KB
+            {value.fileName} {"·"} {Math.max(1, Math.round(value.sizeBytes / 1024))} KB
             <button
               type="button"
               onClick={() => onPick(null)}
@@ -428,9 +483,20 @@ function DocumentPicker({
         ) : (
           <span className="text-xs text-slate-400">{t("pr_no_doc", "No document attached")}</span>
         )}
+        {uploading && <span className="text-xs text-slate-400">{t("pr_uploading", "Uploading…")}</span>}
       </div>
     </Field>
   );
+}
+
+function validateDocFromFile(file: File): string | null {
+  if (!ACCEPTED_MIME.includes(file.type)) {
+    return "Use a JPG, PNG, WEBP or PDF file.";
+  }
+  if (file.size > MAX_DOC_BYTES) {
+    return "That file is too large. The maximum is 8 MB.";
+  }
+  return null;
 }
 
 function validateDoc(ref: DocumentRef): string | null {
@@ -449,8 +515,8 @@ function StepIdentity({
   onNext: () => void;
 }) {
   const t = useT();
-  const { save } = useApplication();
-  const [docType, setDocType] = useState(app.identityDocument?.docType ?? "");
+  const { session, me, save } = useApplication();
+  const [docType, setDocType] = useState<string>(app.identityDocument?.docType ?? "");
   const [error, setError] = useState<string | null>(null);
 
   function setDoc(ref: DocumentRef | null) {
@@ -508,6 +574,9 @@ function StepIdentity({
         value={app.identityDocument}
         error={error}
         onPick={setDoc}
+        userId={session.userId ?? undefined}
+        applicationId={app.id}
+        docType="identity"
       />
 
       {app.identityDocument ? (
@@ -531,7 +600,7 @@ function StepCredentials({
   onNext: () => void;
 }) {
   const t = useT();
-  const { save } = useApplication();
+  const { session, me, save } = useApplication();
   const licensed = isLicensedCategory(app);
   const cat = categoryById(app.category);
 
@@ -623,6 +692,9 @@ function StepCredentials({
             credentialsStatus: ref ? "submitted" : "not-started",
           });
         }}
+        userId={session.userId ?? undefined}
+        applicationId={app.id}
+        docType="credentials"
       />
 
       <StepNav complete={isStepComplete(draft, "credentials")} onBack={onBack} onNext={goNext} />
@@ -636,13 +708,29 @@ function StepReview({ app, onBack }: { app: ProviderApplication; onBack: () => v
   const router = useRouter();
   const { save } = useApplication();
 
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const missing = missingRequirements(app);
   const ready = isReadyToSubmit(app);
 
-  function submit() {
-    if (!ready) return;
-    const next = submitApplication(app, new Date().toISOString());
-    save({ status: next.status, submittedAt: next.submittedAt });
+  async function submit() {
+    if (!ready || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    // Submission is server-authoritative: the draft is not accepted as
+    // submitted until the database confirms it, and the local status copy
+    // is written from the returned row, never from the caller's guess.
+    const result = await saveApplicationToServer(app, true);
+    if (!result.ok || !result.value) {
+      setSubmitting(false);
+      setError(
+        result.error ?? t("pr_submit_failed", "The application could not be submitted. Try again."),
+      );
+      return;
+    }
+    const server = result.value;
+    save({ status: server.status, submittedAt: server.submittedAt });
     push(t("pr_submitted", "Application submitted"), "success");
     router.push("/provider/status");
   }
@@ -677,6 +765,8 @@ function StepReview({ app, onBack }: { app: ProviderApplication; onBack: () => v
         </AuthError>
       ) : null}
 
+      {error ? <AuthError>{error}</AuthError> : null}
+
       <p className="text-[11px] leading-relaxed text-slate-500">
         {t(
           "pr_review_note",
@@ -685,8 +775,8 @@ function StepReview({ app, onBack }: { app: ProviderApplication; onBack: () => v
       </p>
 
       <StepNav complete={false} onBack={onBack} />
-      <Button full disabled={!ready} onClick={submit}>
-        {t("pr_submit_application", "Submit application")}
+      <Button full disabled={!ready || submitting} onClick={() => void submit()}>
+        {submitting ? t("pr_submitting", "Submitting…") : t("pr_submit_application", "Submit application")}
       </Button>
     </Card>
   );

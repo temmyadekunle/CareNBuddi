@@ -16,6 +16,7 @@ import {
 import { canAccessProviderWorkspace } from "@/lib/post-auth";
 import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
 import { useProviderApplications } from "@/lib/use-provider-application";
+import { useServerApplication } from "@/lib/server-provider-applications";
 
 const STATUS_LABEL: Record<ProviderApplicationStatus, string> = {
   draft: "Not started",
@@ -70,9 +71,10 @@ export default function ProviderStatusPage() {
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const { forUser } = useProviderApplications();
+  const { application, phase, error, reload } = useServerApplication(session.userId);
 
   const me = users.find((u) => u.id === session.userId) ?? null;
-  const app = forUser(session.userId);
+  const localApp = forUser(session.userId);
 
   if (!session.userId || !me) {
     return (
@@ -89,7 +91,52 @@ export default function ProviderStatusPage() {
     );
   }
 
+  // The server row is the authority for status. The local copy is only
+  // shown while the server knows nothing about this account, and only ever
+  // reads as a draft: device state was never a decision.
+  const app: ProviderApplication | null =
+    application ??
+    (localApp && localApp.status === "draft" ? localApp : null);
+
+  if (phase === "loading" && !app) {
+    return (
+      <Screen>
+        <p className="mt-6 text-center text-sm text-slate-500">{t("app.loading", "Loading…")}</p>
+      </Screen>
+    );
+  }
+
   if (!app) {
+    if (phase === "offline") {
+      return (
+        <Screen>
+          <Card className="mt-4">
+            <SectionHeader
+              title={t("ps_offline_mode", "CareNBuddi cloud is not configured on this device.")}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {t(
+                "ps_offline_note",
+                "Application status is kept in CareNBuddi cloud. Start or continue your application to have it stored there.",
+              )}
+            </p>
+          </Card>
+        </Screen>
+      );
+    }
+    if (phase === "error") {
+      return (
+        <Screen>
+          <SectionHeader
+            title={t("ps_load_error", "Your application status could not be loaded from CareNBuddi cloud.")}
+          />
+          {error ? <p className="mt-1 text-xs text-slate-500">{error}</p> : null}
+          <Button className="mt-4 min-h-11" onClick={() => void reload()}>
+            {t("ps_retry", "Retry")}
+          </Button>
+        </Screen>
+      );
+    }
     return (
       <Screen>
         <SectionHeader
@@ -99,6 +146,14 @@ export default function ProviderStatusPage() {
             "You have a provider account but have not started an application.",
           )}
         />
+        {localApp && localApp.status !== "draft" ? (
+          <p className="mt-1 text-xs text-slate-500">
+            {t(
+              "ps_local_lost",
+              "A previously stored application on this device was not found in CareNBuddi cloud. Continue your application to submit it for review.",
+            )}
+          </p>
+        ) : null}
         <Link href="/provider/onboarding" className="tap mt-4 inline-block">
           <Button>{t("pr_begin", "Start your application")}</Button>
         </Link>
@@ -106,7 +161,16 @@ export default function ProviderStatusPage() {
     );
   }
 
-  return <StatusBody app={app} />;
+  return (
+    <>
+      {phase === "error" && error ? (
+        <p className="px-4 pt-3 text-xs text-amber-700">
+          {t("ps_stale_note", "CareNBuddi cloud is unreachable; the status below may be out of date.")}
+        </p>
+      ) : null}
+      <StatusBody app={app} />
+    </>
+  );
 }
 
 function StatusBody({ app }: { app: ProviderApplication }) {

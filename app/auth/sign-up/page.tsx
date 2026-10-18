@@ -117,33 +117,45 @@ function SignUpInner() {
     return ok;
   };
 
-  const signUpOffline = (): boolean => {
+  /**
+   * Creates a brand-new local profile for this device.
+   *
+   * This previously also looked the email up first and, if it matched, adopted
+   * that existing account - overwriting its phone number and signing the person
+   * in as the account holder with no password. That is the same vulnerability
+   * as the offline sign-in path, so the branch is gone: a duplicate email is
+   * now refused outright rather than silently claimed.
+   *
+   * What this is NOT: a verified account. The password collected by the form is
+   * never stored or checked, so this profile cannot be signed back into after a
+   * sign-out. That is deliberate - failing closed beats accepting any password.
+   */
+  const signUpOffline = (): { ok: boolean; needsConfirmation: boolean } => {
     const key = email.trim().toLowerCase();
     const existing = users.find((u) => u.email.toLowerCase() === key);
-    const trimmedPhone = phone.trim();
 
     if (existing) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === existing.id ? { ...u, phone: u.phone ?? (trimmedPhone || undefined) } : u,
+      setFormError(
+        t(
+          "auth_signup_exists",
+          "An account already uses that email. We cannot confirm who you are, so we cannot add you to it.",
         ),
       );
-      setSession((prev) => ({ ...prev, userId: existing.id }));
-      return true;
+      return { ok: false, needsConfirmation: false };
     }
 
     const user: User = {
       id: uid(),
       name: name.trim(),
       email: key,
-      phone: trimmedPhone || undefined,
+      phone: phone.trim() || undefined,
       role,
       lang: session.lang,
       createdAt: new Date().toISOString(),
     };
     setUsers((prev) => [...prev, user]);
     setSession((prev) => ({ ...prev, userId: user.id }));
-    return false;
+    return { ok: true, needsConfirmation: false };
   };
 
   const submit = async () => {
@@ -174,12 +186,16 @@ function SignUpInner() {
           router.push(role === "provider" ? "/provider/onboarding" : "/app");
         }
       } else {
-        const alreadyRegistered = signUpOffline();
+        const { ok } = signUpOffline();
+        if (!ok) return;
+        // Not "you are signed in" and not "account created" - neither is true.
+        // This is a local profile on this device that no one can sign back into.
         push(
-          alreadyRegistered
-            ? t("auth_signed_in", "You are signed in")
-            : t("auth_account_created", "Account created"),
-          "success",
+          t(
+            "auth_local_profile_created",
+            "Profile saved on this device",
+          ),
+          "info",
         );
         if (next) {
           router.push(next);

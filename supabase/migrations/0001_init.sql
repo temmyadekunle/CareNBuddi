@@ -18,20 +18,6 @@ begin
 end;
 $$;
 
--- Staff = provider or admin. Used by the booking/report/request policies.
-create or replace function public.is_staff()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('provider', 'admin')
-  );
-$$;
-
 -- Creates a profile row whenever someone signs up, so the app always has a
 -- profile to attach records to.
 create or replace function public.handle_new_user()
@@ -129,6 +115,43 @@ create index if not exists health_documents_user_idx on public.health_documents 
 create index if not exists bookings_user_idx on public.bookings (user_id);
 create index if not exists bookings_status_idx on public.bookings (status);
 create index if not exists provider_requests_status_idx on public.provider_requests (status);
+
+-- ---------------------------------------------------------------------------
+-- helper that depends on a table
+--
+-- is_staff() reads public.profiles, and PostgreSQL validates a `language sql`
+-- function body at CREATE time. It therefore has to be declared *after* the
+-- tables it queries. At its original position -- up in the helpers block, above
+-- the table definitions -- the CREATE failed on a fresh database with
+-- `relation "public.profiles" does not exist`, so this file could never be
+-- applied end to end and every migration after it was unreachable.
+--
+-- Only the position changed. The body, the SECURITY DEFINER wrapper, the
+-- search_path and the role check are exactly as originally written, and
+-- `create or replace` keeps the file idempotent, so re-applying it to a
+-- database that already has this function remains a no-op.
+--
+-- (handle_new_user() above also references public.profiles, but it is plpgsql,
+-- whose body is not resolved at CREATE time, so it needs no such ordering.)
+-- ---------------------------------------------------------------------------
+
+-- Staff = provider or admin. Used by the booking/report/request policies.
+create or replace function public.is_staff()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('provider', 'admin')
+  );
+$$;
+
+-- ---------------------------------------------------------------------------
+-- triggers
+-- ---------------------------------------------------------------------------
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at

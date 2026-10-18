@@ -32,6 +32,7 @@ import {
 import { LangSwitcher } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useT } from "@/lib/i18n";
+import { endSession } from "@/lib/session";
 import { useCloud } from "@/lib/supabase/cloud";
 import { KEYS, useSession, useStoredValue } from "@/lib/storage";
 
@@ -108,7 +109,7 @@ export function ProfileSettings() {
     } finally {
       setSigningOut(false);
     }
-    setSession((prev) => ({ ...prev, userId: null }));
+    endSession("signout");
     setConfirmOut(false);
     push(t("prof_signed_out", "You are signed out"), "info");
     router.push("/auth/sign-in");

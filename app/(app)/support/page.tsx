@@ -6,6 +6,7 @@ import { Badge, Button, Card, Screen, SectionHeader } from "@/components/app-ui"
 import { HelpIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { useSession, useStoredCollection, uid } from "@/lib/storage";
+import { currentScopedKey } from "@/lib/storage-scope";
 import { ENQUIRY_CATEGORIES, SUPPORT_EMAIL, getSupportSession, useSupportData, type SupportConversation, type SupportMessage } from "@/lib/support";
 
 const OPERATING_HOURS = {
@@ -25,13 +26,13 @@ export default function SupportPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("healthlink:support-active");
+    const saved = sessionStorage.getItem(currentScopedKey("healthlink:support-active"));
     if (saved) setActiveConversation(saved);
   }, []);
 
   useEffect(() => {
     if (activeConversation) {
-      sessionStorage.setItem("healthlink:support-active", activeConversation);
+      sessionStorage.setItem(currentScopedKey("healthlink:support-active"), activeConversation);
     }
   }, [activeConversation]);
 

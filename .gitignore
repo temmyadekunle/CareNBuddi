@@ -48,6 +48,22 @@ next-env.d.ts
 .netlify/
 tmp-*.txt
 
+# local Supabase CLI scratch (created when the CLI runs via npx)
+/supabase/.temp/
+
+# generated one-off verification artifacts at the repo root (regenerable by
+# rerunning the harnesses; the reviewed fixtures live in tests/pglite/ and
+# stay tracked — the leading slashes keep these rules root-anchored only)
+/bootstrap-output.txt
+/test-output.txt
+/privacy-output.txt
+/verify-output.txt
+/defence-output.txt
+/replay-output.txt
+/bootstrap.json
+/hardened.json
+/privacy.json
+
 # cloudflare
 .wrangler/
 .open-next/

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -7,64 +7,22 @@ import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage"
 import { Button, Card, Screen } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
 
-const PRIVATE_PATHS = [
-  "/journal",
-  "/records",
-  "/reminders",
-  "/passport",
-  "/care-circle",
-  "/health/chronic",
-  "/health/journey",
-  "/health/exercise",
-  "/appointments",
-  "/profile",
-  // Onboarding and the status screen read the applicant's own application, so
-  // they need a session. /provider/register is deliberately NOT here: it is the
-  // page where an account is created, so requiring a session would lock out
-  // exactly the person who needs it.
-  "/provider/onboarding",
-  "/provider/status",
-];
-
-/**
- * Staff areas, matched as an exact path or as a parent of it.
- */
-const STAFF_PATHS = ["/worker", "/admin"];
-
-/**
- * The professional workspace only, matched exactly.
- *
- * Its children are applicant routes (/provider/register, /provider/onboarding,
- * /provider/status), not staff areas. Treating them as staff is what sent new
- * applicants back to the sign-in screen, so `/provider` must not be used as a
- * prefix here.
- */
-const STAFF_EXACT = ["/provider"];
-
-/**
- * Exact segment match, not a prefix test.
- *
- * `pathname.startsWith("/provider")` also matched `/provider/register`, so an
- * unauthenticated applicant following "Create account as Health provider" was
- * told to sign in and could never reach the registration form.
- */
-function matchesPath(pathname: string, base: string): boolean {
-  if (pathname === base) return true;
-  return pathname.startsWith(`${base}/`);
-}
-
+import { resolveSessionUser, routeAccess } from "@/lib/auth-guard";
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const gate = useGateStrings();
-  const me = users.find((u) => u.id === session.userId);
 
-  const isPrivate = PRIVATE_PATHS.some((p) => matchesPath(pathname, p));
-  const isStaff =
-    STAFF_PATHS.some((p) => matchesPath(pathname, p)) || STAFF_EXACT.includes(pathname);
+  /* Resolve the session id against the real account list before deciding
+     anything. A userId typed into local storage resolves to `undefined`, so it
+     cannot stand in for a session on its own. This is still a client-side
+     check: it stops the obvious "edit local storage" case, and is not a
+     substitute for server-side authorisation. */
+  const me = resolveSessionUser(users, session.userId);
+  const decision = routeAccess({ pathname, user: me });
 
-  if (isStaff && me && me.role === "consumer") {
+  if (decision === "require-staff") {
     return (
       <GateCard
         title={gate.staffTitle}
@@ -75,7 +33,7 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if ((isPrivate || isStaff) && !session.userId) {
+  if (decision === "require-sign-in") {
     return (
       <GateCard
         title={gate.signInTitle}
