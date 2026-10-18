@@ -1,0 +1,117 @@
+{
+  "label": "HARDENED (0001+0002+0003+0004)",
+  "tests": [
+    {
+      "id": "T1",
+      "name": "signup with role=admin does not create an administrator",
+      "expected": "consumer",
+      "actual": "consumer",
+      "ok": true
+    },
+    {
+      "id": "T2",
+      "name": "altered signup metadata cannot escalate",
+      "expected": "all 5 = consumer",
+      "actual": "[{\"role\":\"consumer\",\"n\":5}]",
+      "ok": true
+    },
+    {
+      "id": "T3",
+      "name": "consumer_a cannot update own role",
+      "expected": "permission denied, stays consumer",
+      "actual": "permission denied for table profiles",
+      "ok": true
+    },
+    {
+      "id": "T4",
+      "name": "provider cannot update own role",
+      "expected": "permission denied, stays provider",
+      "actual": "permission denied for table profiles",
+      "ok": true
+    },
+    {
+      "id": "T5",
+      "name": "provider cannot self-verify and gets no staff access",
+      "expected": "no applications table; is_staff=false; bookings=0",
+      "actual": "apps=null; is_staff=false; bookings=0",
+      "ok": true
+    },
+    {
+      "id": "T6",
+      "name": "consumer cannot read another consumer's profile",
+      "expected": "0",
+      "actual": "0",
+      "ok": true
+    },
+    {
+      "id": "T7",
+      "name": "consumer cannot read another consumer's bookings",
+      "expected": "0",
+      "actual": "0",
+      "ok": true
+    },
+    {
+      "id": "T8",
+      "name": "provider cannot select unrelated patient bookings",
+      "expected": "0",
+      "actual": "0",
+      "ok": true
+    },
+    {
+      "id": "T9",
+      "name": "trusted provisioning grants administrator",
+      "expected": "grant ok; is_staff=true; sees all bookings",
+      "actual": "grant=ok; is_staff=true; bookings=1",
+      "ok": true
+    },
+    {
+      "id": "T10",
+      "name": "no client role can execute grant_role()",
+      "expected": "all denied",
+      "actual": "consumer_a=denied provider=denied",
+      "ok": true
+    },
+    {
+      "id": "T11",
+      "name": "anonymous access denied everywhere",
+      "expected": "0 rows or denied everywhere; is_staff=false",
+      "actual": "p=0 b=0 d=0 is_staff=denied is_admin=denied",
+      "ok": true
+    },
+    {
+      "id": "T12",
+      "name": "pre-existing administrators are not demoted",
+      "expected": "role stays admin, is_staff=true, retains booking access",
+      "actual": "role=admin; is_staff=true; bookings=1",
+      "ok": true
+    },
+    {
+      "id": "T13",
+      "name": "provisioning rejects bad role and missing profile",
+      "expected": "superuser rejected; missing rejected; valid promote ok",
+      "actual": "superuser=rejected; missing=rejected; t13=admin",
+      "ok": true
+    },
+    {
+      "id": "T14",
+      "name": "health documents stay owner-only",
+      "expected": "other sees 0; owner sees 1",
+      "actual": "other=0; owner=1",
+      "ok": true
+    },
+    {
+      "id": "T15",
+      "name": "provider registration grants no verification",
+      "expected": "role=provider, no verification table",
+      "actual": "role=provider; apps_tables=0",
+      "ok": true
+    },
+    {
+      "id": "T16",
+      "name": "no other escalation route via available grants",
+      "expected": "all denied",
+      "actual": "col_update=denied insert_admin=denied alter_table=denied create_policy=denied forged_rows=0",
+      "ok": true
+    }
+  ]
+}

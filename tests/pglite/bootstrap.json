@@ -1,0 +1,141 @@
+{
+  "checks": [
+    {
+      "name": "check_function_bodies was on for every migration",
+      "ok": true
+    },
+    {
+      "name": "row level security enabled on every public table",
+      "ok": true,
+      "detail": "8 tables"
+    },
+    {
+      "name": "policies present",
+      "ok": true,
+      "detail": "19 policies"
+    },
+    {
+      "name": "is_staff() delegates to is_admin()",
+      "ok": true
+    },
+    {
+      "name": "is_admin() is security definer with a pinned search_path",
+      "ok": true
+    },
+    {
+      "name": "is_admin() requires role = 'admin'",
+      "ok": true
+    },
+    {
+      "name": "handle_new_user() cannot mint an administrator from metadata",
+      "ok": true,
+      "detail": "only 'provider' is honoured; everything else is 'consumer'"
+    },
+    {
+      "name": "grant_role() is security definer",
+      "ok": true
+    },
+    {
+      "name": "grant_role() keeps both caller restrictions",
+      "ok": true
+    },
+    {
+      "name": "authenticated cannot UPDATE profiles as a table",
+      "ok": true
+    },
+    {
+      "name": "authenticated cannot UPDATE profiles.role specifically",
+      "ok": true
+    },
+    {
+      "name": "authenticated can still UPDATE profiles.full_name",
+      "ok": true
+    },
+    {
+      "name": "authenticated can still UPDATE profiles.email",
+      "ok": true
+    },
+    {
+      "name": "authenticated can still UPDATE profiles.phone",
+      "ok": true
+    },
+    {
+      "name": "authenticated can still UPDATE profiles.lang",
+      "ok": true
+    },
+    {
+      "name": "anon cannot EXECUTE grant_role()",
+      "ok": true
+    },
+    {
+      "name": "authenticated cannot EXECUTE grant_role()",
+      "ok": true
+    },
+    {
+      "name": "service_role CAN execute grant_role() (the Worker path)",
+      "ok": true
+    },
+    {
+      "name": "I1  signup with role='admin' yields a consumer",
+      "ok": true,
+      "detail": "role=consumer"
+    },
+    {
+      "name": "I2  consumer cannot self-promote to admin",
+      "ok": true,
+      "detail": "permission denied"
+    },
+    {
+      "name": "I2  provider cannot self-promote to admin",
+      "ok": true,
+      "detail": "permission denied"
+    },
+    {
+      "name": "I3  provider reads 0 unrelated bookings",
+      "ok": true,
+      "detail": "bookings=0"
+    },
+    {
+      "name": "I4  provider reads 0 health documents",
+      "ok": true,
+      "detail": "docs=0"
+    },
+    {
+      "name": "I5  service_role can provision an administrator",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "I6  provisioned administrator retains staff access",
+      "ok": true,
+      "detail": "is_admin=true is_staff=true bookings=1"
+    },
+    {
+      "name": "I7  provider verification cannot be self-assigned (no such table)",
+      "ok": true,
+      "detail": "provider_applications=null"
+    },
+    {
+      "name": "I8  anon key cannot read profiles or bookings (fails closed)",
+      "ok": true,
+      "detail": "profiles=0 bookings=0"
+    },
+    {
+      "name": "I9  anon key cannot change any role despite holding the UPDATE grant",
+      "ok": true,
+      "detail": "admin=1 consumer=1 provider=1  ->  admin=1 consumer=1 provider=1 (UPDATE accepted but matched 0 rows)"
+    },
+    {
+      "name": "I10 ownership intact: owner sees own records, nobody else's",
+      "ok": true,
+      "detail": "own=1 others=0 other_profiles=0 provider_sees_docs=0"
+    },
+    {
+      "name": "I11 emergency-request protections intact (provider sees 0)",
+      "ok": true,
+      "detail": "emergency_requests=0"
+    }
+  ],
+  "pass": 30,
+  "total": 30
+}

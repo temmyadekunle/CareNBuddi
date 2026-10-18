@@ -229,6 +229,7 @@ function MoreSheet({
         { href: "/provider/status", titleKey: "pr_nav_application", icon: <ClipboardListIcon className="h-5 w-5" /> },
         { href: "/provider", titleKey: "pv_title", icon: <StethoscopeIcon className="h-5 w-5" /> },
         { href: "/admin/providers", titleKey: "apr_title", icon: <SettingsIcon className="h-5 w-5" /> },
+        { href: "/admin/provider-applications", titleKey: "aa_title", icon: <FileTextIcon className="h-5 w-5" /> },
         { href: "/admin", titleKey: "ad_title", icon: <SettingsIcon className="h-5 w-5" /> },
       ],
     });

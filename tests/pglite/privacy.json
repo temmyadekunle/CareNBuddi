@@ -1,0 +1,236 @@
+{
+  "checks": [
+    {
+      "name": "anon SELECT profiles: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT profiles: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon SELECT bookings: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT bookings: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon SELECT provider_requests: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT provider_requests: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon SELECT reports: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT reports: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon SELECT emergency_requests: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT emergency_requests: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon SELECT emergency_request_events: no is_staff() permission error",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon SELECT emergency_request_events: zero rows",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon UPDATE emergency_requests does not raise an is_staff() error",
+      "ok": true,
+      "detail": "accepted, 0 rows visible to anon"
+    },
+    {
+      "name": "anon cannot read the participation base table",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon select * on the base table returns nothing",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "anon cannot retrieve provider phone numbers",
+      "ok": true,
+      "detail": "phones returned: []"
+    },
+    {
+      "name": "anon cannot filter the base table by phone",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "public view exposes no private column",
+      "ok": true,
+      "detail": "columns: provider_id, display_name, accepts_emergency_requests, coverage_area"
+    },
+    {
+      "name": "anon can still read the public badge projection",
+      "ok": true,
+      "detail": "2 rows: prv-alpha/Alpha Clinic, prv-beta/Beta Clinic"
+    },
+    {
+      "name": "no phone value appears anywhere in the projection",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "provider cannot read the participation roster",
+      "ok": true,
+      "detail": "0 rows"
+    },
+    {
+      "name": "provider cannot self-activate or write another's row",
+      "ok": true,
+      "detail": "prv-beta accepts=false (write accepted, matched 0 rows)"
+    },
+    {
+      "name": "provider cannot obtain patient records through emergency access",
+      "ok": true,
+      "detail": "bookings=0"
+    },
+    {
+      "name": "service_role can provision an administrator",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "provisioned administrator can read the full roster including phone",
+      "ok": true,
+      "detail": "is_staff=true rows=2 phones=+2340000000001,+2340000000002"
+    },
+    {
+      "name": "anonymous requester can still create an emergency request",
+      "ok": true,
+      "detail": "inserted; 1 anonymous request(s) in 'created'"
+    },
+    {
+      "name": "documented gap: anonymous insert ... returning is refused by the SELECT policy",
+      "ok": true,
+      "detail": "new row violates row-level security policy for table \"emergency_requests\""
+    },
+    {
+      "name": "anonymous read of emergency_requests resolves without error",
+      "ok": true,
+      "detail": "0 rows visible"
+    },
+    {
+      "name": "administrator can move a request through the status machine",
+      "ok": true,
+      "detail": "1 row updated"
+    },
+    {
+      "name": "administrator can append the audit event",
+      "ok": true,
+      "detail": "appended"
+    },
+    {
+      "name": "anon reads 0 rows from health_documents",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "anon reads 0 rows from bookings",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "the owner can still read their own records",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "name": "a non-owner authenticated caller reads 0 records",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "a non-staff user cannot move a request's status",
+      "ok": true,
+      "detail": "dispatched count 1 -> 1 (write accepted, matched 0 rows)"
+    },
+    {
+      "name": "a non-staff user cannot append an audit event",
+      "ok": true,
+      "detail": "events 1 -> 1"
+    },
+    {
+      "name": "audit events are not rewritable even by an administrator",
+      "ok": true,
+      "detail": "rewritten=0"
+    },
+    {
+      "name": "anon can execute is_staff() (policy evaluation)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "authenticated can execute is_staff() (policy evaluation)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "service_role can execute is_staff() (policy evaluation)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "anon still CANNOT execute is_admin()",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "anon still cannot execute grant_role()",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "authenticated still cannot execute grant_role()",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "service_role can still execute grant_role()",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "authenticated still cannot update profiles.role",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "anon cannot write to the public view",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "pass": 46,
+  "total": 46
+}
