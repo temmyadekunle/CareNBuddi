@@ -56,8 +56,12 @@ const PASSWORD = "synthetic-password-not-a-secret-1!";
  */
 let APP_ID_A = "";
 
-/** Submission preconditions identical to the SQL checks in migration 0007. */
-const docPayload = (appId: string, email: string) => JSON.stringify({
+/** Submission preconditions identical to the SQL checks in migration 0007.
+ *  The payload travels as an OBJECT, exactly as production does
+ *  (lib/server-provider-applications.ts `applicationToPayload`); a
+ *  pre-stringified string would bind as a jsonb scalar and the RPC would
+ *  read null for every field. */
+const docPayload = (appId: string, email: string): Record<string, unknown> => ({
   id: appId,
   email,
   fullName: "Synthetic Tester",
@@ -111,8 +115,8 @@ function syntheticBytes(sizeBytes: number, mime: string): Uint8Array {
   return bytes;
 }
 
-const pathA = (uid: string, docType: string, name: string): string =>
-  `provider-applications/${uid}/${APP_ID_A}/${docType}/${name}`;
+const pathA = (uid: string, appId: string, docType: string, name: string): string =>
+  `provider-applications/${uid}/${appId}/${docType}/${name}`;
 
 /* ------------------------------------------------------------- lifecycle */
 
@@ -253,24 +257,37 @@ async function main(): Promise<number> {
       .select("status, user_id, id").eq("user_id", proA.uid).single();
     check("draft ownership is the server's idea of identity (JWT uid)",
       draftRow.data?.user_id === proA.uid, JSON.stringify(draftRow.data ?? draftRow.error?.message));
+    // The server returned the row (0007 `returning to_jsonb(inserted.*)`). That
+    // id — never a locally guessed one — governs every subsequent workflow step
+    // and every storage path.
+    const appAData = appA.data as { id?: string } | null;
+    const serverAppId = typeof appAData?.id === "string" ? appAData.id : "";
+    check("server adopted the payload id as its authoritative application id (0007)",
+      serverAppId === APP_ID_A,
+      `server id ${serverAppId === "" ? "<none returned>" : serverAppId}`);
+    if (serverAppId === "") {
+      throw new Error("no authoritative application id from the server; aborting the workflow section");
+    }
 
     const submitBad = await proA.client.rpc("upsert_provider_application",
       { p_payload: docPayload(APP_ID_A, proA.email), p_submit: true });
     check("submission without identity evidence is refused", !!submitBad.error,
       submitBad.error?.message);
 
-    const identityPath = pathA(proA.uid, "identity", "synthetic-id.png");
+    const identityPath = pathA(proA.uid, serverAppId, "identity", "synthetic-id.png");
     const up = await proA.client.storage.from("provider-applications")
       .upload(identityPath, syntheticBytes(4, "image/png"), { contentType: "image/png", upsert: false });
     check("provider A can upload identity document in own path", !up.error, up.error?.message);
     if (!up.error) uploadedPaths.push(identityPath);
-    const goodPayload = JSON.parse(docPayload(APP_ID_A, proA.email));
-    goodPayload.identityDocument = {
-      storagePath: identityPath, docType: "National Identity Card",
-      fileName: "synthetic-id.png", sizeBytes: 4, mimeType: "image/png", addedAt: new Date().toISOString(),
+    const goodPayload = {
+      ...docPayload(APP_ID_A, proA.email),
+      identityDocument: {
+        storagePath: identityPath, docType: "National Identity Card",
+        fileName: "synthetic-id.png", sizeBytes: 4, mimeType: "image/png", addedAt: new Date().toISOString(),
+      },
     };
     const submitOk = await proA.client.rpc("upsert_provider_application",
-      { p_payload: JSON.stringify(goodPayload), p_submit: true });
+      { p_payload: goodPayload, p_submit: true });
     check("provider A submits an eligible application via the RPC", !submitOk.error, submitOk.error?.message);
     const nowStatus = await proA.client.from("provider_applications").select("status").eq("user_id", proA.uid).single();
     check("status transitioned to submitted", nowStatus.data?.status === "submitted", nowStatus.data?.status);
@@ -284,14 +301,14 @@ async function main(): Promise<number> {
     check("provider B cannot write provider A's record", !!crossWrite.error, crossWrite.error?.message);
 
     const selfApprove = await proA.client.rpc("review_provider_application",
-      { p_application_id: APP_ID_A, p_next: "verified", p_reason: "self" });
+      { p_application_id: serverAppId, p_next: "verified", p_reason: "self" });
     check("self-approval refused", !!selfApprove.error, selfApprove.error?.message);
 
     const nonAdmin = await con.client.rpc("review_provider_application",
-      { p_application_id: APP_ID_A, p_next: "under-review", p_reason: "nope" });
+      { p_application_id: serverAppId, p_next: "under-review", p_reason: "nope" });
     check("administrative review refused without an admin role", !!nonAdmin.error, nonAdmin.error?.message);
 
-    const direct = await con.client.from("provider_applications").update({ status: "verified" }).eq("id", APP_ID_A);
+    const direct = await con.client.from("provider_applications").update({ status: "verified" }).eq("id", serverAppId);
     check("ordinary clients cannot directly update (0007 revoke)", direct.error !== null,
       direct.error?.message ?? "unexpected success");
 
@@ -307,28 +324,28 @@ async function main(): Promise<number> {
         checkSkip("administrator review flow (positive path)", `grant failed: ${granted.error.message}`);
       } else {
         const rUnderReview = await admin.client.rpc("review_provider_application",
-        { p_application_id: APP_ID_A, p_next: "under-review", p_reason: "" });
+        { p_application_id: serverAppId, p_next: "under-review", p_reason: "" });
       check("valid review begins working with the real admin session", !rUnderReview.error, rUnderReview.error?.message);
       const invalid = await admin.client.rpc("review_provider_application",
-        { p_application_id: APP_ID_A, p_next: "draft", p_reason: "" });
+        { p_application_id: serverAppId, p_next: "draft", p_reason: "" });
       check("under-review -> draft is refused (transition matrix)", !!invalid.error, invalid.error?.message);
       const auditCountBefore = await admin.client.from("provider_application_audit")
-        .select("application_id").eq("application_id", APP_ID_A);
+        .select("application_id").eq("application_id", serverAppId);
       check("invalid review left no audit row (atomic)", auditCountBefore.data?.length === 1,
         JSON.stringify(auditCountBefore.data?.length));
 
       const wantsReason = await admin.client.rpc("review_provider_application",
-        { p_application_id: APP_ID_A, p_next: "needs-info", p_reason: "   " });
+        { p_application_id: serverAppId, p_next: "needs-info", p_reason: "   " });
       check("blank reason refused for needs-info", !!wantsReason.error, wantsReason.error?.message);
       const asks = await admin.client.rpc("review_provider_application",
-        { p_application_id: APP_ID_A, p_next: "needs-info", p_reason: "please re-upload" });
+        { p_application_id: serverAppId, p_next: "needs-info", p_reason: "please re-upload" });
       check("under-review -> needs-info commits its audit event", !asks.error, asks.error?.message);
       const validPath = await admin.client.rpc("review_provider_application",
-        { p_application_id: APP_ID_A, p_next: "verified", p_reason: "in order" });
+        { p_application_id: serverAppId, p_next: "verified", p_reason: "in order" });
       check("needs-info -> verified with reason applies", !validPath.error, validPath.error?.message);
       const auditCheck = await admin.client.from("provider_application_audit")
         .select("reviewer_id, new_status")
-        .eq("application_id", APP_ID_A)
+        .eq("application_id", serverAppId)
         .order("created_at", { ascending: false }).limit(1);
       check("audit consistently records the administrator's uid and the new status",
         auditCheck.data?.[0]?.reviewer_id === admin.uid && auditCheck.data?.[0]?.new_status === "verified",
@@ -338,7 +355,7 @@ async function main(): Promise<number> {
       check("verified promotes verification statuses along the review path",
         idAfter.data?.status === "verified", JSON.stringify(idAfter.data ?? idAfter.error?.message));
       const locked = await proA.client.rpc("upsert_provider_application",
-        { p_payload: JSON.stringify({ ...goodPayload, fullName: "rewritten post-verification" }), p_submit: false });
+        { p_payload: { ...goodPayload, fullName: "rewritten post-verification" }, p_submit: false });
       check("a verified application cannot be edited by its applicant", !!locked.error, locked.error?.message);
       }
     }
@@ -354,7 +371,7 @@ async function main(): Promise<number> {
     // Track anyway: if the policy is ever defeated, cleanup must still reach the object.
     if (!anonUpload.error) uploadedPaths.push(identityPath);
 
-    const crossPath = pathA(proB.uid, "identity", "synthetic-id.png").replace(proB.uid, proA.uid);
+    const crossPath = pathA(proA.uid, serverAppId, "identity", "synthetic-id.png");
     const cross = await proB.client.storage.from("provider-applications")
       .upload(crossPath, syntheticBytes(4, "image/png"), { contentType: "image/png" });
     check("cross-applicant upload is denied (owner-segment policy)", !!cross.error, cross.error?.message);
@@ -369,7 +386,7 @@ async function main(): Promise<number> {
       ["application/zip", "test.zip", false],
     ];
     for (const [mime, name, ok] of allowedMimes) {
-      const u = pathA(proA.uid, "identity", name);
+      const u = pathA(proA.uid, serverAppId, "identity", name);
       const r = await proA.client.storage.from("provider-applications")
         .upload(u, syntheticBytes(4, mime), { contentType: mime, upsert: false });
       check(`mime ${mime}${ok ? " (allowed) uploads" : " (disallowed) is refused"}`,
@@ -380,25 +397,35 @@ async function main(): Promise<number> {
     // size limits: exactly at and one above the 8 MiB bucket limit.
     const limit = 8 * 1024 * 1024;
     const at = await proA.client.storage.from("provider-applications")
-      .upload(pathA(proA.uid, "identity", "at-limit.png"), syntheticBytes(limit, "image/png"),
+      .upload(pathA(proA.uid, serverAppId, "identity", "at-limit.png"), syntheticBytes(limit, "image/png"),
         { contentType: "image/png", upsert: false });
     check("exactly 8 MiB upload is accepted", !at.error, at.error?.message);
-    if (!at.error) uploadedPaths.push(pathA(proA.uid, "identity", "at-limit.png"));
+    if (!at.error) uploadedPaths.push(pathA(proA.uid, serverAppId, "identity", "at-limit.png"));
     const over = await proA.client.storage.from("provider-applications")
-      .upload(pathA(proA.uid, "identity", "over-limit.png"), syntheticBytes(limit + 1, "image/png"),
+      .upload(pathA(proA.uid, serverAppId, "identity", "over-limit.png"), syntheticBytes(limit + 1, "image/png"),
         { contentType: "image/png", upsert: false });
     check("8 MiB + 1 byte upload is rejected by the real Storage API", !!over.error, over.error?.message);
-    if (!over.error) uploadedPaths.push(pathA(proA.uid, "identity", "over-limit.png"));
+    if (!over.error) uploadedPaths.push(pathA(proA.uid, serverAppId, "identity", "over-limit.png"));
 
+    // Real Storage API object keys include the bucket segment (proven
+    // empirically: uploads and signed-URL issuance succeed on paths that start
+    // with `provider-applications/`), so listing uses the same layout. The
+    // cross-applicant check is only valid when the same prefix demonstrably
+    // contains this run's objects for their owner — never an empty result from
+    // a malformed prefix.
+    const ownPrefix = `provider-applications/${proA.uid}/${serverAppId}`;
     const own = await proA.client.storage.from("provider-applications")
-      .list(`${proA.uid}/${APP_ID_A}`);
-    check("applicant reads own folder", (own.data?.length ?? 0) > 0, JSON.stringify(own.data?.length));
+      .list(ownPrefix);
+    const ownPopulated = (own.data?.length ?? 0) > 0;
+    check("applicant lists own folder and sees their uploaded objects", ownPopulated,
+      JSON.stringify(own.data?.length));
     check("applicant list is owner-scoped (no other uid folders appear)",
-      (own.data ?? []).every((o) => o.name.length > 0), "0006 policy scoped");
+      ownPopulated ? (own.data ?? []).every((o) => o.name.length > 0) : false, "0006 policy scoped");
     const foreignOwned = await proB.client.storage.from("provider-applications")
-      .list(`${proA.uid}/${APP_ID_A}`);
-    check("applicant cannot list another applicant's folder",
-      (foreignOwned.data ?? []).length === 0, JSON.stringify(foreignOwned.error?.message));
+      .list(ownPrefix);
+    check("applicant cannot list another applicant's populated folder (prefix verified as populated for its owner)",
+      ownPopulated && (foreignOwned.data ?? []).length === 0,
+      JSON.stringify(foreignOwned.error?.message ?? foreignOwned.data?.length));
 
     const foreignOther = await proB.client.storage.from("provider-applications")
       .createSignedUrl(identityPath, 60);
@@ -421,7 +448,7 @@ async function main(): Promise<number> {
     // authenticates the Content-Type header against the bucket allowlist; it
     // does not promise to inspect the bytes. Neither outcome is counted as a
     // pass beyond the genuine refusal expectation; an acceptance is recorded.
-    const mismatchPath = pathA(proA.uid, "credentials", "mismatch.pdf");
+    const mismatchPath = pathA(proA.uid, serverAppId, "credentials", "mismatch.pdf");
     const mismatch = await proA.client.storage.from("provider-applications")
       .upload(mismatchPath, syntheticBytes(4, "application/pdf"),
         { contentType: "image/png", upsert: false });
