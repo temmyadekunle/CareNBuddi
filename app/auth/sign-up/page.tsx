@@ -169,6 +169,7 @@ function SignUpInner() {
           phone: phone.trim(),
           role,
           lang: session.lang,
+          next: next ?? undefined,
         });
         if (needsConfirmation) {
           writeAuthPending(email.trim());

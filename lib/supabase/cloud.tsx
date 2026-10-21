@@ -29,6 +29,8 @@ export interface SignUpMeta {
   phone?: string;
   role: Role;
   lang: string;
+  /** Same-site destination requested before signup, preserved through the confirmation email link. */
+  next?: string;
 }
 
 interface CloudValue {
@@ -237,7 +239,18 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { name: meta.name, phone: meta.phone ?? "", role: requestedRole, lang: meta.lang } },
+      options: {
+        data: { name: meta.name, phone: meta.phone ?? "", role: requestedRole, lang: meta.lang },
+        /**
+         * Route the confirmation email back to the verification screen instead
+         * of the bare origin. Only that screen knows how to consume a link
+         * callback — without this, the default template lands the user on the
+         * site root and nothing ever confirms the account.
+         */
+        emailRedirectTo: `${window.location.origin}/auth/verify${
+          meta.next ? `?next=${encodeURIComponent(meta.next)}` : ""
+        }`,
+      },
     });
     if (signUpError) throw new Error(signUpError.message);
     return { needsConfirmation: !data.session };

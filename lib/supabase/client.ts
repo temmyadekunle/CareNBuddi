@@ -20,7 +20,17 @@ export function getSupabase(): SupabaseClient | null {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        /**
+         * Email-confirmation links from a browser (implicit-grant) redirect
+         * land with the session tokens in the URL fragment. Without this flag
+         * nothing ever consumes them: the account stays unconfirmed and every
+         * later sign-in fails. The client validates the token with the server
+         * (it never merely adopts the hash), strips the fragment from the
+         * address bar as soon as it has read it, and refuses to process the
+         * same callback twice — see lib/auth-confirm-link.ts, which scrubs the
+         * URL before any page-level async work starts.
+         */
+        detectSessionInUrl: true,
       },
     });
   }

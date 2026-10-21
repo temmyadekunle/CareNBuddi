@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   AuthError,
   AuthIntro,
@@ -16,8 +16,16 @@ import {
 } from "@/components/auth-form";
 import { Button, Card, Field, inputClass, useToast } from "@/components/app-ui";
 import { ShieldIcon, CheckIcon } from "@/components/icons";
-import { useT } from "@/lib/i18n";
 import { getSupabase, isCloudEnabled } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n";
+import {
+  detectConfirmLink,
+  safeNext,
+  scrubConfirmParams,
+} from "@/lib/auth-confirm-link";
+import { fetchProfile } from "@/lib/supabase/sync";
+import { landingPathFor } from "@/lib/post-auth";
+import { useProviderApplications } from "@/lib/use-provider-application";
 import { Suspense } from "react";
 
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -38,8 +46,10 @@ function VerifyContent() {
     () => readAuthPending()?.email ?? "",
     () => "",
   );
+  // A typed value wins, then one carried through the confirmation link, then
+  // the signup screen's record of what it sent a code to.
   const [typedEmail, setTypedEmail] = useState<string | null>(null);
-  const email = typedEmail ?? storedEmail;
+  const email = typedEmail ?? searchParams.get("email") ?? storedEmail;
 
   const [code, setCode] = useState<string[]>(emptyOtp);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -50,14 +60,108 @@ function VerifyContent() {
   const [verified, setVerified] = useState(false);
 
   const cloudMode = isCloudEnabled;
+  const { forUser } = useProviderApplications();
 
-  // Check for email in URL params on mount
+  // A same-site destination requested before signup survives the confirmation
+  // email; everything else falls back to the role-aware landing.
+  const next = safeNext(searchParams.get("next"));
+
+  const navigateOnConfirmed = useCallback(
+    async (userId: string): Promise<string> => {
+      if (next) return next;
+      try {
+        const profile = await fetchProfile(userId);
+        const account = { id: userId, role: profile?.role ?? "consumer" };
+        return landingPathFor(account, forUser(userId));
+      } catch {
+        // A profile read failure must not strand the user; the (app) guards
+        // make the final decision on every protected screen anyway.
+        return "/app";
+      }
+    },
+    [next, forUser],
+  );
+
+  const finishConfirmation = useCallback(
+    (userId: string) => {
+      clearAuthPending();
+      setVerified(true);
+      push(t("auth_confirmed", "Email confirmed"), "success");
+      void navigateOnConfirmed(userId).then((path) => {
+        // Mirrors the OTP flow below: let the success state be seen.
+        setTimeout(() => router.push(path), 1500);
+      });
+    },
+    [navigateOnConfirmed, push, router, t],
+  );
+
+  /**
+   * Consume an email-confirmation clicked from an inbox.
+   *
+   * Two shapes, both recognised by lib/auth-confirm-link.ts:
+   *  - the default browser (implicit-grant) link, whose hash is consumed and
+   *    validated server-side by the Supabase client itself — that call is
+   *    what establishes the session, so the SDK drives it, not us;
+   *  - a `?token_hash=...` (OTP-hash) link, verified explicitly here.
+   *
+   * The run-once ref keeps React StrictMode's double effect invocations from
+   * processing one callback twice, and every token parameter is scrubbed from
+   * the URL before any await, so a refresh or copy of the link can never
+   * re-run it. Nothing token-shaped is ever logged.
+   */
+  const linkHandled = useRef(false);
   useEffect(() => {
-    const emailFromUrl = searchParams.get("email");
-    if (emailFromUrl) {
-      setTypedEmail(emailFromUrl);
-    }
-  }, [searchParams]);
+    if (!cloudMode || linkHandled.current) return;
+    linkHandled.current = true;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    void (async () => {
+      const info = detectConfirmLink(window.location.href);
+
+      const showLinkFailure = () => {
+        window.history.replaceState(window.history.state, "", scrubConfirmParams(window.location.href));
+        setFormError(
+          t(
+            "auth_link_bad",
+            "That confirmation link did not work or has expired. Enter the code from your email, or request a new one.",
+          ),
+        );
+      };
+
+      if (info.kind === "none") return;
+
+      if (info.kind === "error") {
+        showLinkFailure();
+        return;
+      }
+
+      try {
+        if (info.kind === "implicit") {
+          // The URL fragment belongs to the SDK (it must read it); it clears
+          // it itself once processing succeeds or fails.
+          const { data, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          if (!data.session) throw new Error("No session in confirmation link");
+          finishConfirmation(data.session.user.id);
+        } else {
+          // OTP-hash link. Scrub the token out of the URL before the await:
+          // from here on refreshing cannot re-submit the same hash.
+          window.history.replaceState(window.history.state, "", scrubConfirmParams(window.location.href));
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: info.tokenHash,
+            type: info.type,
+          });
+          if (error) throw error;
+          if (!data.user) throw new Error("Confirmation did not return a user");
+          finishConfirmation(data.user.id);
+        }
+      } catch {
+        void showLinkFailure();
+      }
+    })();
+  }, [cloudMode, t, finishConfirmation]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -110,13 +214,17 @@ function VerifyContent() {
 
     setPending(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { error, data } = await supabase.auth.verifyOtp({
         email: trimmed,
         token: code.join(""),
         type: "email",
       });
       if (error) {
         setFormError(error.message);
+        return;
+      }
+      if (data.user) {
+        finishConfirmation(data.user.id);
         return;
       }
       clearAuthPending();
