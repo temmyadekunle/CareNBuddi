@@ -23,6 +23,11 @@
  *      can update or delete history;
  *   8. 0008 pins the bucket to private with the 8 MiB limit and the
  *      four-item MIME allowlist, and upserts idempotently.
+ *   9. 0009 adds the private avatars bucket for patient profile photos
+ *      (see avatars.js for its dedicated harness) without disturbing any
+ *      provider-document guarantee — most importantly, the avatars policies
+ *      must not let an applicant write under the provider-applications
+ *      bucket, and bucket configuration must stay upgrade-preserving.
  */
 const { PGlite, AUTH_STUB, applyMigrations } = require("./migrate.js");
 const { SUPABASE_DEFAULTS } = require("./defaults.js");
@@ -36,6 +41,7 @@ const MIGRATIONS = [
   "0006_storage_policies.sql",
   "0007_application_workflow.sql",
   "0008_storage_upload_limits.sql",
+  "0009_profile_photo_and_avatars.sql",
 ];
 
 /** Minimum Supabase-storage mirror. */

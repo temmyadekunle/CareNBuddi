@@ -29,7 +29,7 @@ import {
 } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
-import { readPhoto } from "@/lib/profile-photo";
+import { useProfilePhoto } from "@/lib/profile-photo-hook";
 
 const TABS = [
   { href: "/app", labelKey: "n_home", Icon: HomeIcon },
@@ -72,6 +72,7 @@ export function Nav() {
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const me = users.find((u) => u.id === session.userId);
+  const navPhoto = useProfilePhoto(me?.id);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const match = TITLES.find((entry) =>
@@ -116,7 +117,7 @@ export function Nav() {
 
           {me ? (
             <Link href="/profile" aria-label={t("n_profile")} className="tap shrink-0">
-              <Avatar name={me.name} size={34} src={readPhoto(me.id)} />
+              <Avatar name={me.name} size={34} src={navPhoto} />
             </Link>
           ) : (
             <Link

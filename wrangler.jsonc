@@ -13,6 +13,19 @@
   // Non-secret AI defaults (Google Gemini via its OpenAI-compatible
   // endpoint). The API key is NEVER set here —
   // put it in a secret: `npx wrangler secret put AI_API_KEY`.
+  //
+  // First-administrator provisioning (POST /api/admin/grant-role) is armed by
+  // three server-only settings; ALL three are secrets here, and absent or
+  // empty values fail closed (503 not_configured):
+  //   `npx wrangler secret put ADMIN_PROVISIONING_KEY` (bearer secret)
+  //   `npx wrangler secret put SUPABASE_SERVICE_KEY`  (service-role key)
+  //   `npx wrangler secret put ADMIN_EMAIL_ALLOWLIST` (the accounts that may
+  //     be promoted, comma-separated; compare is case-insensitive)
+  //
+  // ADMIN_EMAIL_ALLOWLIST must be a secret, never a "vars" entry: Wrangler
+  // refuses a secret whose name shadows a configured var, so any entry for it
+  // here would block the secret path. Nothing in "vars" below arms the
+  // endpoint; until the three secrets are set it stays inert.
   "vars": {
     "AI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/openai",
     "AI_MODEL": "gemini-flash-lite-latest"

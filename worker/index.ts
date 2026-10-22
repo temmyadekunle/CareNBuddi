@@ -22,11 +22,20 @@ import {
   containsEmergencySignal,
   parseGuideReply,
 } from "../lib/guide-core";
+import { handleAdminGrantRole } from "../lib/admin-provision";
 
 interface Env {
   AI_API_KEY?: string;
   AI_BASE_URL?: string;
   AI_MODEL?: string;
+  /* First-administrator provisioning (lib/admin-provision.ts). All four are
+     server-only: ADMIN_PROVISIONING_KEY and SUPABASE_SERVICE_KEY are secrets,
+     ADMIN_EMAIL_ALLOWLIST is the operator's account list. Absent or empty
+     values fail closed (503). */
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_KEY?: string;
+  ADMIN_PROVISIONING_KEY?: string;
+  ADMIN_EMAIL_ALLOWLIST?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
 }
 
@@ -122,6 +131,18 @@ const worker = {
     if (request.method !== "POST") {
       return json({ ok: false, error: "method_not_allowed" }, 405, { allow: "POST" });
     }
+
+    if (url.pathname === "/api/admin/grant-role") {
+      const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+      if (rateLimited(ip)) {
+        return json({ ok: false, error: "rate_limited" }, 429, { "retry-after": "60" });
+      }
+      /* No origin allow-list check here by design: provisioning is called by
+         an operator tool, not by a browser, and requiring an Origin header
+         would add nothing to the bearer-secret gate. */
+      return handleAdminGrantRole(request, env);
+    }
+
     if (url.pathname !== "/api/health-guide") {
       return json({ ok: false, error: "not_found" }, 404);
     }

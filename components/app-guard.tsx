@@ -6,10 +6,13 @@ import { useT } from "@/lib/i18n";
 import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
 import { Button, Card, Screen } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
+import { LogoMark } from "@/components/logo";
 
+import { useCloud } from "@/lib/supabase/cloud";
 import { resolveSessionUser, routeAccess } from "@/lib/auth-guard";
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { ready } = useCloud();
   const [session] = useSession();
   const [users] = useStoredCollection(KEYS.users, seedUsers);
   const gate = useGateStrings();
@@ -21,6 +24,20 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
      substitute for server-side authorisation. */
   const me = resolveSessionUser(users, session.userId);
   const decision = routeAccess({ pathname, user: me });
+
+  /* The very first render races the cloud session restore: `adoptCloudUser`
+     has not yet merged the cloud account into `healthlink:users`, so `me`
+     can be `undefined` for a signed-in user and the guard would briefly show
+     "Sign in to continue" before flashing the real page. Hold the decision
+     until the CloudProvider has finished its initial restore (it resolves
+     from local storage even offline, so this cannot hang). */
+  if (!ready) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center" aria-hidden="true">
+        <LogoMark className="h-12 w-12 opacity-60" />
+      </div>
+    );
+  }
 
   if (decision === "require-staff") {
     return (

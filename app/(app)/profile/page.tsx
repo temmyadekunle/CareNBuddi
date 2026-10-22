@@ -53,7 +53,16 @@ import {
 } from "@/components/profile-settings";
 import { useT } from "@/lib/i18n";
 import { endSession } from "@/lib/session";
-import { fileToSquareDataUrl, readPhoto, removePhoto, savePhoto } from "@/lib/profile-photo";
+import {
+  fileToSquareDataUrl,
+  removePhoto,
+  savePhoto,
+} from "@/lib/profile-photo";
+import {
+  clearAvatarOnCloud,
+  uploadAvatarToCloud,
+} from "@/lib/profile-photo-server";
+import { useProfilePhoto } from "@/lib/profile-photo-hook";
 import { ProfileCropper } from "@/components/profile-cropper";
 import { useCloud } from "@/lib/supabase/cloud";
 import {
@@ -131,10 +140,6 @@ export default function ProfilePage() {
   }, [theme]);
 
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [photoState, setPhotoState] = useState(() => ({
-    userId: session.userId,
-    src: readPhoto(session.userId),
-  }));
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = useState({ name: "", phone: "" });
   const [emergencyDraft, setEmergencyDraft] = useState({ contact: "", phone: "" });
@@ -142,16 +147,14 @@ export default function ProfilePage() {
   const me = users.find((u) => u.id === session.userId);
 
   /**
-   * The photo lives in device storage rather than in React state, because a
-   * data URL is far too large to keep in a module-level cache. Re-read it
-   * whenever the signed-in account changes, and after every save or removal.
-   *
-   * Reading during render keeps this to a single source of truth. It used to
-   * call setPhotoState here instead, which React tolerates but which throws
-   * away the render pass and immediately re-runs it.
+   * One source of truth for the photo, shared with Home and the nav bar via
+   * the useProfilePhoto hook (lib/profile-photo-hook.tsx): reads the device
+   * cache instantly and hydrates from the server master copy (Storage +
+   * profiles.photo_path) when the account is a real cloud session — the
+   * server-side decisions live in lib/profile-photo-server.ts. Crop saves
+   * and removals land here through the same local-change notification.
    */
-  const storedPhoto = readPhoto(session.userId);
-  const photo = photoState.userId === session.userId ? photoState.src : storedPhoto;
+  const photo = useProfilePhoto(session.userId);
 
   const pickPhoto = () => fileRef.current?.click();
 
@@ -180,8 +183,12 @@ export default function ProfilePage() {
   const clearPhoto = () => {
     if (!me) return;
     if (removePhoto(me.id)) {
-      setPhotoState({ userId: me.id, src: null });
       push(t("prof_photo_removed", "Photo removed"), "success");
+      // Device copy is gone; relax the server reference too, best effort.
+      // photo_path is what other devices read, so a removal must propagate.
+      if (cloud.enabled && cloud.user?.id === me.id) {
+        clearAvatarOnCloud(me.id).catch(() => undefined);
+      }
     } else {
       push(t("prof_photo_failed", "We could not use that image. Try another one."), "error");
     }
@@ -223,15 +230,26 @@ export default function ProfilePage() {
     push(t("prof_emergency_saved", "Emergency contact updated"), "success");
   };
 
-  const handleCropSave = (dataUrl: string) => {
+  const handleCropSave = async (dataUrl: string) => {
     if (!me) return;
-    if (savePhoto(me.id, dataUrl)) {
-      setPhotoState({ userId: me.id, src: dataUrl });
-      push(t("prof_photo_saved", "Photo updated"), "success");
-    } else {
-      push(t("prof_photo_no_room", "This device is out of storage space."), "error");
-    }
     setCropperImage(null);
+    if (!savePhoto(me.id, dataUrl)) {
+      push(t("prof_photo_no_room", "This device is out of storage space."), "error");
+      return;
+    }
+    push(t("prof_photo_saved", "Photo updated"), "success");
+
+    // Server master copy: this is what makes the photo survive sign-out,
+    // reinstall, and other devices. Local save already succeeded, so a
+    // cloud failure must not undo the device state — it is reported so the
+    // user knows the picture will not follow them to another device yet.
+    if (cloud.enabled && cloud.user?.id === me.id) {
+      try {
+        await uploadAvatarToCloud(me.id, dataUrl);
+      } catch {
+        push(t("prof_photo_cloud_failed", "Photo saved on this device, but it could not sync to your account."), "error");
+      }
+    }
   };
 
   const handleCropCancel = () => {

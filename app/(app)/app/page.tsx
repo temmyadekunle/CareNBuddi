@@ -45,7 +45,7 @@ import {
 } from "@/lib/appointments";
 import { useLang } from "@/lib/i18n";
 import { useGreeting } from "@/lib/use-greeting";
-import { readPhoto } from "@/lib/profile-photo";
+import { useProfilePhoto } from "@/lib/profile-photo-hook";
 
 const QUICK_ACTIONS = [
   { href: "/find-care", key: "home_find_doctor", icon: SearchIcon, tone: "bg-brand-50 text-brand-700" },
@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const [journal] = useStoredCollection(KEYS.journal, seedJournal);
 
   const me = users.find((u) => u.id === session.userId);
+  const homePhoto = useProfilePhoto(me?.id);
   const firstName = me?.name?.split(" ")[0] ?? t("home_guest", "Guest");
   const greeting = useGreeting(firstName);
 
@@ -103,7 +104,7 @@ export default function HomeScreen() {
         </div>
         {me ? (
           <Link href="/profile" className="tap shrink-0">
-            <Avatar name={me.name} size={44} src={readPhoto(me.id)} />
+            <Avatar name={me.name} size={44} src={homePhoto} />
           </Link>
         ) : (
           <Link href="/auth/sign-in" className="shrink-0">
