@@ -241,8 +241,6 @@ a_sync_off: "Àkójọ ọ̀fẹ́ — ìwé rẹ ń gùn nínú ẹ̀rọ yìí
   prof_govt_id_d: "Fifiranṣẹ́ fún ìgbésíayé àti àlàáfíà tó yẹ kí wá lè jẹ́wọ́ àwọn ìṣẹ́ ìtọ́jú ìlera.",
   prof_nin: "NIN (Nọ́mbà Ìgbésíayé Àgbáyé)",
   prof_nin_hint: "Nọ́mbà méẹ́wààdínlógún Ìgbésíayé Àgbáyé",
-  prof_bvn: "BVN (Nọ́mbà Ìgbésíayé Ìbá àkọ́lé)",
-  prof_bvn_hint: "Nọ́mbà méẹ́wààdínlógún Ìgbésíayé Ìbá àkọ́lé",
   prof_crop_title: "Yọ ẹ̀wé rẹ",
   prof_crop_save: "Pamọ́",
   prof_rotate: "Tẹ́",
@@ -873,4 +871,9 @@ a_sync_off: "Àkójọ ọ̀fẹ́ — ìwé rẹ ń gùn nínú ẹ̀rọ yìí
   s_on: "ní ọjọ́",
   s_ph_name: "àpẹẹrẹ: Amina Yusuf",
   s_ph_area: "àpẹẹrẹ: Ikeja, Lagos",
+
+  /* ===== Language & AI-guide language support ===== */
+  a_language_aria: "Yí èdè padà",
+  hg_lang_note:
+    "Olùrànlọ́wọ́ AI náà máa ń fún ọ́ ní èsì ní èdè tí o yàn (Èdè Gẹ̀ẹ́sì, Yorùbá, Hausa, Igbo) ní ibi tí AI ṣe lè ṣe é; nígbàtí kò lè, ó fi Èdè Gẹ̀ẹ́sì sọ fún ọ.",
 };

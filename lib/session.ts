@@ -54,9 +54,13 @@ export interface SessionEndResult {
  *
  * Theme, units and the language choice are device preferences - wiping them
  * every time someone signs out is hostile and loses nothing sensitive. The
- * account registry stays too, because `healthlink:users` is how the device
- * knows which accounts exist; it holds names and email addresses, which is a
- * recorded residual risk rather than something this function can fix.
+ * session key is in this list so the test of that sentence holds: it is
+ * rewritten to a signed-out session (user pointer cleared, language kept)
+ * rather than deleted, because the language must survive logout — see the
+ * note in `endSessionFor`. The account registry stays too, because
+ * `healthlink:users` is how the device knows which accounts exist; it holds
+ * names and email addresses, which is a recorded residual risk rather than
+ * something this function can fix.
  */
 const PRESERVED_PREFIXES = [
   "healthlink:theme",
@@ -134,16 +138,26 @@ export function endSessionFor(
     // The session pointer goes last: while it is present, `resolve()` in
     // storage.ts would keep reading the namespace we just emptied.
     //
-    // Only remove it when it still names this principal. If another account
-    // has signed in since, their session must not be torn down by our
-    // cleanup.
+    // It is REPLACED, not deleted, by a signed-out session that keeps the
+    // language choice: the language is a device preference (the same reason
+    // theme and units survive) and the task spec is that the choice a
+    // signed-in user (or guest) made must survive logout and carry into the
+    // next sign-in sequence. What MUST NOT survive is the user pointer: a
+    // `userId` of null forces the next reader onto the guest namespace, so
+    // the departing user's records — and login state — end here. If another
+    // account has signed in since, their session must not be touched.
     try {
       const raw = localStorage.getItem("healthlink:session");
       const current = raw ? (JSON.parse(raw) as { userId?: unknown }).userId : null;
-      if (principal.kind === "user" && current === principal.userId) {
-        localStorage.removeItem("healthlink:session");
-      } else if (principal.kind === "guest") {
-        localStorage.removeItem("healthlink:session");
+      const sessionLang = raw ? (JSON.parse(raw) as { lang?: unknown }).lang : null;
+      if (
+        (principal.kind === "user" && current === principal.userId) ||
+        principal.kind === "guest"
+      ) {
+        localStorage.setItem(
+          "healthlink:session",
+          JSON.stringify({ userId: null, lang: sessionLang ?? "en" }),
+        );
       }
     } catch {
       /* ignore */

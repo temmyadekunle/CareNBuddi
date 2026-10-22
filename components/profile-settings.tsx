@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   BottomSheet,
   Button,
@@ -34,7 +34,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useT } from "@/lib/i18n";
 import { endSession } from "@/lib/session";
 import { useCloud } from "@/lib/supabase/cloud";
-import { KEYS, useSession, useStoredValue } from "@/lib/storage";
+import { KEYS, readLocal, useSession, useStoredValue, writeLocal } from "@/lib/storage";
 
 export const UNITS_KEY = "healthlink:prefs-units";
 export const NOTIFICATIONS_KEY = "healthlink:prefs-notifications";
@@ -47,21 +47,25 @@ export interface NotificationPrefs {
   tips: boolean;
 }
 
-export interface PassportPrefs {
-  hmo: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-  nin: string;
-  bvn: string;
+export interface NotificationPrefs {
+  appointments: boolean;
+  medication: boolean;
+  tips: boolean;
 }
 
-export const PASSPORT_DEFAULTS: PassportPrefs = {
-  hmo: "",
-  emergencyContact: "",
-  emergencyPhone: "",
-  nin: "",
-  bvn: "",
-};
+/* Health Passport model (PassportPrefs, PASSPORT_DEFAULTS, stripLegacyBvn
+   — the BVN-privacy scrub) lives in lib/passport.ts: pure logic imported
+   here and re-exported for the existing consumers. */
+export {
+  PASSPORT_DEFAULTS,
+  stripLegacyBvn,
+} from "@/lib/passport";
+export type { PassportPrefs } from "@/lib/passport";
+import {
+  PASSPORT_DEFAULTS,
+  stripLegacyBvn,
+  type PassportPrefs,
+} from "@/lib/passport";
 
 export const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
   appointments: true,
@@ -94,6 +98,14 @@ export function ProfileSettings() {
     DEFAULT_NOTIFICATIONS,
   );
   const [passport] = useStoredValue<PassportPrefs>(KEYS.passport, PASSPORT_DEFAULTS);
+
+  // Privacy scrub for the removed BVN field — see stripLegacyBvn. Idempotent:
+  // when the payload has no legacy column the write (and the backup push it
+  // would trigger) never happens.
+  useEffect(() => {
+    const { clean, hadBvn } = stripLegacyBvn(readLocal<PassportPrefs>(KEYS.passport));
+    if (hadBvn) writeLocal<PassportPrefs>(KEYS.passport, clean);
+  }, []);
 
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);

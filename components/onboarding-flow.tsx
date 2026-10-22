@@ -8,6 +8,7 @@ import { LogoMark } from "@/components/logo";
 import { ConnectedArt, FindCareArt, ManageArt } from "@/components/brand-art";
 import { useT } from "@/lib/i18n";
 import { readLocal, writeLocal } from "@/lib/storage";
+import { LangSwitcher } from "@/components/ui";
 
 const ONBOARDED_KEY = "healthlink:onboarded";
 const LAST_STEP = 2;
@@ -194,16 +195,23 @@ export function OnboardingFlow() {
     <>
       <style>{STAGE_CSS}</style>
       <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden bg-white dark:bg-slate-950">
-        {/* top bar — brand + out */}
+        {/* top bar — brand, language, out. The language choice is the
+            first thing a first-time visitor can set: it applies instantly to
+            every screen of the flow (useT re-renders) and persists through
+            the account-creation flow that follows, because sign-up seeds
+            profiles.lang from this same device session. */}
         <header className="flex shrink-0 items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <LogoMark className="h-10 w-10" />
-          <button
-            type="button"
-            onClick={skip}
-            className={`tap min-h-10 rounded-lg px-2 text-sm font-semibold text-slate-500 hover:text-brand-700 dark:text-slate-400 ${FOCUS}`}
-          >
-            {t("onb_skip", "Skip")}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <LangSwitcher compact />
+            <button
+              type="button"
+              onClick={skip}
+              className={`tap min-h-10 rounded-lg px-2 text-sm font-semibold text-slate-500 hover:text-brand-700 dark:text-slate-400 ${FOCUS}`}
+            >
+              {t("onb_skip", "Skip")}
+            </button>
+          </div>
         </header>
 
         {/* scrollable middle — illustration + copy */}

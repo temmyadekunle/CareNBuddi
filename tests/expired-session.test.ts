@@ -137,14 +137,21 @@ test("expiry does not remove a session belonging to a different account", () => 
 
 /* ------------------------------------------------- ordering guarantees */
 
-test("the session pointer is removed, and preferences are not", () => {
+test("session end clears the user pointer but keeps the language preference", () => {
   seedFor("user-a");
   store.setItem(THEME, '"dark"');
   store.setItem(LANG, '"imperial"');
 
+  store.setItem(SESSION, JSON.stringify({ userId: "user-a", lang: "yo" }));
   endUserSession("user-a", "expired");
 
-  assert.equal(store.getItem(SESSION), null, "session pointer should be gone");
+  // Language is a device preference and must survive logout: the session is
+  // rewritten signed-out rather than deleted, so the next guest of this
+  // device starts in the language the previous person chose, and the
+  // account's choice is restored from the server at the next sign-in.
+  const session = JSON.parse(store.getItem(SESSION)!);
+  assert.equal(session.userId, null, "the user pointer must be gone");
+  assert.equal(session.lang, "yo", "the language choice must survive session end");
   assert.equal(store.getItem(THEME), '"dark"', "theme must survive");
   assert.equal(store.getItem(LANG), '"imperial"', "units must survive");
 });

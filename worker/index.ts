@@ -20,6 +20,8 @@ import {
   GUIDE_CATEGORIES,
   GUIDE_STATES,
   containsEmergencySignal,
+  guideReplyLanguageDirective,
+  normalizeGuideLang,
   parseGuideReply,
 } from "../lib/guide-core";
 import { handleAdminGrantRole } from "../lib/admin-provision";
@@ -183,6 +185,13 @@ const worker = {
       return json({ ok: false, error: "invalid_request" }, 400);
     }
     const history = sanitizeHistory(record.history);
+    /* Reply language: the app sends the user's chosen language. Anything
+       malformed or unsupported normalises to English, so existing clients
+       and hostile payloads behave exactly as before. The directive is
+       appended to the system prompt for the AI path only; emergency handling
+       above stays deterministic (English pre-check + English safety reply),
+       because safety must not depend on model compliance in any language. */
+    const lang = normalizeGuideLang(record.lang);
 
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
     if (rateLimited(ip)) {
@@ -226,7 +235,7 @@ const worker = {
       max_tokens: 500,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: systemPrompt() },
+        { role: "system", content: [systemPrompt(), guideReplyLanguageDirective(lang)].filter(Boolean).join("\n") },
         ...history.map((item) => ({ role: item.role, content: item.content })),
         { role: "user", content: message },
       ],

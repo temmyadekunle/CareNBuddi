@@ -1,11 +1,45 @@
 /**
  * CareNBuddi AI Health Guide — shared core.
  *
- * Dependency-free on purpose: it is imported by BOTH the Next.js app bundle
- * and the Cloudflare Worker script, so provider categories, supported
- * locations, emergency signals and the AI reply contract each have exactly
- * one source of truth. Nothing here reads the network, storage or the DOM.
+ * Shared on purpose: it is imported by BOTH the Next.js app bundle and the
+ * Cloudflare Worker script, so provider categories, supported locations,
+ * reply languages, emergency signals and the AI reply contract each have
+ * exactly one source of truth. The only import is the language-type module
+ * (lib/lang.ts); nothing here reads the network, storage or the DOM.
  */
+
+import { isLang, LANG_NAMES, type Lang } from "./lang";
+
+/* ------------------------------------------------------------------ languages */
+
+/**
+ * Reply languages the guide can be asked for. The fallback is always
+ * English: an API caller sending nothing, garbage or an unsupported code
+ * gets English rather than an error, which keeps the request-shape contract
+ * backwards-compatible for existing clients.
+ */
+export function normalizeGuideLang(value: unknown): Lang {
+  return isLang(value) ? value : "en";
+}
+
+/**
+ * Extra system-prompt text when a non-English reply language was requested.
+ * Machine-readable values (intent/category/state enums) deliberately stay
+ * English — the app parses those values; only the natural-language response
+ * follows the preference. Empty string for English so the prompt is
+ * unchanged for the default client.
+ */
+export function guideReplyLanguageDirective(rawLang: unknown): string {
+  const lang = normalizeGuideLang(rawLang);
+  if (lang === "en") return "";
+  const name = LANG_NAMES[lang];
+  return [
+    `LANGUAGE: reply to the user in ${name}.`,
+    `- The JSON object and its enum values (intent, category, state) stay exactly in English as specified, because the app relies on those exact values.`,
+    `- Write the "response" text — and the preference strings — in ${name}, using proper diacritics where the language uses them.`,
+    `- If a medical term has no well-established ${name} word, keep the English term in parentheses after your best translation.`,
+  ].join("\n");
+}
 
 /* ------------------------------------------------------------------ categories */
 

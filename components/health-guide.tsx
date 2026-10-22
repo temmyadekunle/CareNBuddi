@@ -358,7 +358,7 @@ export function HealthGuide() {
       const res = await fetch("/api/health-guide", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify({ message: text, history, lang }),
       });
 
       if (res.status === 404 || res.status === 405) {
@@ -633,6 +633,12 @@ export function HealthGuide() {
                 <ChevronRightIcon className="h-5 w-5" />
               </Button>
             </form>
+            <p className="px-3 pb-1 text-center text-[10px] leading-snug text-slate-400">
+              {t(
+                "hg_lang_note",
+                "The assistant answers in your chosen language (English, Yoruba, Hausa, Igbo) where the AI service supports it; when it cannot, it replies in English.",
+              )}
+            </p>
             <p className="px-3 pb-2 text-center text-[10px] leading-snug text-slate-400">
               {t(
                 "hg_disclaimer",

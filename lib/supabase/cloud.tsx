@@ -19,7 +19,8 @@ import {
   SYNCED_KEYS,
   type CloudProfile,
 } from "./sync";
-import { KEYS, onLocalChange, readLocal, writeLocal } from "@/lib/storage";
+import { KEYS, onLocalChange, readLocal, writeLocal, type Session } from "@/lib/storage";
+import { adoptedLang } from "@/lib/lang-decision";
 import type { Role, User } from "@/lib/types";
 
 export type SyncState = "off" | "idle" | "syncing" | "synced" | "error";
@@ -92,12 +93,27 @@ function localUserFor(user: SupabaseUser, profile: CloudProfile | null): User {
  */
 const REVOKING_EVENTS = new Set<string>(["SIGNED_OUT", "USER_SIGNED_OUT"]);
 
-/** Keeps the existing local session/users collections in step with the cloud account. */
+/**
+ * Keeps the existing local session/users collections in step with the cloud account.
+ *
+ * The language follows the conflict rule in lib/lang-decision.ts: a saved
+ * server preference wins when it is supported, otherwise the device's current
+ * choice stands (a guest's pre-signup choice survives into the session). The
+ * session is only rewritten when something actually changed, so a plain
+ * restore never wakes language subscribers for nothing.
+ */
 function adoptCloudUser(user: SupabaseUser, profile: CloudProfile | null) {
   const me = localUserFor(user, profile);
-  const session = readLocal<{ userId: string | null; lang: string }>(KEYS.session);
-  const lang = session?.lang ?? "en";
-  writeLocal<{ userId: string | null; lang: string }>(KEYS.session, { userId: user.id, lang });
+  const session = readLocal<Session>(KEYS.session);
+  const { lang } = adoptedLang(session, profile?.lang);
+  const next: Session = { userId: user.id, lang };
+  if (
+    !session ||
+    session.userId !== next.userId ||
+    session.lang !== next.lang
+  ) {
+    writeLocal<Session>(KEYS.session, next);
+  }
 
   const users = readLocal<User[]>(KEYS.users) ?? [];
   const index = users.findIndex((u) => u.id === user.id);
@@ -186,9 +202,13 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
         if (REVOKING_EVENTS.has(event) && cloudUserId) {
           endUserSession(cloudUserId, "expired");
         } else {
-          // Not a revocation: keep the data, just drop the session pointer.
-          const session_ = readLocal<{ userId: string | null; lang: string }>(KEYS.session);
-          writeLocal(KEYS.session, { userId: null, lang: session_?.lang ?? "en" });
+          // Not a revocation: keep the data, just drop the session pointer —
+          // and with it nothing else, language included.
+          const session_ = readLocal<Session>(KEYS.session);
+          writeLocal<Session>(KEYS.session, {
+            userId: null,
+            lang: session_?.lang ?? "en",
+          });
         }
         cloudUserId = null;
         setSyncState("idle");
@@ -261,11 +281,27 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) throw new Error("Cloud sign-in is not configured");
     setError(null);
     setNotice(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError, data } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     if (signInError) throw new Error(signInError.message);
+    /* Restore the server preference BEFORE the caller navigates: the profile
+       (role, name, language) is fetched and adopted here, so the screen the
+       user lands on already renders in their account language instead of
+       flashing the device default. The auth-listener path does the same work;
+       whoever finishes first wins and both are idempotent. */
+    const signedIn = data.user;
+    if (signedIn) {
+      try {
+        const p = await fetchProfile(signedIn.id);
+        setProfile(p);
+        adoptCloudUser(signedIn, p);
+      } catch {
+        /* Profile fetch failed: the SIGNED_IN listener will retry; the
+           sign-in itself must not fail because of this. */
+      }
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -339,4 +375,13 @@ export function useCloud(): CloudValue {
   const ctx = useContext(CloudContext);
   if (!ctx) throw new Error("useCloud must be used inside CloudProvider");
   return ctx;
+}
+
+/**
+ * For shared surface components (the language switcher) that render both
+ * inside and outside a CloudProvider — e.g. the onboarding flow deliberately
+ * runs without one. External to the provider the cloud path is simply off.
+ */
+export function useCloudOptional(): CloudValue | null {
+  return useContext(CloudContext);
 }

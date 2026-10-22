@@ -241,8 +241,6 @@ a_sync_off: "Nlọọgụ offline — data gị nọrọ na ngwaọ a",
   prof_govt_id_d: "E ji ya mabiri na enweghị ọsọ banyere ọrụ ahụike na enweghị nsogbu.",
   prof_nin: "NIN (Nọmba Mmadu Ọchịchị Naa-egosipụta Ọnwe Ya)",
   prof_nin_hint: "Nọmba 11 iji egosipụta onye na onye",
-  prof_bvn: "BVN (Nọmba Mmadu Ọchịchị Naa-egosipụta Akwụntụ)",
-  prof_bvn_hint: "Nọmba 11 iji egosipụta ọgụgụ akwụntụ",
   prof_crop_title: "Chọọchọ ọkwa gị",
   prof_crop_save: "Cheta",
   prof_rotate: "Ríe",
@@ -883,4 +881,9 @@ a_sync_off: "Nlọọgụ offline — data gị nọrọ na ngwaọ a",
   s_on: "n'Ọnụma",
   s_ph_name: "atụle: Amina Yusuf",
   s_ph_area: "atụle: Ikeja, Lagos",
+
+  /* ===== Language & AI-guide language support ===== */
+  a_language_aria: "Gbanwee asụsụ",
+  hg_lang_note:
+    "Onye enyemaka AI nwere ike ịza gị n'asụsụ ị họrọ (Bekee, Yoruba, Hausa, Igbo) ebe AI nwere ike; mgbe ọ nweghị ike, ọ na-aza na Bekee.",
 };

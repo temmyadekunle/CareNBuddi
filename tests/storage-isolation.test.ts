@@ -167,7 +167,10 @@ test("sign-out removes private information from the device", () => {
 
   const keys = Array.from({ length: store.length }, (_, i) => store.key(i)!);
   assert.ok(!keys.some((k) => k.startsWith("healthlink:u:")), "a user namespace survived sign-out");
-  assert.equal(store.getItem(KEYS.session), null);
+  // The session is rewritten signed-out (userId null), not deleted: the
+  // language preference must survive logout. No user namespace may remain.
+  const session = JSON.parse(store.getItem(KEYS.session)!);
+  assert.equal(session.userId, null, "sign-out must clear the user pointer");
 });
 
 test("sign-out purges the guest namespace and rotates the guest id", () => {

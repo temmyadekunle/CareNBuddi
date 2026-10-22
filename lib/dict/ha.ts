@@ -241,8 +241,6 @@ a_sync_off: "Buga kyauta — bayanai suna kan wannan na'ura kawai",
   prof_govt_id_d: "Shi ne don tabbatarwa da samar da ayyukan lafiya da salama.",
   prof_nin: "NIN (Nanbanin Afojin Kowa)",
   prof_nin_hint: "Lambobi 11 na Nanbanin Afojin Kowa",
-  prof_bvn: "BVN (Nanbanin Tabbatarwar Banki)",
-  prof_bvn_hint: "Lambobi 11 na Nanbanin Tabbatarwar Banki",
   prof_crop_title: "Kwaba hotuna",
   prof_crop_save: "Ajiye",
   prof_rotate: "Juya",
@@ -873,4 +871,9 @@ a_sync_off: "Buga kyauta — bayanai suna kan wannan na'ura kawai",
   s_on: "a ran",
   s_ph_name: "misali: Amina Yusuf",
   s_ph_area: "misali: Ikeja, Lagos",
+
+  /* ===== Language & AI-guide language support ===== */
+  a_language_aria: "Canza harshe",
+  hg_lang_note:
+    "Mataimakin AI na iya ba ka da amsa a cikin harshen da ka zaba (Turanci, Yarabanci, Hausanci, Igbanci) idan AI ta iya; idan ba zai iya ba, yana amsa da Turanci.",
 };

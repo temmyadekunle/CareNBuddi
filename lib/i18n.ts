@@ -150,8 +150,6 @@ a_consumer: "Patient / community member", a_provider: "Healthcare provider", a_a
   prof_govt_id_d: "Used for verification and secure access to health services.",
   prof_nin: "NIN (National Identification Number)",
   prof_nin_hint: "11-digit National Identity Number",
-  prof_bvn: "BVN (Bank Verification Number)",
-  prof_bvn_hint: "11-digit Bank Verification Number",
   prof_crop_title: "Crop your photo",
   prof_crop_save: "Save",
   prof_rotate: "Rotate",
@@ -835,6 +833,11 @@ auth_verify_title: "Confirm your email",
   ps_local_lost:
     "A previously stored application on this device was not found in CareNBuddi cloud. Continue your application to submit it for review.",
   ps_stale_note: "CareNBuddi cloud is unreachable; the status below may be out of date.",
+
+  /* ===== Language & AI-guide language support ===== */
+  a_language_aria: "Change language",
+  hg_lang_note:
+    "The assistant answers in your chosen language (English, Yoruba, Hausa, Igbo) where the AI service supports it; when it cannot, it replies in English.",
 };
 
 const DICT: Dicts = {
@@ -861,4 +864,13 @@ function useSessionRaw(): [Session, (next: Session | ((prev: Session) => Session
 export function useLang(): Lang {
   const [session] = useSessionRaw();
   return session.lang;
+}
+
+/**
+ * Sets the device-session language in place, keeping the signed-in user (if
+ * any) attached. The signed-out-to-signed-in conflict rule lives in
+ * lib/lang-decision.ts; while signed in this value is what the UI runs on.
+ */
+export function changeLanguage(session: Session, lang: Lang): Session {
+  return { ...session, lang };
 }

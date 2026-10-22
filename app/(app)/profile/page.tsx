@@ -45,6 +45,7 @@ import {
   NOTIFICATIONS_KEY,
   PASSPORT_DEFAULTS,
   PrivacyBlock,
+  stripLegacyBvn,
   SwitchRow,
   UNITS_KEY,
   type NotificationPrefs,
@@ -67,10 +68,12 @@ import { ProfileCropper } from "@/components/profile-cropper";
 import { useCloud } from "@/lib/supabase/cloud";
 import {
   KEYS,
+  readLocal,
   seedUsers,
   useSession,
   useStoredCollection,
   useStoredValue,
+  writeLocal,
 } from "@/lib/storage";
 import type { Role } from "@/lib/types";
 
@@ -138,6 +141,13 @@ export default function ProfilePage() {
     document.documentElement.classList.add(theme);
     localStorage.setItem("healthlink:theme", theme);
   }, [theme]);
+
+  // Privacy scrub for the removed BVN field — see stripLegacyBvn in
+  // profile-settings. Idempotent: no legacy payload, no write, no push.
+  useEffect(() => {
+    const { clean, hadBvn } = stripLegacyBvn(readLocal<PassportPrefs>(KEYS.passport));
+    if (hadBvn) writeLocal<PassportPrefs>(KEYS.passport, clean);
+  }, []);
 
   const [photoBusy, setPhotoBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -551,16 +561,6 @@ export default function ProfilePage() {
                 <input
                   value={passport.nin ?? ""}
                   onChange={(e) => setPassport((p) => ({ ...p, nin: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
-                  inputMode="numeric"
-                  maxLength={11}
-                  placeholder="12345678901"
-                  className={`${inputClass} min-h-11`}
-                />
-              </Field>
-              <Field label={t("prof_bvn", "BVN (Bank Verification Number)")} hint={t("prof_bvn_hint", "11-digit Bank Verification Number")}>
-                <input
-                  value={passport.bvn ?? ""}
-                  onChange={(e) => setPassport((p) => ({ ...p, bvn: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
                   inputMode="numeric"
                   maxLength={11}
                   placeholder="12345678901"
