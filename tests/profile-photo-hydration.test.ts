@@ -4,10 +4,13 @@ import test from "node:test";
 import {
   clearAvatarOnCloud,
   hydrateServerPhoto,
+  resetPhotoHydration,
   type ServerPhotoPort,
   type ServerPhotoRow,
 } from "../lib/profile-photo-server";
 import { readPhoto, removePhoto, savePhoto } from "../lib/profile-photo";
+import { principalForUser } from "../lib/storage-scope";
+import { endSessionFor } from "../lib/session";
 
 /**
  * Profile photo hydration and adoption semantics.
@@ -22,7 +25,11 @@ import { readPhoto, removePhoto, savePhoto } from "../lib/profile-photo";
  * server port and the real localStorage read/write paths (shimmed below),
  * including the ownership-scoped key resolution. Each test uses its own
  * account id because hydration remembers one attempt per account per page
- * load; a fresh id is the equivalent of a fresh page load.
+ * load; a fresh id is the equivalent of a fresh page load. Since the
+ * production bug: the gate is a module-level set, and the same account
+ * signing in again WITHOUT a page load (sign-out is a client-side route
+ * change in the static app) must go through `resetPhotoHydration` — the
+ * way the cloud auth listener does at every session end.
  */
 
 const JPEG = "data:image/jpeg;base64,AAAA" + "B".repeat(64);
@@ -55,9 +62,12 @@ function recordingPort(row: Partial<ServerPhotoRow> = {}, options: {
   const effects = {
     adopted: [] as string[],
     downloaded: [] as string[],
+    /** Accounts whose profile lookup actually ran (the hydration gate target). */
+    fetched: [] as string[],
   };
   const port: ServerPhotoPort = {
-    async fetchPhotoPath(): Promise<ServerPhotoRow> {
+    async fetchPhotoPath(userId: string): Promise<ServerPhotoRow> {
+      effects.fetched.push(userId);
       return {
         found: row.found ?? true,
         photoPath: row.photoPath ?? null,
@@ -223,6 +233,87 @@ test("a user without a readable profile row keeps its local state untouched", as
   assert.equal(effects.adopted.length, 0);
   assert.equal(effects.downloaded.length, 0);
   assert.equal(readPhoto(u), JPEG, "a local-only slot id must not lose its photo");
+});
+
+/* ------------------------------------------------- sign-out → sign-in (same session) */
+/**
+ * The production bug: hydration remembers one attempt per account per page
+ * load, but sign-out is NOT a page load in this SPA. Sign-out also purges
+ * the user-scoped photo cache (deliberately — biometrics), so the ONLY way
+ * the photo comes back is a fresh server fetch, which the stale gate used
+ * to block. These tests exercise the REAL sign-out cleanup path
+ * (endSessionFor with the real principal) and the REAL reset call shape
+ * the auth listener makes, in the same module instance this file loaded.
+ */
+
+test("the gate stays shut for a second hydration attempt in the same session", async () => {
+  const u = mkUser(14);
+  const objectName = `avatars/${u}/1700000000001.jpg`;
+  const { port, effects } = recordingPort({ found: true, photoPath: objectName });
+
+  await hydrateServerPhoto(u, port);
+  assert.equal(effects.fetched.length, 1);
+  assert.equal(readPhoto(u), JPEG);
+
+  await hydrateServerPhoto(u, port);
+  await hydrateServerPhoto(u, port);
+  assert.equal(
+    effects.fetched.length,
+    1,
+    "duplicate-request protection: one fetch per account per page load, never two",
+  );
+});
+
+test("REGRESSION: sign-out purge + gate reset lets hydration restore the photo without a fresh module", async () => {
+  const u = mkUser(15);
+  const objectName = `avatars/${u}/1700000000002.jpg`;
+  // Re-sign-in on the same device: session points at this account first.
+  store.setItem("healthlink:session", JSON.stringify({ userId: u, lang: "en" }));
+  assert.equal(savePhoto(u, JPEG), true);
+
+  const { port, effects } = recordingPort({ found: true, photoPath: objectName });
+  await hydrateServerPhoto(u, port);
+  assert.equal(effects.fetched.length, 1, "first sign-in: the gate allowed a fetch");
+  assert.equal(readPhoto(u), JPEG);
+
+  // Real session end (expiry-style revocation cleanup — the same purge the
+  // listener and explicit sign-out share).
+  const { removed } = endSessionFor(principalForUser(u), "expired");
+  assert.ok(removed > 0, "the real sign-out cleanup must have purged private keys");
+  assert.equal(
+    store.getItem(`healthlink:u:${u}:profile-photos`),
+    null,
+    "sign-out really did purge the device photo cache",
+  );
+
+  // Re-sign-in WITHOUT a page load: session points at the account again.
+  store.setItem("healthlink:session", JSON.stringify({ userId: u, lang: "en" }));
+  assert.equal(readPhoto(u), null, "the cache is empty — only a server fetch can restore");
+
+  // Exactly what the auth listener does at session end, before this hydrate.
+  resetPhotoHydration(u);
+
+  await hydrateServerPhoto(u, port);
+  assert.deepEqual(effects.downloaded, [`${u}/1700000000002.jpg`], "hydration fetched again");
+  assert.equal(readPhoto(u), JPEG, "the photo came back from the server in-session");
+
+  // The reestablished gate: without another reset, further hydrates stay no-ops.
+  await hydrateServerPhoto(u, port);
+  assert.equal(effects.fetched.length, 2, "and the one-attempt property is intact again");
+});
+
+test("repeated resets are idempotent and scoped", () => {
+  const a = mkUser(16);
+  const b = mkUser(17);
+  resetPhotoHydration(a);
+  resetPhotoHydration(a);
+  resetPhotoHydration();
+  // Whether gates were conceptually open or closed, reset must never throw
+  // and cleaning up everything (no argument) must not disturb other state.
+  removePhoto(a);
+  removePhoto(b);
+  assert.equal(readPhoto(a), null);
+  assert.equal(readPhoto(b), null);
 });
 
 test("clearAvatarOnCloud stays silent without cloud configuration", async () => {

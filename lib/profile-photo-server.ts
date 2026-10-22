@@ -53,6 +53,35 @@ const attempted = new Set<string>();
 /** Re-entrancy guard so a fast render never fires parallel fetches. */
 const inflight = new Set<string>();
 
+/**
+ * Clears the per-account hydration gate after an account's session ended.
+ *
+ * The gate exists to stop retry loops ONCE THE DEVICE STATE IS SETTLED: one
+ * fetch per user per page load. A sign-out invalidates that state — the
+ * sign-out purge deletes the user's local photo cache (healthlink:profile-
+ * photos is a private, user-scoped key), so restoring the photo on the next
+ * sign-in REQUIRES a fresh server fetch. Without this reset, a sign-out and
+ * sign-in inside the same single-page-app session would skip hydration
+ * (the gate is never reset by a reload, because a client-side route change
+ * is not a page load) and the photo would disappear.
+ *
+ * Narrowly scoped by design:
+ *   - with a userId, only that account's entry is removed;
+ *   - without, everything is cleared (switching device-wide, e.g. tests);
+ *   - the in-flight map is deliberately NOT touched: a hydration pass that
+ *     is mid-request keeps its guard, so no parallel fetch can start and no
+ *     running request is disturbed;
+ *   - duplicate-request and retry protections are otherwise unchanged.
+ *
+ * Idempotent either way: deleting an absent key and clearing an empty set
+ * are no-ops. Call sites are session end paths (auth listener): passing an
+ * unknown id cannot affect any other account's gate.
+ */
+export function resetPhotoHydration(userId?: string): void {
+  if (userId) attempted.delete(userId);
+  else attempted.clear();
+}
+
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

@@ -21,6 +21,7 @@ import {
 } from "./sync";
 import { KEYS, onLocalChange, readLocal, writeLocal, type Session } from "@/lib/storage";
 import { adoptedLang } from "@/lib/lang-decision";
+import { resetPhotoHydration } from "@/lib/profile-photo-server";
 import type { Role, User } from "@/lib/types";
 
 export type SyncState = "off" | "idle" | "syncing" | "synced" | "error";
@@ -196,6 +197,16 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
 
       if (!next) {
+        /* An account's session has ended here — both for a confirmed
+           revocation and for a plain sign-out: this branch is the single
+           funnel for `next === null`, and `cloudUserId` still holds the id
+           of the user who was signed in before this event. Releasing the
+           profile-photo hydration gate BEFORE the cleanup paths lets the
+           next sign-in of that same account fetch a fresh server photo in
+           this SPA session (sign-out purges the device cache, so without
+           this the photo could never come back until a full page reload). */
+        if (cloudUserId) resetPhotoHydration(cloudUserId);
+
         /* Only a confirmed revocation clears data. A transient network failure
            does not raise SIGNED_OUT, and INITIAL_SESSION with no session just
            means nobody is signed in - neither should cost anyone their records. */
