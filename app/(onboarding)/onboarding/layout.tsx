@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Splash } from "@/components/splash";
+import { ConfirmCallbackConsumer } from "@/components/confirm-callback";
 
 export const metadata: Metadata = {
   title: "Welcome to CareNBuddi",
@@ -17,6 +18,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
     <>
       <Splash />
       <div className="flex min-h-[100dvh] flex-col bg-white">
+        <ConfirmCallbackConsumer />
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
       </div>
     </>

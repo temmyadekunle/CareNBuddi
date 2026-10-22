@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteNav } from "@/components/marketing/site-nav";
+import { ConfirmCallbackConsumer } from "@/components/confirm-callback";
 
 const TITLE = "CareNBuddi — Your Health, Your Buddi.";
 const DESCRIPTION =
@@ -62,6 +63,7 @@ export const metadata: Metadata = {
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full flex-col bg-white">
+      <ConfirmCallbackConsumer />
       <SiteNav />
       <div className="flex-1">{children}</div>
       <SiteFooter />

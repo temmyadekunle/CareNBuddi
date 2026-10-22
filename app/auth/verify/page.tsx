@@ -24,6 +24,7 @@ import {
   scrubConfirmParams,
 } from "@/lib/auth-confirm-link";
 import { fetchProfile } from "@/lib/supabase/sync";
+import { confirmedUserMatches } from "@/lib/confirm-user-check";
 import { landingPathFor } from "@/lib/post-auth";
 import { useProviderApplications } from "@/lib/use-provider-application";
 import { Suspense } from "react";
@@ -144,6 +145,14 @@ function VerifyContent() {
           const { data, error } = await supabase.auth.getSession();
           if (error) throw error;
           if (!data.session) throw new Error("No session in confirmation link");
+          // Belt and braces: the SDK already verifies URL tokens server-side;
+          // require an independently fetched user that matches the session
+          // before declaring success.
+          const { data: verified, error: verifyError } = await supabase.auth.getUser();
+          if (verifyError) throw verifyError;
+          if (!confirmedUserMatches(data.session.user, verified?.user ?? null)) {
+            throw new Error("Session identity did not match the verified user");
+          }
           finishConfirmation(data.session.user.id);
         } else {
           // OTP-hash link. Scrub the token out of the URL before the await:

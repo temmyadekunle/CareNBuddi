@@ -140,3 +140,60 @@ function makeApplication(overrides: Partial<ProviderApplication>): ProviderAppli
     ...overrides,
   } as ProviderApplication;
 }
+
+
+test("confirmation callbacks landing on the site root are recognised", () => {
+  // When a mail-redirect lands on / instead of /auth/verify (say a generic
+  // site-root redirect), the shared layouts still classify it identically.
+  assert.deepEqual(
+    detectConfirmLink("https://carenbuddi.example/#access_token=SECRET&refresh_token=SECRET&expires_in=3600&token_type=bearer&type=signup"),
+    { kind: "implicit" },
+  );
+  assert.deepEqual(
+    detectConfirmLink("https://carenbuddi.example/?token_hash=H&type=signup"),
+    { kind: "otp-hash", tokenHash: "H", type: "signup" },
+  );
+  assert.deepEqual(detectConfirmLink("https://carenbuddi.example/?error=access_denied"), { kind: "error" });
+  // A plain landing-page visit with no material stays untouched.
+  assert.deepEqual(detectConfirmLink("https://carenbuddi.example/"), { kind: "none" });
+});
+
+test("no session exists before the callback is verified (type discipline)", () => {
+  // Detection NEVER fabricates a session; implicit kinds carry no token data,
+  // so a consumer cannot accidentally adopt user-supplied tokens as truth.
+  const link = detectConfirmLink("https://carenbuddi.example/#access_token=SECRET&refresh_token=SECRET&type=signup");
+  if (link.kind === "implicit") {
+    assert.ok(!("tokenHash" in link));
+    assert.ok(!("token" in link));
+  }
+});
+
+
+test("no re-processing after scrubbing: a consumed URL is inert", () => {
+  const implicit = "https://carenbuddi.example/#access_token=S&refresh_token=S&expires_in=3600&token_type=bearer";
+  const otp = "https://carenbuddi.example/?token_hash=H&type=signup&next=/app";
+  assert.deepEqual(detectConfirmLink(scrubConfirmParams(implicit)), { kind: "none" });
+  const scrubbed = scrubConfirmParams(otp);
+  assert.deepEqual(detectConfirmLink(scrubbed), { kind: "none" });
+  // ... and the same-site destination survived the scrub.
+  assert.equal(new URL(scrubbed).searchParams.get("next"), "/app");
+});
+
+test("otp-hash verification types are pinned at parse time", () => {
+  // Only the two signup-completing types survive detection; anything else
+  // reaches the consumer as an error and can never call verifyOtp.
+  for (const t of ["recovery", "magiclink", "invite", "email_change"]) {
+    assert.equal(detectConfirmLink(`https://x.example/?token_hash=H&type=${t}`).kind, "error");
+  }
+});
+
+test("confirmedUserMatches: identity agreement required, fails closed", async () => {
+  const { confirmedUserMatches } = await import("../lib/confirm-user-check");
+  assert.equal(confirmedUserMatches({ id: "u-1" }, { id: "u-1" }), true);
+  assert.equal(confirmedUserMatches({ id: "u-1" }, { id: "u-2" }), false);
+  assert.equal(confirmedUserMatches(null, { id: "u-1" }), false);
+  assert.equal(confirmedUserMatches({ id: "u-1" }, null), false);
+  assert.equal(confirmedUserMatches({}, {}), false);
+  assert.equal(confirmedUserMatches({ id: "u-1" }, { id: "u-1", extra: true } as { id: string }), true);
+  // A session adoption with no independent verification (null) never counts.
+});
