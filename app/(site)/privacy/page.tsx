@@ -18,7 +18,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Why we store it",
-    body: "So the app can do what it is built to do: show you the information you saved, let you book and manage appointments, and let the providers you choose work with the information they need. We do not use your health information for advertising, and we do not sell your data.",
+    body: "So the app can do what it is built to do: show you the information you saved and keep your visit requests and health activity in one place. We do not use your health information for advertising, and we do not sell your data.",
   },
   {
     heading: "Where it is stored",
@@ -26,7 +26,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "Who can see it",
-    body: "Your account and your saved health information are visible to you. Providers you connect with see the information that is necessary for the care they are delivering to you, and staff who administer CareNBuddi can access the app in order to keep it working. We do not sell your information to anyone.",
+    body: "Your account and your saved health information are visible to you. CareNBuddi does not currently share your health information with providers through the app, and staff who administer CareNBuddi can access the app in order to keep it working. We do not sell your information to anyone.",
   },
   {
     heading: "How long we keep it",

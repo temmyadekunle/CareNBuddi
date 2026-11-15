@@ -181,20 +181,39 @@ export function dashboardCounts(args: {
 
 /* ----------------------------------------------- verification */
 
+/** Where an application record came from, and whether it has loaded. */
+export type ApplicationSource = "local" | "loading" | "ready" | "error" | "offline";
+
+export type WorkspaceAccess =
+  | "open"
+  | "locked"
+  | "pending"
+  | "unavailable"
+  | "not-a-provider";
+
 /**
  * Whether the workspace should be open at all.
  *
- * A provider with an application that has not been verified belongs on the
- * status screen. An account with no application record - the seeded
- * demonstration facility and admins - keeps working, so the guard does not lock
- * anyone out of a screen they could already use.
+ * A provider needs a verified application. A missing record is not permission:
+ * clearing or editing local storage must not open a professional workspace, so
+ * the only way through is `status === "verified"`. Administrators do not apply,
+ * and are handled separately.
+ *
+ * In cloud mode the application comes from the server (`source` is never
+ * "local"); while that read is in flight the answer is "pending", and a failed
+ * read is "unavailable". Neither state opens the workspace.
  */
 export function workspaceAccess(args: {
   role: string | undefined;
   application: ProviderApplication | null | undefined;
-}): "open" | "locked" | "not-a-provider" {
-  const { role, application } = args;
+  source?: ApplicationSource;
+}): WorkspaceAccess {
+  const { role, application, source = "local" } = args;
   if (role !== "provider" && role !== "admin") return "not-a-provider";
-  if (role === "provider" && application && application.status !== "verified") return "locked";
-  return "open";
+  if (role === "admin") return "open";
+
+  if (source === "loading") return "pending";
+  if (source === "error" || source === "offline") return "unavailable";
+
+  return application?.status === "verified" ? "open" : "locked";
 }

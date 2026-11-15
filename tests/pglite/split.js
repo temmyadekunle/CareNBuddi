@@ -1,8 +1,8 @@
 const { PGlite, AUTH_STUB } = require("./migrate.js");
 const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const { join, resolve } = require("node:path");
 
-const REPO = process.env.REPO ?? "C:/Users/USER/AppData/Local/Temp/opencode/carenbuddi-fix";
+const REPO = process.env.REPO ?? resolve(__dirname, "..", "..");
 
 /** Splits a SQL file on ';' while respecting $$ ... $$ bodies and -- comments. */
 function splitStatements(sql) {

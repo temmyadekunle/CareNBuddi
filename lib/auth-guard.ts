@@ -26,6 +26,8 @@ export const PRIVATE_PATHS = [
   "/health/journey",
   "/health/exercise",
   "/appointments",
+  "/community",
+  "/consultations",
   "/profile",
   "/provider/onboarding",
   "/provider/status",
@@ -33,6 +35,14 @@ export const PRIVATE_PATHS = [
 
 /** Staff areas, matched as an exact path or as a parent of it. */
 export const STAFF_PATHS = ["/worker", "/admin"];
+
+/**
+ * Administration areas. These are stricter than "staff": a provider account is
+ * staff for the professional workspace but must never enter an administrator
+ * console. Both lists intentionally overlap so a guest still gets "sign in"
+ * rather than "staff only".
+ */
+export const ADMIN_PATHS = ["/worker", "/admin"];
 
 /**
  * The professional workspace only, matched exactly.
@@ -76,6 +86,11 @@ export function isStaffRoute(pathname: string): boolean {
   return STAFF_PATHS.some((p) => matchesPath(path, p)) || STAFF_EXACT.includes(path);
 }
 
+export function isAdminRoute(pathname: string): boolean {
+  const path = normalize(pathname);
+  return ADMIN_PATHS.some((p) => matchesPath(path, p));
+}
+
 /**
  * The account a session refers to.
  *
@@ -94,9 +109,14 @@ export type GateDecision = "allow" | "require-sign-in" | "require-staff";
 /**
  * Decides whether a route may render.
  *
- * `user` must come from resolveSessionUser, never straight from storage. The
- * consumer check comes first so a patient landing on a staff route is told to
- * go back to their profile rather than being asked to sign in again.
+ * `user` must come from a trusted source, never straight from local storage.
+ * In cloud mode that is the Supabase identity plus the server profile role
+ * (see lib/access-identity.ts); only a build without cloud auth may treat the
+ * device's demo accounts as identities.
+ *
+ * Administration routes are checked before the general staff rule: a provider
+ * is staff for the professional workspace but is not an administrator, so
+ * "provider" must not be enough for /admin or /worker.
  */
 export function routeAccess(args: {
   pathname: string;
@@ -104,7 +124,12 @@ export function routeAccess(args: {
 }): GateDecision {
   const { pathname, user } = args;
 
-  if (isStaffRoute(pathname) && user && user.role === "consumer") return "require-staff";
+  if (isAdminRoute(pathname)) {
+    if (!user) return "require-sign-in";
+    return user.role === "admin" ? "allow" : "require-staff";
+  }
+
+  if (isStaffRoute(pathname) && user && !isStaffRole(user.role)) return "require-staff";
 
   // Requires a real account record, not merely a truthy session value.
   if ((isPrivateRoute(pathname) || isStaffRoute(pathname)) && !user) return "require-sign-in";
@@ -126,4 +151,65 @@ export function isVerifiedProvider(args: {
 /** Convenience for call sites that only care about the staff roles. */
 export function isStaffRole(role: Role | undefined): boolean {
   return role === "provider" || role === "admin";
+}
+
+/* ------------------------------------------- trusted identity */
+
+/**
+ * The identity a route decision may trust.
+ *
+ * With cloud authentication configured, the only trusted role is the one the
+ * server returns in `profiles.role`; the local mirror of the account supplies
+ * display fields only. A hand-edited `healthlink:users` entry therefore cannot
+ * turn an account into an administrator.
+ *
+ * Without cloud authentication this is a device demo, not an account system:
+ * the local session and its local role are all there is, and they grant no
+ * access to any server resource.
+ */
+export interface AccessIdentityInput {
+  cloudEnabled: boolean;
+  cloudReady: boolean;
+  cloudUserId: string | null;
+  /** `profiles.role`, or null while it is unknown or the read failed. */
+  cloudRole: Role | null;
+  localSessionUserId: string | null;
+  localUsers: User[];
+}
+
+export interface AccessIdentity {
+  user: User | undefined;
+  /** Cloud restored but has not finished; callers should not decide yet. */
+  pending: boolean;
+}
+
+export function resolveAccessIdentity(input: AccessIdentityInput): AccessIdentity {
+  if (!input.cloudEnabled) {
+    return {
+      user: resolveSessionUser(input.localUsers, input.localSessionUserId),
+      pending: false,
+    };
+  }
+
+  if (!input.cloudReady) return { user: undefined, pending: true };
+  if (!input.cloudUserId) return { user: undefined, pending: false };
+
+  const mirrored = input.localUsers.find((u) => u.id === input.cloudUserId);
+  /* Signed in, but no server profile. This is the fail-closed case: the
+     account exists, yet the only trustworthy role source has not answered, so
+     nothing that depends on a role may be treated as authorised. */
+  if (!input.cloudRole) return { user: undefined, pending: false };
+
+  return {
+    user: {
+      id: input.cloudUserId,
+      name: mirrored?.name ?? "CareNBuddi Member",
+      email: mirrored?.email ?? "",
+      phone: mirrored?.phone,
+      role: input.cloudRole,
+      lang: mirrored?.lang ?? "en",
+      createdAt: mirrored?.createdAt ?? "",
+    },
+    pending: false,
+  };
 }

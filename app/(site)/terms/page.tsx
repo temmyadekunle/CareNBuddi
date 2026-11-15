@@ -14,7 +14,7 @@ const SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: "What CareNBuddi is",
-    body: "CareNBuddi is a software platform. It helps people find healthcare providers, organise health information, manage appointments, reminders and health activities, and connect with healthcare professionals. It also gives providers a way to publish their details and manage appointment requests.",
+    body: "CareNBuddi is a software platform. It helps people find healthcare providers, organise health information, keep visit requests, reminders and health activities in one place, and reach providers using their published contact details. It also gives providers a way to apply, upload credentials privately and follow their verification status.",
   },
   {
     heading: "CareNBuddi is not a medical service",

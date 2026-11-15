@@ -113,13 +113,19 @@ export function isGuideIntent(value: unknown): value is GuideIntent {
 
 /* ------------------------------------------------------------------ locations */
 
-/** All 36 Nigerian states plus the FCT (the app calls it "Abuja"). */
+/**
+ * All 36 Nigerian states plus the FCT, named exactly as lib/states.ts names it.
+ *
+ * This list used to call the FCT "Abuja" while provider records and the
+ * directory filter used "Federal Capital Territory (FCT)", so a guide reply
+ * naming Abuja matched no facility. One canonical spelling removes that gap.
+ */
 export const GUIDE_STATES: readonly string[] = [
   "Abia",
   "Adamawa",
   "Akwa Ibom",
   "Anambra",
-  "Abuja",
+  "Federal Capital Territory (FCT)",
   "Bauchi",
   "Bayelsa",
   "Benue",
@@ -154,14 +160,17 @@ export const GUIDE_STATES: readonly string[] = [
   "Zamfara",
 ];
 
+const FCT = "Federal Capital Territory (FCT)";
+
 export function normalizeState(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const v = value.trim().toLowerCase().replace(/\s+state$/, "");
   if (!v) return null;
   const aliases: Record<string, string> = {
-    fct: "Abuja",
-    "federal capital territory": "Abuja",
-    "capital territory": "Abuja",
+    abuja: FCT,
+    fct: FCT,
+    "federal capital territory": FCT,
+    "capital territory": FCT,
     "lago island": "Lagos",
   };
   const alias = aliases[v];

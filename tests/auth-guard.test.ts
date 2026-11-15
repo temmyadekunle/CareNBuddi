@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  isAdminRoute,
   isPrivateRoute,
   isStaffRoute,
   matchesPath,
+  resolveAccessIdentity,
   resolveSessionUser,
   routeAccess,
   type GateDecision,
@@ -100,8 +102,13 @@ test("a patient on a staff route is sent to their profile, not to sign-in", () =
   assert.equal(routeAccess({ pathname: "/provider", user: CONSUMER }), "require-staff");
 });
 
-test("a provider and an admin reach staff routes", () => {
+test("a provider reaches the workspace but not the administrator console", () => {
+  // "Staff" covers both roles; "admin" is a narrower check on top of it. A
+  // provider used to satisfy the staff test and reach /admin.
   assert.equal(routeAccess({ pathname: "/provider", user: PROVIDER }), "allow");
+  assert.equal(routeAccess({ pathname: "/admin", user: PROVIDER }), "require-staff");
+  assert.equal(routeAccess({ pathname: "/admin/providers", user: PROVIDER }), "require-staff");
+  assert.equal(routeAccess({ pathname: "/worker", user: PROVIDER }), "require-staff");
   assert.equal(routeAccess({ pathname: "/admin", user: ADMIN }), "allow");
 });
 
@@ -155,4 +162,130 @@ test("a trailing slash does not change the decision", () => {
   assert.equal(routeAccess({ pathname: "/profile/", user: undefined }), "require-sign-in");
   assert.equal(routeAccess({ pathname: "/provider/", user: undefined }), "require-sign-in");
   assert.equal(routeAccess({ pathname: "/app/", user: undefined }), "allow");
+});
+
+/* ------------------------------------------- administrator routes */
+
+test("administrator routes match their children", () => {
+  assert.equal(isAdminRoute("/admin"), true);
+  assert.equal(isAdminRoute("/admin/providers"), true);
+  assert.equal(isAdminRoute("/worker"), true);
+  assert.equal(isAdminRoute("/administrator"), false);
+  assert.equal(isAdminRoute("/provider"), false);
+});
+
+test("only an administrator role opens an administrator route", () => {
+  assert.equal(routeAccess({ pathname: "/admin", user: ADMIN }), "allow");
+  // A hand-made consumer account is not enough even if it reaches staff code.
+  assert.equal(routeAccess({ pathname: "/admin/provider-applications", user: CONSUMER }), "require-staff");
+});
+
+/* --------------------------------- trusted identity in cloud mode */
+
+const LOCAL_SEEDED_ADMIN: User = {
+  id: "seeded-admin",
+  name: "Seeded Administrator",
+  email: "admin@carenbuddi.ng",
+  role: "admin",
+  lang: "en",
+  createdAt: "",
+};
+
+test("a local account claiming admin grants nothing once cloud auth is on", () => {
+  // This is the bypass: editing healthlink:users or the local session in a
+  // cloud build must not produce an administrator.
+  const identity = resolveAccessIdentity({
+    cloudEnabled: true,
+    cloudReady: true,
+    cloudUserId: "supabase-user-1",
+    cloudRole: "consumer",
+    localSessionUserId: "seeded-admin",
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.user?.role, "consumer");
+  assert.equal(identity.pending, false);
+  assert.equal(
+    routeAccess({ pathname: "/admin", user: identity.user }),
+    "require-staff",
+  );
+});
+
+test("a local session id is ignored when cloud auth is enabled", () => {
+  const identity = resolveAccessIdentity({
+    cloudEnabled: true,
+    cloudReady: true,
+    cloudUserId: null,
+    cloudRole: null,
+    localSessionUserId: "seeded-admin",
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.user, undefined);
+  assert.equal(identity.pending, false);
+  assert.equal(routeAccess({ pathname: "/admin", user: identity.user }), "require-sign-in");
+});
+
+test("a missing server role fails closed rather than guessing", () => {
+  const identity = resolveAccessIdentity({
+    cloudEnabled: true,
+    cloudReady: true,
+    cloudUserId: "supabase-user-1",
+    cloudRole: null,
+    localSessionUserId: null,
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.user, undefined);
+  assert.equal(identity.pending, false);
+});
+
+test("cloud restore in flight is pending, not signed out", () => {
+  const identity = resolveAccessIdentity({
+    cloudEnabled: true,
+    cloudReady: false,
+    cloudUserId: null,
+    cloudRole: null,
+    localSessionUserId: "seeded-admin",
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.pending, true);
+  assert.equal(identity.user, undefined);
+});
+
+test("the server role is what the guard trusts in cloud mode", () => {
+  const identity = resolveAccessIdentity({
+    cloudEnabled: true,
+    cloudReady: true,
+    cloudUserId: "supabase-user-1",
+    cloudRole: "admin",
+    localSessionUserId: null,
+    localUsers: [],
+  });
+  assert.equal(identity.user?.id, "supabase-user-1");
+  assert.equal(routeAccess({ pathname: "/admin", user: identity.user }), "allow");
+});
+
+test("without cloud auth the demo session still resolves locally", () => {
+  // The offline demo is a product feature; its roles grant access to device
+  // data only, never to a server resource.
+  const identity = resolveAccessIdentity({
+    cloudEnabled: false,
+    cloudReady: false,
+    cloudUserId: null,
+    cloudRole: null,
+    localSessionUserId: "seeded-admin",
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.user?.role, "admin");
+  assert.equal(identity.pending, false);
+});
+
+test("without cloud auth a fabricated session id still resolves to nothing", () => {
+  const identity = resolveAccessIdentity({
+    cloudEnabled: false,
+    cloudReady: false,
+    cloudUserId: null,
+    cloudRole: null,
+    localSessionUserId: "u-attacker",
+    localUsers: [LOCAL_SEEDED_ADMIN],
+  });
+  assert.equal(identity.user, undefined);
 });

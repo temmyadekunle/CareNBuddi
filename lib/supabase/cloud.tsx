@@ -22,6 +22,7 @@ import {
 import { KEYS, onLocalChange, readLocal, writeLocal, type Session } from "@/lib/storage";
 import { adoptedLang } from "@/lib/lang-decision";
 import { resetPhotoHydration } from "@/lib/profile-photo-server";
+import { describeSignUpResult, type SignUpOutcome } from "@/lib/signup-outcome";
 import type { Role, User } from "@/lib/types";
 
 export type SyncState = "off" | "idle" | "syncing" | "synced" | "error";
@@ -44,7 +45,7 @@ interface CloudValue {
   lastSyncedAt: number | null;
   error: string | null;
   notice: string | null;
-  signUp: (email: string, password: string, meta: SignUpMeta) => Promise<{ needsConfirmation: boolean }>;
+  signUp: (email: string, password: string, meta: SignUpMeta) => Promise<SignUpOutcome>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   sync: () => Promise<void>;
@@ -60,21 +61,25 @@ const PUSH_DEBOUNCE_MS = 900;
 /**
  * The local mirror of a cloud account.
  *
- * `role` is taken from the server profile only. It used to fall back to
- * `user.user_metadata.role`, which is client-supplied, so a user who asked for
- * 'admin' at signup would have been mirrored locally as an administrator even
- * though the database never granted it - enough to show staff-only screens
- * locally while every query behind them was denied. The profile row is the
- * only authority for a role.
+ * `role` is taken from the server profile only. It never falls back to
+ * `user.user_metadata.role`, which is client-supplied. When the profile read
+ * fails, a previously adopted role is kept instead; that value also came from
+ * the profile, so a transient failure cannot demote a provider. A first-ever
+ * adoption with no profile is provisional (`consumer`), and the profile row
+ * corrects it as soon as it loads.
  */
-function localUserFor(user: SupabaseUser, profile: CloudProfile | null): User {
+function localUserFor(
+  user: SupabaseUser,
+  profile: CloudProfile | null,
+  previous: User | null,
+): User {
   return {
     id: user.id,
     name: profile?.full_name || (user.user_metadata?.name as string) || "CareNBuddi Member",
     email: user.email ?? profile?.email ?? "",
     phone: profile?.phone ?? ((user.user_metadata?.phone as string) || undefined),
-    role: profile?.role ?? "consumer",
-    lang: profile?.lang ?? "en",
+    role: profile?.role ?? previous?.role ?? "consumer",
+    lang: profile?.lang ?? previous?.lang ?? "en",
     createdAt: user.created_at,
   };
 }
@@ -104,7 +109,9 @@ const REVOKING_EVENTS = new Set<string>(["SIGNED_OUT", "USER_SIGNED_OUT"]);
  * restore never wakes language subscribers for nothing.
  */
 function adoptCloudUser(user: SupabaseUser, profile: CloudProfile | null) {
-  const me = localUserFor(user, profile);
+  const users = readLocal<User[]>(KEYS.users) ?? [];
+  const previous = users.find((u) => u.id === user.id) ?? null;
+  const me = localUserFor(user, profile, previous);
   const session = readLocal<Session>(KEYS.session);
   const { lang } = adoptedLang(session, profile?.lang);
   const next: Session = { userId: user.id, lang };
@@ -116,7 +123,6 @@ function adoptCloudUser(user: SupabaseUser, profile: CloudProfile | null) {
     writeLocal<Session>(KEYS.session, next);
   }
 
-  const users = readLocal<User[]>(KEYS.users) ?? [];
   const index = users.findIndex((u) => u.id === user.id);
   if (index === -1) writeLocal<User[]>(KEYS.users, [...users, me]);
   else if (JSON.stringify(users[index]) !== JSON.stringify(me))
@@ -178,6 +184,11 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
       setUser(current);
       if (current) {
         cloudUserId = current.id;
+        /* The Supabase session is already server-verified. Adopt it before
+           the profile read so a transient profiles/RLS failure cannot leave
+           the local guard showing "Sign in to continue" for a valid session.
+           The profile read still supplies the authoritative role. */
+        adoptCloudUser(current, null);
         try {
           const p = await fetchProfile(current.id);
           if (!active) return;
@@ -228,6 +239,7 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
       }
 
       cloudUserId = next.id;
+      adoptCloudUser(next, null);
       fetchProfile(next.id)
         .then(async (p) => {
           adoptCloudUser(next, p);
@@ -284,7 +296,11 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (signUpError) throw new Error(signUpError.message);
-    return { needsConfirmation: !data.session };
+    // `data.user` is present even when confirmation is required; callers use
+    // its id instead of fabricating one. With confirmation on, an existing
+    // address comes back as a user with an empty identities array, so the
+    // outcome never claims a new account was created.
+    return describeSignUpResult(data);
   }, []);
 
   const signIn = useCallback<CloudValue["signIn"]>(async (email, password) => {
@@ -304,13 +320,16 @@ export function CloudProvider({ children }: { children: React.ReactNode }) {
        whoever finishes first wins and both are idempotent. */
     const signedIn = data.user;
     if (signedIn) {
+      // Adopt first: the password check already verified this session, so the
+      // local guard must not depend on the profile read succeeding.
+      adoptCloudUser(signedIn, null);
       try {
         const p = await fetchProfile(signedIn.id);
         setProfile(p);
         adoptCloudUser(signedIn, p);
       } catch {
-        /* Profile fetch failed: the SIGNED_IN listener will retry; the
-           sign-in itself must not fail because of this. */
+        /* Profile fetch failed: the provisional adoption above keeps the
+           session usable, and the SIGNED_IN listener retries the profile. */
       }
     }
   }, []);

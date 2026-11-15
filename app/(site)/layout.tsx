@@ -5,7 +5,7 @@ import { ConfirmCallbackConsumer } from "@/components/confirm-callback";
 
 const TITLE = "CareNBuddi — Your Health, Your Buddi.";
 const DESCRIPTION =
-  "CareNBuddi connects you to the care you need. Find healthcare providers near you, book appointments, keep your health information organised and stay connected — in English, Yoruba, Hausa and Igbo.";
+  "CareNBuddi connects you to the care you need. Find healthcare providers near you, request visits, keep your health information organised and reach the right people — in English, Yoruba, Hausa and Igbo.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://carenbuddi.vercel.app"),
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   keywords: [
     "healthcare Nigeria",
     "find a hospital",
-    "book an appointment",
+    "health passport",
     "health records",
     "health reminders",
     "healthcare app Nigeria",
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     locale: "en_NG",
     images: [
       {
-        url: "/brand/logo-real.jpg",
-        width: 1080,
-        height: 720,
+        url: "/brand/og-card.png",
+        width: 1200,
+        height: 630,
         alt: "CareNBuddi — Your Health, Your Buddi.",
       },
     ],
@@ -45,17 +45,17 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/brand/logo-real.jpg"],
+    images: ["/brand/og-card.png"],
   },
   robots: { index: true, follow: true },
   icons: {
     icon: [
-      { url: "/icon-16.png", type: "image/png", sizes: "16x16" },
-      { url: "/icon-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/icon-48.png", type: "image/png", sizes: "48x48" },
-      { url: "/apple-touch-icon.png", sizes: "180x180" },
+      { url: "/brand/icon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/brand/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/icon-48.png", type: "image/png", sizes: "48x48" },
+      { url: "/brand/apple-touch-icon.png", sizes: "180x180" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/brand/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
 };

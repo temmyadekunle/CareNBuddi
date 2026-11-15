@@ -153,8 +153,8 @@ function FindCareInner() {
           </h1>
           <p className="mt-0.5 text-xs leading-snug text-slate-500">
             {t(
-              "fc_sub",
-              "Hospitals, PHCs, labs, pharmacies and professionals — with the next available slot.",
+              "fc_sub_directory",
+              "Hospitals, PHCs, labs, pharmacies and professionals in the directory.",
             )}
           </p>
         </div>
@@ -241,8 +241,7 @@ function FindCareInner() {
 
       <p className="mt-3.5 truncate text-xs text-slate-500">
         {results.length}{" "}
-        {results.length === 1 ? t("f_facility_one", "facility") : t("f_facility_many", "facilities")} ·{" "}
-        {t("f_verified", "Verified")} ✓
+        {results.length === 1 ? t("f_facility_one", "facility") : t("f_facility_many", "facilities")}
       </p>
 
       {failed ? (

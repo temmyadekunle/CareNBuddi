@@ -26,9 +26,33 @@
   // refuses a secret whose name shadows a configured var, so any entry for it
   // here would block the secret path. Nothing in "vars" below arms the
   // endpoint; until the three secrets are set it stays inert.
+  //
+  // Telemedicine (POST /api/consultations/join) is armed by:
+  //   SUPABASE_URL          (already required by admin provisioning)
+  //   `npx wrangler secret put SUPABASE_ANON_KEY`
+  //   `npx wrangler secret put DAILY_API_KEY`
+  //   `npx wrangler secret put DAILY_DOMAIN`  (e.g. team.daily.co)
+  // Without the video pair the endpoint returns 503 video_not_configured and
+  // never mints a room or token. The browser never receives DAILY_API_KEY.
+  // Daily webhook (POST /api/daily/webhook) for participant events:
+  //   `npx wrangler secret put DAILY_WEBHOOK_SECRET`
+  // Without it the webhook endpoint returns 503 webhook_not_configured.
+  // Browser origins allowed to call the API routes. Keep this in deployment
+  // config so adding the launch domain does not mean editing worker/index.ts.
+  // localhost is always allowed by the Worker for development.
   "vars": {
     "AI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/openai",
-    "AI_MODEL": "gemini-flash-lite-latest"
+    "AI_MODEL": "gemini-flash-lite-latest",
+    "APP_ORIGINS": "https://carenbuddi.folababy02.workers.dev,https://carenbuddi.vercel.app"
+  },
+  // System-wide consultation expiry (0013) and room closure reconciliation
+  // (0015). Every five minutes the Worker calls the service-role-only
+  // expire_stale_consultations(), then reconciles the durable room-closure
+  // queue. Both jobs are idempotent. They use SUPABASE_URL,
+  // SUPABASE_SERVICE_KEY and DAILY_API_KEY; without the Supabase pair the tick
+  // is inert, and without the Daily key reconciliation only records the queue.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
   },
   "observability": {
     "enabled": true

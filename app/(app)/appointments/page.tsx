@@ -58,7 +58,7 @@ const EMPTY_COPY: Record<
     titleKey: "appt_empty_upcoming",
     title: "No upcoming appointments",
     bodyKey: "appt_empty_upcoming_d",
-    body: "Book a visit with a verified provider in a few taps.",
+    body: "Request a visit from a provider in the directory in a few taps.",
   },
   completed: {
     icon: "done",
@@ -236,7 +236,7 @@ export default function AppointmentsPage() {
             title={t("appt_none_title", "No appointment booked")}
             body={t(
               "appt_none_d",
-              "Find a verified provider near you and request a visit in a few taps.",
+              "Find a provider in the directory and request a visit in a few taps.",
             )}
             action={
               <Link href="/find-care" className="mt-2">

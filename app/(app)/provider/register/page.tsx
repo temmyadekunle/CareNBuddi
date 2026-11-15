@@ -10,24 +10,46 @@ import {
   AuthIntro,
   AuthSubmit,
   AuthSwitch,
-  OfflineNote,
+  writeAuthPending,
 } from "@/components/auth-form";
 import { Button, Card, Field, Screen, SectionHeader, inputClass, useToast } from "@/components/app-ui";
 import { ChevronLeftIcon, StethoscopeIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import {
+  PROVIDER_APPLICATIONS_KEY,
   PROVIDER_CATEGORIES_DETAIL,
   newApplication,
+  type ProviderApplication,
   type ProviderCategoryId,
 } from "@/lib/provider-application";
 import { providerRegisterEntry } from "@/lib/post-auth";
-import { KEYS, seedUsers, uid, useSession, useStoredCollection } from "@/lib/storage";
+import {
+  KEYS,
+  readCollectionForUser,
+  seedUsers,
+  uid,
+  useSession,
+  useStoredCollection,
+  writeCollectionForUser,
+} from "@/lib/storage";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
 import { useProviderApplications } from "@/lib/use-provider-application";
 import type { User } from "@/lib/types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** Form order, used to list errors and focus the first one. */
+const ERROR_FIELD_ORDER = ["fullName", "email", "password", "confirm", "category", "consent"] as const;
+type ErrorField = (typeof ERROR_FIELD_ORDER)[number];
+
+const FIELD_IDS: Record<Exclude<ErrorField, "consent">, string> = {
+  fullName: "provider-register-name",
+  email: "provider-register-email",
+  password: "provider-register-password",
+  confirm: "provider-register-confirm",
+  category: "provider-register-category",
+};
 
 /**
  * Create Account as Health Provider — and resume, when there is already an
@@ -71,6 +93,21 @@ export default function ProviderRegisterPage() {
   const [pending, setPending] = useState(false);
 
   const cloudMode = isCloudEnabled;
+
+  const errorLabels: Record<ErrorField, string> = {
+    fullName: t("a_name", "Full name"),
+    email: t("a_email", "Email"),
+    password: t("a_password", "Password"),
+    confirm: t("auth_confirm_label", "Confirm password"),
+    category: t("prg_category", "Category"),
+    consent: t("pr_consent_label", "Terms and privacy"),
+  };
+
+  const fieldErrors = ERROR_FIELD_ORDER.filter((key) => errors[key]).map((key) => ({
+    key,
+    label: errorLabels[key],
+    message: errors[key] as string,
+  }));
 
   /* The two signed-in cases are decided by the same tested helper the rest of
      the app uses, so "do I already have an application?" is answered in one
@@ -134,6 +171,52 @@ export default function ProviderRegisterPage() {
     );
   }
 
+  /**
+   * Keeps the provider's details on this device while the account is waiting
+   * for email confirmation.
+   *
+   * The ordinary draft hook resolves storage through the current session, and
+   * there is deliberately no session before confirmation. Writing through the
+   * user id Supabase returned puts the draft in the namespace the confirmed
+   * account will use, without signing anybody in early. Nothing is sent to the
+   * server and no status is advanced.
+   */
+  function persistDraftForUser(userId: string) {
+    const key = email.trim().toLowerCase();
+    const stored = readCollectionForUser<ProviderApplication>(userId, PROVIDER_APPLICATIONS_KEY);
+    const base =
+      stored.find((app) => app.userId === userId) ??
+      newApplication({ id: uid(), userId, email: key });
+    const draft: ProviderApplication = {
+      ...base,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      category,
+      trainee,
+      acceptedTerms,
+      acceptedPrivacy,
+      updatedAt: new Date().toISOString(),
+    };
+    const at = stored.findIndex((app) => app.userId === userId);
+    const next = at === -1 ? [...stored, draft] : stored.map((app, i) => (i === at ? draft : app));
+    writeCollectionForUser(userId, PROVIDER_APPLICATIONS_KEY, next);
+  }
+
+  function focusFirstError(next: Record<string, string | null>) {
+    const first = ERROR_FIELD_ORDER.find((key) => next[key]);
+    if (!first) return;
+    const id =
+      first === "consent"
+        ? acceptedTerms
+          ? "provider-register-privacy"
+          : "provider-register-terms"
+        : FIELD_IDS[first];
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.focus({ preventScroll: true });
+  }
+
   function validate(): boolean {
     const next: Record<string, string | null> = {};
     if (!fullName.trim()) next.fullName = t("pr_err_name", "Enter your full professional name.");
@@ -152,7 +235,9 @@ export default function ProviderRegisterPage() {
       next.consent = t("pr_err_consent", "Accept the Terms of Service and Privacy Policy to continue.");
 
     setErrors(next);
-    return Object.values(next).every((v) => !v);
+    const ok = Object.values(next).every((v) => !v);
+    if (!ok) focusFirstError(next);
+    return ok;
   }
 
   /** Adopt an existing account as a provider and start the application. */
@@ -182,6 +267,15 @@ export default function ProviderRegisterPage() {
 
   async function submit() {
     setFormError(null);
+    if (!cloudMode) {
+      setFormError(
+        t(
+          "pr_signup_unavailable",
+          "Provider account creation needs the CareNBuddi authentication service, which is not connected in this build. No account was created.",
+        ),
+      );
+      return;
+    }
     if (!validate()) return;
     setPending(true);
 
@@ -202,63 +296,72 @@ export default function ProviderRegisterPage() {
         return;
       }
 
-      let userId: string;
+      const {
+        needsConfirmation,
+        userId: signedUpUserId,
+        existingAccount,
+      } = await cloud.signUp(email, password, {
+        name: fullName.trim(),
+        phone: phone.trim(),
+        role: "provider",
+        lang: session.lang,
+        // Carried into the confirmation email so the link lands back here.
+        next: "/provider/onboarding",
+      });
 
-      if (cloudMode) {
-        const { needsConfirmation } = await cloud.signUp(email, password, {
-          name: fullName.trim(),
-          phone: phone.trim(),
-          role: "provider",
-          lang: session.lang,
-        });
-        if (needsConfirmation) {
-          // Scenario A: the account exists but the session is not established
-          // yet. Say so and send them to the verification screen rather than
-          // silently bouncing to sign-in.
-          push(t("auth_check_email", "Check your email to confirm your account"), "info");
-          router.push("/auth/verify");
-          return;
-        }
-        userId = uid();
-      } else {
-        const user: User = {
-          id: uid(),
-          name: fullName.trim(),
-          email: key,
-          phone: phone.trim() || undefined,
-          role: "provider",
-          lang: session.lang,
-          createdAt: new Date().toISOString(),
-        };
-        setUsers((prev) => [...prev, user]);
-        userId = user.id;
+      if (needsConfirmation) {
+        // No session yet: remember which address is waiting and keep the
+        // details the person already typed. The draft is keyed by the real
+        // Supabase id, and is skipped for an address that already has an
+        // account, so nothing is written into somebody else's namespace.
+        writeAuthPending(key);
+        if (signedUpUserId && !existingAccount) persistDraftForUser(signedUpUserId);
+        push(
+          t(
+            "auth_check_email",
+            "If this address needs confirming, check your inbox.",
+          ),
+          "info",
+        );
+        router.push(
+          `/auth/verify?email=${encodeURIComponent(key)}&next=${encodeURIComponent("/provider/onboarding")}`,
+        );
+        return;
       }
 
-      // Establish the session so the rest of the journey is authenticated, and
-      // resume rather than duplicate if an application already exists.
+      if (!signedUpUserId) {
+        // A session without a user id is not something to paper over with a
+        // locally minted id; fail closed and let them sign in.
+        setFormError(
+          t(
+            "pr_signup_no_session",
+            "We could not find the new account. Sign in and continue your application.",
+          ),
+        );
+        return;
+      }
+
+      const userId = signedUpUserId;
+      persistDraftForUser(userId);
+
+      // Establish the session so the rest of the journey is authenticated.
       setSession((prev) => ({ ...prev, userId }));
-      const now = new Date().toISOString();
-      const existingApp = forUser(userId);
-      upsert({
-        ...(existingApp ?? newApplication({ id: uid(), userId, email: key })),
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        category,
-        trainee,
-        acceptedTerms,
-        acceptedPrivacy,
-        updatedAt: now,
-      });
 
       push(t("pr_account_created", "Account created"), "success");
       router.push("/provider/onboarding?step=welcome");
     } catch (error) {
-      // Scenario C: the account may or may not have been created. Say what is
-      // true and let them retry rather than discarding anything.
+      // The account may or may not have been created. Say what is true and let
+      // them retry rather than discarding anything. "Already registered" is
+      // answered neutrally: it is only returned when confirmations are off,
+      // and repeating it would confirm the address is in use.
+      const message = error instanceof Error ? error.message : "";
       setFormError(
-        error instanceof Error
-          ? error.message
-          : t("pr_signup_failed", "We could not create that account. Please try again."),
+        /already registered/i.test(message)
+          ? t(
+              "auth_signup_try_signin",
+              "We could not create that account. If you already have one, sign in instead.",
+            )
+          : message || t("pr_signup_failed", "We could not create that account. Please try again."),
       );
     } finally {
       setPending(false);
@@ -294,6 +397,25 @@ export default function ProviderRegisterPage() {
         }}
         className="mt-6 space-y-4"
       >
+        {fieldErrors.length > 0 && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs leading-relaxed text-rose-700"
+          >
+            <p className="font-semibold">
+              {t("auth_fix_errors", "Please fix the highlighted fields before continuing.")}
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {fieldErrors.map(({ key, label, message }) => (
+                <li key={key}>
+                  <span className="font-medium">{label}:</span> {message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <Card className="space-y-4">
           <SectionHeader
             title={t("pr_account_section", "Account")}
@@ -301,14 +423,17 @@ export default function ProviderRegisterPage() {
           />
 
           <AuthField
+            id={FIELD_IDS.fullName}
             label={t("a_name", "Full name")}
             type="text"
             autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             error={errors.fullName}
+            errorId={`${FIELD_IDS.fullName}-error`}
           />
           <AuthField
+            id={FIELD_IDS.email}
             label={t("a_email", "Email")}
             type="email"
             inputMode="email"
@@ -316,6 +441,7 @@ export default function ProviderRegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             error={errors.email}
+            errorId={`${FIELD_IDS.email}-error`}
           />
           <AuthField
             label={t("auth_phone_label", "Phone (optional)")}
@@ -327,21 +453,25 @@ export default function ProviderRegisterPage() {
             onChange={(e) => setPhone(e.target.value)}
           />
           <AuthField
+            id={FIELD_IDS.password}
             label={t("a_password", "Password")}
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={errors.password}
+            errorId={`${FIELD_IDS.password}-error`}
             hint={t("auth_password_hint", "At least 8 characters")}
           />
           <AuthField
+            id={FIELD_IDS.confirm}
             label={t("auth_confirm_label", "Confirm password")}
             type="password"
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             error={errors.confirm}
+            errorId={`${FIELD_IDS.confirm}-error`}
           />
         </Card>
 
@@ -354,10 +484,17 @@ export default function ProviderRegisterPage() {
             )}
           />
 
-          <Field label={t("prg_category", "Category")} error={errors.category}>
+          <Field
+            label={t("prg_category", "Category")}
+            error={errors.category}
+            errorId={`${FIELD_IDS.category}-error`}
+          >
             <select
+              id={FIELD_IDS.category}
               value={category}
               onChange={(e) => setCategory(e.target.value as ProviderCategoryId | "")}
+              aria-invalid={errors.category ? true : undefined}
+              aria-describedby={errors.category ? `${FIELD_IDS.category}-error` : undefined}
               className={inputClass}
             >
               <option value="">{t("pr_pick_category", "Select your category")}</option>
@@ -394,9 +531,12 @@ export default function ProviderRegisterPage() {
         <Card className="space-y-3">
           <label className="flex items-start gap-2.5 text-xs leading-relaxed text-slate-600">
             <input
+              id="provider-register-terms"
               type="checkbox"
               checked={acceptedTerms}
               onChange={(e) => setAcceptedTerms(e.target.checked)}
+              aria-invalid={errors.consent ? true : undefined}
+              aria-describedby={errors.consent ? "provider-register-consent-error" : undefined}
               className="mt-0.5 h-5 w-5 rounded border-slate-300"
             />
             <span>
@@ -408,9 +548,12 @@ export default function ProviderRegisterPage() {
           </label>
           <label className="flex items-start gap-2.5 text-xs leading-relaxed text-slate-600">
             <input
+              id="provider-register-privacy"
               type="checkbox"
               checked={acceptedPrivacy}
               onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+              aria-invalid={errors.consent ? true : undefined}
+              aria-describedby={errors.consent ? "provider-register-consent-error" : undefined}
               className="mt-0.5 h-5 w-5 rounded border-slate-300"
             />
             <span>
@@ -420,7 +563,11 @@ export default function ProviderRegisterPage() {
               </Link>
             </span>
           </label>
-          {errors.consent ? <AuthError>{errors.consent}</AuthError> : null}
+          {errors.consent ? (
+            <div id="provider-register-consent-error">
+              <AuthError>{errors.consent}</AuthError>
+            </div>
+          ) : null}
         </Card>
 
         {formError ? <AuthError>{formError}</AuthError> : null}
@@ -428,8 +575,6 @@ export default function ProviderRegisterPage() {
         <AuthSubmit pending={pending} pendingLabel={t("auth_creating", "Creating…")}>
           {t("pr_submit", "Create account and continue")}
         </AuthSubmit>
-
-        {!cloudMode && <OfflineNote />}
 
         <AuthSwitch
           question={t("auth_have_account", "Already have an account?")}

@@ -535,11 +535,13 @@ export function Field({
   label,
   error,
   hint,
+  errorId,
   children,
 }: {
   label: string;
   error?: string | null;
   hint?: string;
+  errorId?: string;
   children: ReactNode;
 }) {
   return (
@@ -547,7 +549,11 @@ export function Field({
       <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{label}</span>
       <div className="mt-1.5">{children}</div>
       {hint && !error && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
-      {error && <span className="mt-1 block text-[11px] font-medium text-rose-600">{error}</span>}
+      {error && (
+        <span id={errorId} className="mt-1 block text-[11px] font-medium text-rose-600">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

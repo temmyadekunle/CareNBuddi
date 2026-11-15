@@ -107,14 +107,20 @@ export function BookSheet({
       phone: phone.trim(),
       message: notes.trim(),
       date,
-      status: "confirmed",
+      status: "new",
       createdAt: todayIso(),
       time,
       kind,
       specialty: provider.services[0] ?? categoryLabel,
     };
     setBookings((prev) => [...prev, booking]);
-    push(t("booking_done", "Appointment booked"), "success");
+    push(
+      t(
+        "booking_request_saved",
+        "Request saved on this device. The facility has not been contacted.",
+      ),
+      "success",
+    );
     reset();
     onClose();
     onBooked?.(booking);
@@ -129,11 +135,11 @@ export function BookSheet({
     <BottomSheet
       open={open && provider !== null}
       onClose={onClose}
-      title={t("fc_book_title", "Book an appointment")}
+      title={t("fc_book_title", "Request a visit")}
       footer={
         <Button full disabled={!valid} onClick={confirm}>
           <CalendarIcon className="h-4 w-4" />
-          {t("fc_confirm_booking", "Confirm booking")}
+          {t("fc_confirm_booking", "Save request")}
         </Button>
       }
     >
@@ -260,7 +266,7 @@ export function BookSheet({
           <p className="text-[11px] leading-relaxed text-slate-400">
             {t(
               "fc_book_note",
-              "You can reschedule or cancel from your Appointments tab.",
+              "This saves a request on this device. The facility has not been contacted, and no appointment is confirmed until it responds through a verified channel.",
             )}
           </p>
         </div>

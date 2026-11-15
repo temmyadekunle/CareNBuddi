@@ -8,7 +8,6 @@ import {
   Button,
   Card,
   ListRow,
-  Rating,
   Screen,
   SectionHeader,
 } from "@/components/app-ui";
@@ -86,10 +85,10 @@ export default function HomeScreen() {
   const activeReminders = reminders.filter((r) => r.enabled);
   const meds = activeReminders.filter((r) => r.type === "medication");
   const lastVitals = journal[0]?.vitals;
-  const nearest = [...providers]
-    .filter((p) => p.verified)
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-    .slice(0, 6);
+  /* A stable subset of the directory. "Nearest" would be a claim about the
+     reader's location that this build cannot make, and the old filter also
+     showed only entries tagged verified - a tag the data did not earn. */
+  const nearby = [...providers].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 6);
   const tips = topics.filter((tp) => tp.status === "published").slice(0, 8);
 
   return (
@@ -252,12 +251,12 @@ export default function HomeScreen() {
 
       {/* providers near you --------------------------------------------- */}
       <SectionHeader
-        title={t("home_nearby", "Health services near you")}
+        title={t("home_directory", "Health services in the directory")}
         action={t("home_see_all", "See all")}
         href="/find-care"
       />
       <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
-        {nearest.map((provider) => (
+        {nearby.map((provider) => (
           <ProviderMiniCard key={provider.id} provider={provider} />
         ))}
       </div>
@@ -382,18 +381,13 @@ function ProviderMiniCard({ provider }: { provider: Provider }) {
     >
       <div className="flex items-center gap-2">
         <Avatar name={provider.name} role="doctor" size={32} seed={provider.name.length} />
-        {provider.verified && (
-          <span className="ml-auto rounded-full bg-brand-50 px-1.5 py-0.5 text-[9px] font-bold text-brand-700">
-            ✓
-          </span>
-        )}
       </div>
       <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-snug text-slate-900">
         {provider.name}
       </p>
       <p className="mt-0.5 truncate text-[10px] text-slate-500">{category}</p>
       <div className="mt-1.5 flex items-center justify-between gap-1">
-        {provider.rating ? <Rating value={provider.rating} /> : <span />}
+        <span />
         <span className="flex items-center gap-0.5 text-[10px] font-medium text-slate-500">
           <PinIcon className="h-3 w-3" />
           {provider.city}

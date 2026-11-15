@@ -16,12 +16,7 @@ import {
 } from "@/components/app-ui";
 import { FileTextIcon, ShieldIcon, UserIcon, SearchIcon, FilterIcon, CalendarIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
-import {
-  KEYS,
-  seedUsers,
-  useSession,
-  useStoredCollection,
-} from "@/lib/storage";
+import { useAccessIdentity } from "@/lib/access-identity";
 import {
   APPLICATION_TRANSITIONS,
   type ProviderApplication,
@@ -70,15 +65,18 @@ const STATUS_TONE: Record<ProviderApplicationStatus, "brand" | "green" | "amber"
 
 export default function AdminProviderApplicationsPage() {
   const t = useT();
-  const [session] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
-  const me = users.find((u) => u.id === session.userId);
+  const { user: me, pending } = useAccessIdentity();
 
-  /* Every hook this component calls sits above its first return, so the
-     hook order is identical whether the gate or the dashboard renders. The
-     dashboard body below only mounts once the administrator check has
-     passed; if the role changes between renders React unmounts and mounts
-     it as a fresh instance, which is safe. */
+  /* The administrator role is resolved from the server profile when cloud
+     auth is configured, never from this browser's account list. */
+  if (pending) {
+    return (
+      <Screen>
+        <SectionHeader title={t("ad_title")} subtitle={t("ad_sub", "Moderate the platform.")} />
+      </Screen>
+    );
+  }
+
   if (me?.role !== "admin") {
     return (
       <Screen>

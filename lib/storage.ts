@@ -6,7 +6,15 @@ import type { Booking, ProviderRequest, Report, User, MenstrualCycle, MoodEntry,
 import { DEFAULT_HEALTH_PREFERENCES } from "./types";
 import type { Lang } from "./lang";
 import { PROVIDERS, PROVIDER_SEED_ID, TOPICS } from "./content";
-import { currentScopedKey, isPrivateKey, privateKeys, quarantineLegacyData, type Principal } from "./storage-scope";
+import {
+  currentScopedKey,
+  isPrivateKey,
+  privateKeys,
+  principalForUser,
+  quarantineLegacyData,
+  scopedKey,
+  type Principal,
+} from "./storage-scope";
 
 export interface Session {
   userId: string | null;
@@ -325,6 +333,46 @@ function writeCollection<T extends { id: string }>(key: string, items: T[]) {
     // storage may be unavailable
   }
   notify(key);
+}
+
+/**
+ * Reads and writes one user's collection without changing the current session.
+ *
+ * Needed for a provider draft collected before email confirmation: the person
+ * is not signed in yet, so ordinary reads/writes resolve to the guest
+ * namespace, and a draft written there would be invisible once the confirmed
+ * account's own namespace is in use. The user id comes from Supabase's signup
+ * response, never from a locally minted value.
+ */
+export function readCollectionForUser<T>(userId: string, key: string): T[] {
+  if (!userId) return [];
+  const scoped = scopedKey(principalForUser(userId), key);
+  try {
+    const raw = localStorage.getItem(scoped);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as T[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeCollectionForUser<T extends { id: string }>(
+  userId: string,
+  key: string,
+  items: T[],
+): boolean {
+  if (!userId) return false;
+  const scoped = scopedKey(principalForUser(userId), key);
+  cache.set(scoped, items);
+  try {
+    localStorage.setItem(scoped, JSON.stringify(items));
+    notify(key);
+    return true;
+  } catch {
+    cache.delete(scoped);
+    return false;
+  }
 }
 
 /**

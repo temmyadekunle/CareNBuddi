@@ -17,22 +17,25 @@ import { useT } from "@/lib/i18n";
 import { endSession } from "@/lib/session";
 import { LANGS } from "@/lib/lang";
 import { isCloudEnabled } from "@/lib/supabase/client";
-import {
-  KEYS,
-  seedUsers,
-  useSession,
-  useStoredCollection,
-  type Session,
-} from "@/lib/storage";
+import { useCloud } from "@/lib/supabase/cloud";
+import { useAccessIdentity } from "@/lib/access-identity";
 
 export default function AccountPage() {
   const t = useT();
-  const [session, setSession] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const cloud = useCloud();
+  const { user: me } = useAccessIdentity();
 
-  const me = users.find((u) => u.id === session.userId);
-
-  const signOut = () => {
+  /**
+   * Signing out has to end the trusted session, not just the local mirror.
+   * In cloud mode that means invalidating the Supabase session; clearing the
+   * device data alone would leave the account signed in and the next page
+   * load would restore it. `cloud.signOut()` performs both steps.
+   */
+  const signOut = async () => {
+    if (cloud.enabled) {
+      await cloud.signOut();
+      return;
+    }
     endSession("signout");
   };
 
@@ -65,7 +68,7 @@ export default function AccountPage() {
               {me.role}
             </Badge>
           </div>
-          <Button full tone="secondary" className="mt-4" onClick={signOut}>
+          <Button full tone="secondary" className="mt-4" onClick={() => void signOut()}>
             <LogOutIcon className="h-4 w-4" />
             {t("a_signout", "Sign out")}
           </Button>

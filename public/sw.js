@@ -1,4 +1,4 @@
-const CACHE = "healthlink-v4";
+const CACHE = "healthlink-v6";
 
 /**
  * Everything needed to open the app without a network. An installed HealthLink
@@ -25,8 +25,38 @@ const SHELL = [
   "/icon-512.png",
 ];
 
-/** Offline fallback when a navigation fails and nothing was cached. */
-const FALLBACK = "/app";
+/**
+ * Routes whose document carries session or confirmation state, or a one-shot
+ * token in the query string. They are never served from, and never written to,
+ * the service worker: a cached or substituted document can replay a different
+ * screen against the URL's state, and a query-string variant must not be
+ * stored under another URL.
+ */
+const NETWORK_ONLY = [
+  "/auth",
+  "/provider/register",
+  "/provider/onboarding",
+  "/provider/status",
+];
+
+/**
+ * The static export (no `trailingSlash`) also emits `/provider/register.html`.
+ * A hard navigation to that alias must obey the same rule as the
+ * extensionless URL, otherwise a provider application document could be
+ * cached and later served from the worker. The `/provider` workspace itself
+ * is not in the list and stays cacheable.
+ */
+function normalizeRoutePath(pathname) {
+  const bare = pathname.replace(/\/+$/, "");
+  return bare.endsWith(".html") ? bare.slice(0, -5) : bare;
+}
+
+function isNetworkOnlyPath(pathname) {
+  const path = normalizeRoutePath(pathname);
+  return NETWORK_ONLY.some(
+    (route) => path === route || path.startsWith(`${route}/`),
+  );
+}
 
 /**
  * How long to wait on the network before falling back to the cached copy.
@@ -94,6 +124,25 @@ async function putInCache(request, response) {
   }
 }
 
+/**
+ * The cached document for exactly this navigation, if there is one.
+ *
+ * The static export serves /app and /app/ for the same document, so the
+ * trailing-slash form is also tried. No other route is ever substituted:
+ * answering /provider/register with the cached /app document hydrated the
+ * wrong screen against the URL. Query state is read by the page after load,
+ * so the route's document still matches; query-bearing URLs are simply never
+ * cached themselves.
+ */
+async function cachedDocumentFor(url) {
+  const exact = await caches.match(url.pathname);
+  if (exact) return exact;
+
+  const bare = url.pathname.replace(/\/+$/, "");
+  if (!bare || bare === url.pathname) return null;
+  return (await caches.match(bare)) ?? null;
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -123,25 +172,28 @@ self.addEventListener("fetch", (event) => {
   // latest deploy, but never wait longer than NAV_TIMEOUT_MS — a slow or dead
   // connection falls back to the cached copy instead of hanging the tap.
   if (request.mode === "navigate") {
+    // Auth, verification and provider-application screens are left entirely to
+    // the network. Their session handoff cannot run from a cached document,
+    // and caching one would let an old document answer a new URL.
+    if (isNetworkOnlyPath(url.pathname)) return;
+
     event.respondWith(
       (async () => {
         const fresh = await fetchWithTimeout(request, NAV_TIMEOUT_MS);
         if (fresh) {
-          event.waitUntil(putInCache(request, fresh));
+          // Query-string navigations are one-off (destinations, filters,
+          // confirmation state); only the plain route is stored.
+          if (!url.search) event.waitUntil(putInCache(request, fresh));
           return fresh;
         }
 
-        const cached = await caches.match(request);
+        const cached = await cachedDocumentFor(url);
         if (cached) return cached;
 
-        const fallback = await caches.match(FALLBACK);
-        return (
-          fallback ||
-          new Response("You are offline.", {
-            status: 503,
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
-          })
-        );
+        return new Response("You are offline.", {
+          status: 503,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
       })(),
     );
     return;

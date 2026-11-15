@@ -11,6 +11,7 @@ import {
   BookIcon,
   BookIcon as RecordsIcon,
   CalendarIcon,
+  CameraIcon,
   ChatIcon,
   ClipboardListIcon,
   FileTextIcon,
@@ -42,6 +43,10 @@ const TABS = [
 const TITLES: { prefix: string; titleKey: string; subKey?: string }[] = [
   { prefix: "/app", titleKey: "n_home" },
   { prefix: "/appointments", titleKey: "n_appts" },
+  { prefix: "/consultations/session", titleKey: "vc_detail", subKey: "vc_secure" },
+  { prefix: "/consultations", titleKey: "vc_title", subKey: "vc_sub" },
+  { prefix: "/community/post", titleKey: "cm_discussion" },
+  { prefix: "/community", titleKey: "n_community" },
   { prefix: "/find-care/", titleKey: "f_title" },
   { prefix: "/find-care", titleKey: "n_find" },
   { prefix: "/health/diary", titleKey: "mh_title", subKey: "mh_sub" },
@@ -60,6 +65,7 @@ const TITLES: { prefix: string; titleKey: string; subKey?: string }[] = [
   { prefix: "/health-days", titleKey: "n_healthdays", subKey: "n_healthdays_d" },
   { prefix: "/emergency", titleKey: "em_title", subKey: "em_sub" },
   { prefix: "/worker", titleKey: "w_title", subKey: "w_sub" },
+  { prefix: "/provider/consultations", titleKey: "vc_consultations", subKey: "vc_provider_sub" },
   { prefix: "/provider", titleKey: "pv_title", subKey: "pv_sub" },
   { prefix: "/admin", titleKey: "ad_title" },
   { prefix: "/account", titleKey: "a_title", subKey: "a_sub" },
@@ -84,7 +90,7 @@ export function Nav() {
       <header className="z-30 shrink-0 border-b border-slate-200/70 bg-white/92 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/90">
         <div className="flex items-center gap-2.5 px-4 py-2.5">
           <Link href="/app" aria-label="CareNBuddi home" className="tap shrink-0">
-            <LogoMark className="h-9 w-9 rounded-xl" />
+            <LogoMark className="h-9 w-9" />
           </Link>
           <div className="min-w-0 flex-1">
              <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
@@ -204,6 +210,8 @@ function MoreSheet({
       titleKey: "n_care",
       items: [
         { href: "/services", titleKey: "s_title", icon: <CalendarIcon className="h-5 w-5" /> },
+        { href: "/community", titleKey: "n_community", icon: <ChatIcon className="h-5 w-5" /> },
+        { href: "/consultations", titleKey: "vc_title", icon: <CameraIcon className="h-5 w-5" /> },
         { href: "/ask", titleKey: "n_ask", icon: <ChatIcon className="h-5 w-5" /> },
         { href: "/explore", titleKey: "e_title", icon: <BookIcon className="h-5 w-5" /> },
         { href: "/health-days", titleKey: "n_healthdays", icon: <CalendarIcon className="h-5 w-5" /> },
@@ -229,6 +237,7 @@ function MoreSheet({
         // their status and next step without already knowing the URL.
         { href: "/provider/status", titleKey: "pr_nav_application", icon: <ClipboardListIcon className="h-5 w-5" /> },
         { href: "/provider", titleKey: "pv_title", icon: <StethoscopeIcon className="h-5 w-5" /> },
+        { href: "/provider/consultations", titleKey: "vc_consultations", icon: <CameraIcon className="h-5 w-5" /> },
         { href: "/admin/providers", titleKey: "apr_title", icon: <SettingsIcon className="h-5 w-5" /> },
         { href: "/admin/provider-applications", titleKey: "aa_title", icon: <FileTextIcon className="h-5 w-5" /> },
         { href: "/admin", titleKey: "ad_title", icon: <SettingsIcon className="h-5 w-5" /> },

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Button, Field, inputClass } from "@/components/app-ui";
 import { AlertIcon, ShieldIcon, GoogleIcon, AppleIcon } from "@/components/icons";
+import { useHydrated } from "@/lib/hydration";
 import { useT } from "@/lib/i18n";
 import { readLocal, writeLocal } from "@/lib/storage";
 import { isCloudEnabled } from "@/lib/supabase/client";
@@ -104,19 +105,37 @@ export function AuthField({
   label,
   error,
   hint,
+  errorId,
   className = "",
   ...props
-}: { label: string; error?: string | null; hint?: string; className?: string } & Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "className"
->) {
+}: {
+  label: string;
+  error?: string | null;
+  hint?: string;
+  errorId?: string;
+  className?: string;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "className">) {
   return (
-    <Field label={label} error={error} hint={hint}>
-      <input {...props} className={`${inputClass} min-h-11 ${className}`} />
+    <Field label={label} error={error} hint={hint} errorId={errorId}>
+      <input
+        {...props}
+        aria-invalid={props["aria-invalid"] ?? (error ? true : undefined)}
+        aria-describedby={props["aria-describedby"] ?? (error ? errorId : undefined)}
+        className={`${inputClass} min-h-11 ${className}`}
+      />
     </Field>
   );
 }
 
+/**
+ * Submit is disabled until this form has hydrated.
+ *
+ * The static export ships the form markup before any React handler exists. A
+ * tap in that window submits the form natively, which puts the password and
+ * every other field into the URL as a GET query string. Keeping the only submit
+ * button disabled until hydration completes makes that impossible, including
+ * implicit Enter-key submission through the disabled default button.
+ */
 export function AuthSubmit({
   pending,
   pendingLabel,
@@ -126,8 +145,10 @@ export function AuthSubmit({
   pendingLabel: string;
   children: ReactNode;
 }) {
+  const hydrated = useHydrated();
+
   return (
-    <Button type="submit" full disabled={pending}>
+    <Button type="submit" full disabled={!hydrated || pending}>
       {pending ? pendingLabel : children}
     </Button>
   );

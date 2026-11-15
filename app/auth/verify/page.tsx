@@ -226,21 +226,28 @@ function VerifyContent() {
       const { error, data } = await supabase.auth.verifyOtp({
         email: trimmed,
         token: code.join(""),
+        /*
+         * Installed auth-js (2.117.2) documents `email` as the current type
+         * for an OTP sent during sign-up or sign-in, and marks `signup` and
+         * `magiclink` as deprecated for verifyOtp. `resend` below still uses
+         * `signup` because that is the only email type it accepts. Check the
+         * installed SDK before changing either value.
+         */
         type: "email",
       });
       if (error) {
         setFormError(error.message);
         return;
       }
-      if (data.user) {
-        finishConfirmation(data.user.id);
+      if (!data.user) {
+        // A response without an identity is not proof that the account was
+        // confirmed; fail closed rather than claiming success.
+        setFormError(
+          t("auth_verify_failed", "That code did not work. Try the link in your email or request a new code."),
+        );
         return;
       }
-      clearAuthPending();
-      push(t("auth_confirmed", "Email confirmed"), "success");
-      setVerified(true);
-      // Auto-redirect after showing success
-      setTimeout(() => router.push("/app"), 1500);
+      finishConfirmation(data.user.id);
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : t("auth_verify_failed", "That code did not work."),
@@ -373,7 +380,16 @@ function VerifyContent() {
                   </Button>
 
                   <p className="text-center text-[11px] leading-relaxed text-slate-400">
-                    {t("auth_verify_hint", "Already confirmed? Sign in with your email and password.")}
+                    <Link
+                      href={
+                        email.trim()
+                          ? `/auth/sign-in?email=${encodeURIComponent(email.trim())}`
+                          : "/auth/sign-in"
+                      }
+                      className="tap font-semibold text-brand-700 underline"
+                    >
+                      {t("auth_verify_hint", "Already confirmed? Sign in with your email and password.")}
+                    </Link>
                   </p>
                 </>
               )}

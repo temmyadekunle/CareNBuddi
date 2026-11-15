@@ -8,7 +8,6 @@ import {
   AuthIntro,
   AuthSubmit,
   AuthSwitch,
-  OfflineNote,
   SocialLoginButtons,
   writeAuthPending,
 } from "@/components/auth-form";
@@ -17,8 +16,8 @@ import { UserIcon } from "@/components/icons";
 import { useT } from "@/lib/i18n";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
-import { KEYS, seedUsers, uid, useSession, useStoredCollection } from "@/lib/storage";
-import type { Role, User } from "@/lib/types";
+import { useSession } from "@/lib/storage";
+import type { Role } from "@/lib/types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_PATTERN = /^\+?[\d][\d\s()-]{6,19}$/;
@@ -38,8 +37,7 @@ function SignUpInner() {
   const { push } = useToast();
   const router = useRouter();
   const cloud = useCloud();
-  const [session, setSession] = useSession();
-  const [users, setUsers] = useStoredCollection(KEYS.users, seedUsers);
+  const [session] = useSession();
 
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -118,86 +116,51 @@ function SignUpInner() {
   };
 
   /**
-   * Creates a brand-new local profile for this device.
+   * Account creation requires the CareNBuddi authentication service.
    *
-   * This previously also looked the email up first and, if it matched, adopted
-   * that existing account - overwriting its phone number and signing the person
-   * in as the account holder with no password. That is the same vulnerability
-   * as the offline sign-in path, so the branch is gone: a duplicate email is
-   * now refused outright rather than silently claimed.
-   *
-   * What this is NOT: a verified account. The password collected by the form is
-   * never stored or checked, so this profile cannot be signed back into after a
-   * sign-out. That is deliberate - failing closed beats accepting any password.
+   * The old offline branch wrote a local profile, set it as the session and
+   * claimed the account existed. No password was ever stored or checked, so
+   * nobody could sign back into it after a sign-out - the account was unusable,
+   * and before that fix the same branch could adopt an existing account. The
+   * branch is gone: without cloud authentication the screen refuses rather
+   * than creating an account it cannot secure.
    */
-  const signUpOffline = (): { ok: boolean; needsConfirmation: boolean } => {
-    const key = email.trim().toLowerCase();
-    const existing = users.find((u) => u.email.toLowerCase() === key);
-
-    if (existing) {
-      setFormError(
-        t(
-          "auth_signup_exists",
-          "An account already uses that email. We cannot confirm who you are, so we cannot add you to it.",
-        ),
-      );
-      return { ok: false, needsConfirmation: false };
-    }
-
-    const user: User = {
-      id: uid(),
-      name: name.trim(),
-      email: key,
-      phone: phone.trim() || undefined,
-      role,
-      lang: session.lang,
-      createdAt: new Date().toISOString(),
-    };
-    setUsers((prev) => [...prev, user]);
-    setSession((prev) => ({ ...prev, userId: user.id }));
-    return { ok: true, needsConfirmation: false };
-  };
-
   const submit = async () => {
     setFormError(null);
+    if (!cloudMode) {
+      setFormError(
+        t(
+          "auth_signup_unavailable",
+          "Account creation needs the CareNBuddi authentication service, which is not connected in this build. No account was created.",
+        ),
+      );
+      return;
+    }
     if (!validate()) return;
     setPending(true);
     try {
-      if (cloudMode) {
-        const { needsConfirmation } = await cloud.signUp(email, password, {
-          name: name.trim(),
-          phone: phone.trim(),
-          role,
-          lang: session.lang,
-          next: next ?? undefined,
-        });
-        if (needsConfirmation) {
-          writeAuthPending(email.trim());
-          push(t("auth_check_email", "Check your email to confirm your account"), "info");
-          router.push("/auth/verify");
-        } else {
-          push(t("auth_account_created", "Account created"), "success");
-          // Honour an explicit same-site destination first, then fall back to
-          // the role-aware landing so a provider lands in onboarding, not the
-          // patient home screen.
-          if (next) {
-            router.push(next);
-            return;
-          }
-          router.push(role === "provider" ? "/provider/onboarding" : "/app");
-        }
-      } else {
-        const { ok } = signUpOffline();
-        if (!ok) return;
-        // Not "you are signed in" and not "account created" - neither is true.
-        // This is a local profile on this device that no one can sign back into.
+      const { needsConfirmation } = await cloud.signUp(email, password, {
+        name: name.trim(),
+        phone: phone.trim(),
+        role,
+        lang: session.lang,
+        next: next ?? undefined,
+      });
+      if (needsConfirmation) {
+        writeAuthPending(email.trim());
         push(
           t(
-            "auth_local_profile_created",
-            "Profile saved on this device",
+            "auth_check_email",
+            "If this address needs confirming, check your inbox.",
           ),
           "info",
         );
+        router.push("/auth/verify");
+      } else {
+        push(t("auth_account_created", "Account created"), "success");
+        // Honour an explicit same-site destination first, then fall back to
+        // the role-aware landing so a provider lands in onboarding, not the
+        // patient home screen.
         if (next) {
           router.push(next);
           return;
@@ -312,8 +275,6 @@ function SignUpInner() {
           {cloudMode && <SocialLoginButtons />}
 
         </Card>
-
-        {!cloudMode && <OfflineNote />}
 
         <AuthSwitch
           question={t("auth_have_account", "Already have an account?")}

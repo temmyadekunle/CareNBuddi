@@ -173,10 +173,16 @@ test("AdminProviderApplicationsPage: no hook call sits after the first statement
 
   // Sanity so the invariant cannot pass on a vacuously empty scan.
   const names = new Set(hookCalls.map((h) => h.name));
-  assert.ok(hookCalls.length >= 3, `expected the wrapper's own hooks, got: ${[...names].join(", ")}`);
+  assert.ok(hookCalls.length >= 2, `expected the wrapper's own hooks, got: ${[...names].join(", ")}`);
   assert.ok(names.has("useT"), "wrapper calls useT");
-  assert.ok(names.has("useSession"), "wrapper calls useSession");
-  assert.ok(names.has("useStoredCollection"), "wrapper calls useStoredCollection");
+  assert.ok(
+    names.has("useAccessIdentity"),
+    "wrapper resolves its role from the trusted identity source",
+  );
+  assert.ok(
+    names.has("useSession") === false,
+    "the wrapper must not read the local session directly for authorisation",
+  );
   assert.ok(names.has("useState") === false, "wrapper owns no dashboard state");
   assert.ok(returns.length >= 2, "wrapper has a gate return and a dashboard render");
 

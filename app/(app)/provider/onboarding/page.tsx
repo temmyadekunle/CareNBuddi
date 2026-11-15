@@ -15,6 +15,7 @@ import {
   useToast,
 } from "@/components/app-ui";
 import { CheckIcon } from "@/components/icons";
+import { useHydrated } from "@/lib/hydration";
 import { useT } from "@/lib/i18n";
 import { NIGERIAN_STATES } from "@/lib/states";
 import {
@@ -92,7 +93,8 @@ function useApplication() {
 
 export default function ProviderOnboardingPage() {
   const t = useT();
-  const { session, me, app } = useApplication();
+  const hydrated = useHydrated();
+  const { session, me, app, save } = useApplication();
 
   // Derived rather than stored in state: until the applicant taps a step we
   // show the first thing still outstanding, so saved progress is respected.
@@ -116,10 +118,39 @@ export default function ProviderOnboardingPage() {
     );
   }
 
-  if (!app || step === null) {
+  /* The store is read synchronously, but the static export hydrates with the
+     seed snapshot first. Without this gate a returning applicant would see
+     the no-draft card for one frame before their draft appeared. */
+  if (!hydrated) {
     return (
       <Screen>
         <p className="mt-6 text-center text-sm text-slate-500">{t("app.loading", "Loading…")}</p>
+      </Screen>
+    );
+  }
+
+  /* A confirmed provider may have no draft on this device: the confirmation
+     email was opened elsewhere, the address already had an account, or the
+     draft write failed. Show an explicit way forward instead of an endless
+     "Loading…" screen. Creating the draft is a local draft only; submission
+     still happens from the review step. */
+  if (!app) {
+    return (
+      <Screen>
+        <Card className="mt-6 space-y-3 text-center">
+          <p className="text-sm text-slate-600">
+            {t("pr_no_draft", "You are signed in, but this device has no saved provider application yet.")}
+          </p>
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            {t(
+              "pr_no_draft_hint",
+              "If you started on another device, continue from there or start again here.",
+            )}
+          </p>
+          <Button full onClick={() => save({})}>
+            {t("pr_start_application", "Start your application")}
+          </Button>
+        </Card>
       </Screen>
     );
   }

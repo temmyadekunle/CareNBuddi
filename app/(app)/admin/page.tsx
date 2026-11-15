@@ -24,6 +24,10 @@ import {
   UserIcon,
 } from "@/components/icons";
 import { MiniBars } from "@/components/health-charts";
+import { CommunityModeration } from "@/components/admin/community-moderation";
+import { ConsultationOversight } from "@/components/admin/consultation-oversight";
+import { useAccessIdentity } from "@/lib/access-identity";
+import { isCloudEnabled } from "@/lib/supabase/client";
 import { PROVIDER_CATEGORIES } from "@/lib/content";
 import { useT } from "@/lib/i18n";
 import {
@@ -34,13 +38,24 @@ import {
   seedReports,
   seedTopics,
   seedUsers,
-  useSession,
   useStoredCollection,
   type ContentItem,
 } from "@/lib/storage";
 import type { ProviderRequest, User } from "@/lib/types";
 
-type Tab = "overview" | "content" | "verification" | "users" | "analytics" | "reports";
+type Tab =
+  | "overview"
+  | "content"
+  | "verification"
+  | "users"
+  | "analytics"
+  | "reports"
+  | "community"
+  | "consultations";
+
+/** Tabs whose data lives in this browser only and must not appear as
+ *  platform-wide management when real accounts are in use. */
+const DEMO_TABS: Tab[] = ["content", "verification", "users", "analytics", "reports"];
 
 const CONTENT_CATEGORIES = [
   "General Health",
@@ -59,10 +74,20 @@ const REQ_TONE = { pending: "amber", approved: "green", rejected: "rose" } as co
 
 export default function AdminPage() {
   const t = useT();
-  const [session] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
-  const me = users.find((u) => u.id === session.userId);
+  const cloudMode = isCloudEnabled;
+  const { user: me, pending } = useAccessIdentity();
   const [tab, setTab] = useState<Tab>("overview");
+
+  /* The role comes from the server profile when cloud auth is configured; the
+     local account list is only the demo identity source (see
+     lib/access-identity.ts). Hold the first paint until it has resolved. */
+  if (pending) {
+    return (
+      <Screen>
+        <SectionHeader title={t("ad_title", "Admin console")} subtitle={t("ad_sub", "Moderate the platform.")} />
+      </Screen>
+    );
+  }
 
   if (me?.role !== "admin") {
     return (
@@ -87,34 +112,89 @@ export default function AdminPage() {
     );
   }
 
+  /* Screens backed by this browser's demo data are not platform management.
+     Showing them beside real moderation would present seed rows as live
+     figures, so cloud mode exposes only server-backed surfaces. */
+  const tabs = cloudMode
+    ? [
+        { value: "overview" as const, label: t("ad_overview", "Overview") },
+        { value: "community" as const, label: t("ad_community", "Community") },
+        { value: "consultations" as const, label: t("vc_consultations", "Consultations") },
+      ]
+    : [
+        { value: "overview" as const, label: t("ad_overview", "Overview") },
+        { value: "content" as const, label: t("ad_content", "Content") },
+        { value: "verification" as const, label: t("ad_verification", "Verification") },
+        { value: "users" as const, label: t("ad_users", "Users") },
+        { value: "analytics" as const, label: t("ad_analytics", "Analytics") },
+        { value: "reports" as const, label: t("ad_reports", "Reports") },
+        { value: "community" as const, label: t("ad_community", "Community") },
+        { value: "consultations" as const, label: t("vc_consultations", "Consultations") },
+      ];
+
   return (
     <Screen>
       <SectionHeader title={t("ad_title", "Admin console")} subtitle={t("ad_sub", "Moderate the platform.")} />
 
       <div className="mt-3">
-        <Tabs<Tab>
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "overview", label: t("ad_overview", "Overview") },
-            { value: "content", label: t("ad_content", "Content") },
-            { value: "verification", label: t("ad_verification", "Verification") },
-            { value: "users", label: t("ad_users", "Users") },
-            { value: "analytics", label: t("ad_analytics", "Analytics") },
-            { value: "reports", label: t("ad_reports", "Reports") },
-          ]}
-        />
+        <Tabs<Tab> value={tab} onChange={setTab} tabs={tabs} />
       </div>
 
       <div className="mt-4">
-        {tab === "overview" && <Overview />}
-        {tab === "content" && <ContentManager />}
-        {tab === "verification" && <Verification />}
-        {tab === "users" && <UserManager />}
-        {tab === "analytics" && <Analytics />}
-        {tab === "reports" && <ReportCenter />}
+        {tab === "overview" && (cloudMode ? <CloudOverview /> : <Overview />)}
+        {tab === "content" && (cloudMode ? <DemoUnavailable /> : <ContentManager />)}
+        {tab === "verification" && (cloudMode ? <DemoUnavailable /> : <Verification />)}
+        {tab === "users" && (cloudMode ? <DemoUnavailable /> : <UserManager />)}
+        {tab === "analytics" && (cloudMode ? <DemoUnavailable /> : <Analytics />)}
+        {tab === "reports" && (cloudMode ? <DemoUnavailable /> : <ReportCenter />)}
+        {tab === "community" && <CommunityModeration />}
+        {tab === "consultations" && <ConsultationOversight />}
       </div>
     </Screen>
+  );
+}
+
+function CloudOverview() {
+  const t = useT();
+  return (
+    <div className="space-y-2.5">
+      <Card>
+        <h2 className="text-sm font-semibold text-slate-900">
+          {t("ad_cloud_tools", "Administrator tools")}
+        </h2>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          {t(
+            "ad_cloud_tools_d",
+            "Provider applications are reviewed against the records stored by CareNBuddi cloud. Decisions are recorded by the database, not this browser.",
+          )}
+        </p>
+        <Link href="/admin/provider-applications" className="mt-3 block min-h-11">
+          <Button full>{t("ad_review_applications", "Review provider applications")}</Button>
+        </Link>
+      </Card>
+      <Card>
+        <p className="text-xs leading-relaxed text-slate-500">
+          {t(
+            "ad_demo_tools_off",
+            "Local demo tools for content, users, reports and facility requests are hidden while cloud authentication is enabled, so seed data is never shown as a live platform total.",
+          )}
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function DemoUnavailable() {
+  const t = useT();
+  return (
+    <Card>
+      <p className="text-xs leading-relaxed text-slate-500">
+        {t(
+          "ad_demo_only",
+          "This tool only changes demo data on this device. It is unavailable while CareNBuddi cloud authentication is enabled.",
+        )}
+      </p>
+    </Card>
   );
 }
 
@@ -130,7 +210,6 @@ function Overview() {
   const cards = [
     { label: t("ad_users", "Users"), value: users.length, icon: <UserIcon className="h-4 w-4" /> },
     { label: t("ad_providers", "Providers"), value: providers.length, icon: <StethoscopeIcon className="h-4 w-4" /> },
-    { label: t("ad_verified_p", "Verified"), value: providers.filter((p) => p.verified).length, icon: <ShieldIcon className="h-4 w-4" /> },
     { label: t("ad_topics", "Articles"), value: topics.length, icon: <FileTextIcon className="h-4 w-4" /> },
     {
       label: t("ad_verify_pending", "Verifications pending"),
@@ -285,15 +364,19 @@ function Verification() {
         state: req.state,
         lga: req.lga,
         address: req.address || "Address pending",
-        phone: req.phone,
         hours: "Mon–Sat, 8am–5pm",
-        verified: true,
-        description: t("ad_v_approved_desc", "Verified CareNBuddi partner facility."),
+        description: t(
+          "ad_v_approved_desc",
+          "Demo directory entry added from a local registration request.",
+        ),
         emergency: false,
       },
     ]);
     setRequests((prev) => prev.map((r) => (r.id === req.id ? { ...r, status: "approved" } : r)));
-    push(t("ad_v_approved_toast", "Facility verified"), "success");
+    push(
+      t("ad_v_approved_toast", "Added to the demo directory on this device"),
+      "success",
+    );
   };
 
   const reject = (id: string) =>
@@ -334,7 +417,7 @@ function Verification() {
           {req.status === "pending" && (
             <div className="mt-3 flex gap-2">
               <Button full onClick={() => approve(req)}>
-                {t("ad_v_verify", "Verify")}
+                {t("ad_v_add_demo", "Add to demo directory")}
               </Button>
               <Button full tone="secondary" onClick={() => reject(req.id)}>
                 {t("ad_v_reject", "Reject")}

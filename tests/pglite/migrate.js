@@ -9,9 +9,11 @@
  */
 const { PGlite } = require("@electric-sql/pglite");
 const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const { join, resolve } = require("node:path");
 
-const REPO = process.env.REPO ?? "C:/Users/USER/AppData/Local/Temp/opencode/carenbuddi-fix";
+/* Default to this checkout, so the harness runs on a clean clone. REPO is
+   still honoured for running against a different working tree. */
+const REPO = process.env.REPO ?? resolve(__dirname, "..", "..");
 
 /** Supabase-compatible auth stub. */
 const AUTH_STUB = `

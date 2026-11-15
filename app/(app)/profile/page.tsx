@@ -824,11 +824,11 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center py-2 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/mark.png"
+            src="/brand/symbol.png"
             alt=""
-            width={64}
-            height={64}
-            className="h-16 w-16 rounded-2xl"
+            width={512}
+            height={512}
+            className="h-16 w-16"
           />
           <p className="mt-3 text-base font-bold text-slate-900">CareNBuddi</p>
           <p className="mt-0.5 text-sm font-semibold text-brand-700">

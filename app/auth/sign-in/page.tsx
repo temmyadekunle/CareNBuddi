@@ -12,6 +12,7 @@ import { isCloudEnabled } from "@/lib/supabase/client";
 import { useCloud } from "@/lib/supabase/cloud";
 import { KEYS, seedUsers, useStoredCollection } from "@/lib/storage";
 import { landingPathFor } from "@/lib/post-auth";
+import { classifySignInFailure } from "@/lib/signin-feedback";
 import { useProviderApplications } from "@/lib/use-provider-application";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -118,8 +119,22 @@ function SignInInner() {
       const account = users.find((u) => u.email.toLowerCase() === key) ?? null;
       router.push(landingPathFor(account, forUser(account?.id ?? null)));
     } catch (error) {
+      // Supabase's raw "Invalid login credentials" is unhelpful and repeats a
+      // value that may be wrong in two places. Both it and "Email not
+      // confirmed" get the same neutral advice, which never says whether the
+      // address has an account. Genuine reachability failures get their own
+      // message so the user does not reset a password over a dropped network.
+      const message = error instanceof Error ? error.message : "";
       setFormError(
-        error instanceof Error ? error.message : t("a_bad_login", "Email or password is incorrect."),
+        classifySignInFailure(message) === "network"
+          ? t(
+              "auth_signin_network",
+              "We could not reach CareNBuddi. Check your connection and try again.",
+            )
+          : t(
+              "auth_signin_bad",
+              "Email or password is incorrect. Check both and try again. If you have not confirmed your email, open the confirmation link we sent.",
+            ),
       );
     } finally {
       setPending(false);

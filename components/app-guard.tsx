@@ -3,35 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
-import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
 import { Button, Card, Screen } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
 import { LogoMark } from "@/components/logo";
 
-import { useCloud } from "@/lib/supabase/cloud";
-import { resolveSessionUser, routeAccess } from "@/lib/auth-guard";
+import { useAccessIdentity } from "@/lib/access-identity";
+import { routeAccess } from "@/lib/auth-guard";
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { ready } = useCloud();
-  const [session] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const { user: me, pending } = useAccessIdentity();
   const gate = useGateStrings();
 
-  /* Resolve the session id against the real account list before deciding
-     anything. A userId typed into local storage resolves to `undefined`, so it
-     cannot stand in for a session on its own. This is still a client-side
-     check: it stops the obvious "edit local storage" case, and is not a
-     substitute for server-side authorisation. */
-  const me = resolveSessionUser(users, session.userId);
+  /* Resolve the identity from a trusted source before deciding anything. In
+     cloud mode that is the Supabase session plus the server profile role, so a
+     userId or role typed into local storage cannot stand in for an account or
+     grant an administrator console. This is still a client-side check: it
+     stops the obvious tampering case and is not a substitute for server-side
+     authorisation. */
   const decision = routeAccess({ pathname, user: me });
 
   /* The very first render races the cloud session restore: `adoptCloudUser`
      has not yet merged the cloud account into `healthlink:users`, so `me`
      can be `undefined` for a signed-in user and the guard would briefly show
      "Sign in to continue" before flashing the real page. Hold the decision
-     until the CloudProvider has finished its initial restore (it resolves
-     from local storage even offline, so this cannot hang). */
-  if (!ready) {
+     until the access identity has finished resolving (it resolves from local
+     storage even offline, so this cannot hang). */
+  if (pending) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center" aria-hidden="true">
         <LogoMark className="h-12 w-12 opacity-60" />

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Segmented } from "@/components/app-ui";
 import { EmergencyMap, type MapPoint } from "@/components/emergency-map";
-import { PinIcon, PhoneIcon, ShieldIcon } from "@/components/icons";
+import { PinIcon } from "@/components/icons";
 import {
   PROVIDER_CATEGORY_LABELS,
   directionsUrl,
@@ -360,22 +360,9 @@ export function NearbyEmergency() {
                     {distance !== null && (
                       <Badge tone="rose">{formatDistance(distance)}</Badge>
                     )}
-                    {facility.verified && (
-                      <Badge tone="brand">
-                        <ShieldIcon className="mr-1 h-3 w-3" />
-                        {t("f_verified", "Verified")}
-                      </Badge>
-                    )}
                   </div>
                 </div>
                 <div className="mt-2.5 flex gap-2">
-                  <a
-                    href={`tel:${facility.phone}`}
-                    className="tap inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3 text-sm font-semibold text-white active:bg-rose-700"
-                  >
-                    <PhoneIcon className="h-4 w-4" />
-                    {t("er_call", "Call")}
-                  </a>
                   <a
                     href={directionsUrl(facility)}
                     target="_blank"
@@ -386,6 +373,12 @@ export function NearbyEmergency() {
                     {t("er_directions", "Directions")}
                   </a>
                 </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                  {t(
+                    "er_no_phone",
+                    "No phone number is published for this listing. In an emergency, call the national emergency number listed on this screen.",
+                  )}
+                </p>
               </div>
             );
           })}

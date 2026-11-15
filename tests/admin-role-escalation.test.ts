@@ -29,6 +29,9 @@ const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8"
  */
 function sql(source: string): string {
   return source
+    // A CRLF checkout leaves a \r at the end of every line, and `$` does not
+    // match before it, so `--` comments would survive the strip below.
+    .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((line) => line.replace(/--.*$/, ""))
     .join("\n");
@@ -167,7 +170,9 @@ test("the local user mirror does not take a role from client metadata", () => {
   const fn = cloud.slice(cloud.indexOf("function localUserFor"));
   const body = fn.slice(0, fn.indexOf("\n}", fn.indexOf("function localUserFor")));
   assert.doesNotMatch(body, /user_metadata\?\.role/);
-  assert.match(body, /role: profile\?\.role \?\? "consumer"/);
+  // `previous` is the local mirror written by an earlier profile-backed
+  // adoption, so the fallback chain still never trusts client metadata.
+  assert.match(body, /role: profile\?\.role \?\? previous\?\.role \?\? "consumer"/);
 });
 
 /* ----------------------------------- no UI offers an administrator */

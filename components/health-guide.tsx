@@ -196,10 +196,7 @@ export function HealthGuide() {
       const matches = providers
         .filter((p) => p.category === reply.category)
         .filter((p) => !reply.state || p.state === reply.state)
-        .sort(
-          (a, b) =>
-            Number(b.verified) - Number(a.verified) || (b.rating ?? 0) - (a.rating ?? 0),
-        );
+        .sort((a, b) => a.name.localeCompare(b.name));
 
       if (matches.length === 0) {
         trackGuideEvent("no_matching_provider_found");

@@ -20,6 +20,7 @@ const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8"
 const signIn = read("../app/auth/sign-in/page.tsx");
 const signUp = read("../app/auth/sign-up/page.tsx");
 const account = read("../app/(app)/account/page.tsx");
+const providerRegister = read("../app/(app)/provider/register/page.tsx");
 
 /* -------------------------------------------------- the removed path */
 
@@ -58,15 +59,43 @@ test("sign-in refuses rather than accepting any password", () => {
 
 test("sign-up cannot claim an existing account", () => {
   // Duplicating an email used to overwrite the victim's phone number and adopt
-  // their account. It must now be refused.
+  // their account. The offline branch that did so is gone entirely.
   assert.doesNotMatch(signUp, /userId:\s*existing\.id/);
-  assert.match(signUp, /auth_signup_exists/);
+  assert.doesNotMatch(signUp, /signUpOffline/);
+  assert.doesNotMatch(signUp, /setUsers\(/);
 });
 
-test("sign-up does not claim a secure account was created", () => {
-  // "You are signed in" / "Account created" are both false offline.
-  assert.doesNotMatch(signUp, /alreadyRegistered/);
-  assert.match(signUp, /auth_local_profile_created/);
+test("sign-up refuses when cloud authentication is unavailable", () => {
+  // Offline registration created a profile no one could sign back into: the
+  // password was collected and discarded. It must fail instead.
+  assert.match(signUp, /!cloudMode/);
+  assert.match(signUp, /auth_signup_unavailable/);
+  assert.doesNotMatch(signUp, /auth_local_profile_created/);
+  assert.doesNotMatch(signUp, /setSession\(/);
+});
+
+test("the real sign-up path keeps email confirmation and session handoff", () => {
+  assert.match(signUp, /cloud\.signUp\(email, password/);
+  assert.match(signUp, /needsConfirmation/);
+  assert.match(signUp, /writeAuthPending/);
+  assert.match(signUp, /auth\/verify/);
+});
+
+test("provider registration refuses when cloud authentication is unavailable", () => {
+  // The provider form had the same offline branch: it minted a local account,
+  // set it as the session and never stored a password, so the account could
+  // not be signed back into. It must fail like patient sign-up does.
+  assert.match(providerRegister, /!cloudMode/);
+  assert.match(providerRegister, /pr_signup_unavailable/);
+  assert.doesNotMatch(providerRegister, /const user: User = \{/);
+  assert.doesNotMatch(providerRegister, /setUsers\(\(prev\) => \[\.\.\.prev, user\]\)/);
+});
+
+test("sign-out ends the cloud session, not just device data", () => {
+  // Calling endSession alone left the Supabase session intact, so the account
+  // stayed signed in and the next page load restored it.
+  assert.match(account, /cloud\.signOut\(\)/);
+  assert.match(account, /if \(cloud\.enabled\)/);
 });
 
 /* --------------------------- demonstration accounts and fake codes */

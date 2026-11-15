@@ -20,10 +20,7 @@ import {
   ChevronLeftIcon,
   ClockIcon,
   EmergencyIcon,
-  MessageIcon,
-  PhoneIcon,
   PinIcon,
-  ShieldIcon,
   StethoscopeIcon,
 } from "@/components/icons";
 import { BookSheet } from "@/components/book-sheet";
@@ -32,7 +29,6 @@ import { formatDay } from "@/lib/appointments";
 import {
   PROVIDER_CATEGORY_LABELS,
   directionsUrl,
-  whatsappUrl,
 } from "@/lib/content";
 import { useLang, useT } from "@/lib/i18n";
 import {
@@ -108,7 +104,12 @@ export default function ProviderProfilePage() {
       createdAt: new Date().toISOString(),
     };
     setBookings((prev) => [...prev, booking]);
-    push(t("fc_request_sent", "Visit request sent"));
+    push(
+      t(
+        "fc_request_saved",
+        "Request saved on this device. The facility has not been contacted.",
+      ),
+    );
     setSent(true);
   };
 
@@ -139,15 +140,6 @@ export default function ProviderProfilePage() {
             </h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Badge tone="slate">{catLabel}</Badge>
-              {provider.verified && (
-                <Badge tone="brand">
-                  <ShieldIcon className="mr-1 h-3 w-3" />
-                  {t("f_verified", "Verified")}
-                </Badge>
-              )}
-              {provider.rating !== undefined && (
-                <Badge tone="amber">★ {provider.rating.toFixed(1)}</Badge>
-              )}
             </div>
           </div>
         </div>
@@ -177,29 +169,11 @@ export default function ProviderProfilePage() {
 
       <Button full className="mt-3" onClick={() => setBookingOpen(true)}>
         <CalendarIcon className="h-4 w-4" />
-        {t("fc_book_appointment", "Book an appointment")}
+        {t("fc_book_appointment", "Request a visit")}
       </Button>
 
       <Card padded={false} className="mt-3 overflow-hidden">
         <div className="divide-y divide-slate-100">
-          <ListRow
-            onClick={() => {
-              window.location.href = `tel:${provider.phone}`;
-            }}
-            icon={<PhoneIcon className="h-5 w-5" />}
-            tone="brand"
-            title={t("f_call", "Call")}
-            subtitle={provider.phone}
-            chevron={false}
-          />
-          <ListRow
-            href={whatsappUrl(provider)}
-            icon={<MessageIcon className="h-5 w-5" />}
-            tone="green"
-            title={t("f_whatsapp", "WhatsApp")}
-            subtitle={t("fc_whatsapp_d", "Ask a question on WhatsApp")}
-            chevron={false}
-          />
           <ListRow
             href={directionsUrl(provider)}
             icon={<PinIcon className="h-5 w-5" />}
@@ -209,6 +183,12 @@ export default function ProviderProfilePage() {
             chevron={false}
           />
         </div>
+        <p className="border-t border-slate-100 px-4 py-3 text-[11px] leading-relaxed text-slate-500">
+          {t(
+            "fc_no_contact",
+            "No phone or WhatsApp number is published for this listing. CareNBuddi has not verified contact details for it, so it does not show any.",
+          )}
+        </p>
       </Card>
 
       {provider.emergency && (
@@ -249,18 +229,24 @@ export default function ProviderProfilePage() {
         <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
           {t(
             "fc_request_d",
-            "Send a request and the facility will contact you to arrange the visit.",
+            "Save a request on this device. This does not contact the facility, and no appointment is confirmed until the facility responds through a channel CareNBuddi can verify.",
           )}
         </p>
 
         {sent ? (
           <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4">
             <p className="text-sm font-semibold text-green-900">
-              ✓ {t("f_book_sent", "Visit request sent")}
+              ✓ {t("f_book_sent", "Request saved on this device")}
             </p>
             <p className="mt-1 break-words text-xs text-green-800">
               {provider.name} · {phone} ·{" "}
               {date ? formatDay(date) : t("fc_no_date", "No preferred date")}
+            </p>
+            <p className="mt-2 break-words text-[11px] leading-relaxed text-green-800">
+              {t(
+                "fc_request_local_note",
+                "The facility has not been contacted. This request exists only on this device.",
+              )}
             </p>
           </div>
         ) : (

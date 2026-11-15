@@ -27,7 +27,10 @@ export default function SupportPage() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem(currentScopedKey("healthlink:support-active"));
-    if (saved) setActiveConversation(saved);
+    if (!saved) return;
+    /* Deferred past the effect so hydration matches the server-rendered tree
+       before the saved conversation is selected. */
+    queueMicrotask(() => setActiveConversation(saved));
   }, []);
 
   useEffect(() => {

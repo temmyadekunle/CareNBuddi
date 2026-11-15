@@ -8,8 +8,12 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: "Product",
     links: [
+      { label: "The App", href: "#app" },
       { label: "Features", href: "#features" },
       { label: "How It Works", href: "#how-it-works" },
+      { label: "What's Ahead", href: "#whats-ahead" },
+      { label: "Community", href: "#community" },
+      { label: "Health Academy", href: "#academy" },
       { label: "For Patients", href: "#for-patients" },
       { label: "For Providers", href: "#for-providers" },
     ],
@@ -18,8 +22,10 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     title: "Company",
     links: [
       { label: "Why CareNBuddi", href: "#why" },
+      { label: "About CareNBuddi", href: "#about" },
       { label: "Who we are", href: "#who-we-are" },
-      { label: "Our vision", href: "#our-vision" },
+      { label: "Our bigger vision", href: "#our-vision" },
+      { label: "Meet the team", href: "#team" },
       { label: "FAQ", href: "#faq" },
     ],
   },
@@ -68,7 +74,7 @@ const SHARE_TARGETS = [
 /** Add real accounts here when they exist. */
 const PROFILE_LINKS: { label: string; href: string }[] = [];
 
-const SHARE_TEXT = "CareNBuddi — Your Health, Your Buddi. Find care, book appointments and manage your health in one place.";
+const SHARE_TEXT = "CareNBuddi — Your Health, Your Buddi. Find care, keep your health information organised and manage your health in one place.";
 
 export function SiteFooter() {
   const [copied, setCopied] = useState(false);
@@ -90,7 +96,7 @@ export function SiteFooter() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
             <Link href="/" aria-label="CareNBuddi home">
-              <Logo className="h-[46px] w-auto md:h-[60px]" />
+              <Logo className="h-[46px] w-auto lg:h-[60px]" />
             </Link>
             <p className="mt-3 max-w-xs text-sm text-slate-600">Your Health, Your Buddi.</p>
             <a

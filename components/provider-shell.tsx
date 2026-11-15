@@ -7,25 +7,32 @@ import { useState, type ReactNode } from "react";
 import { Badge, BottomSheet, Button, Card, EmptyState, Screen, SectionHeader } from "./app-ui";
 import {
   BellIcon,
+  CameraIcon,
   ChatIcon,
   ClockIcon,
   StethoscopeIcon,
   UserIcon,
 } from "./icons";
 import { useT } from "@/lib/i18n";
+import { useAccessIdentity } from "@/lib/access-identity";
 import { useProviderApplications } from "@/lib/use-provider-application";
+import { useServerApplication } from "@/lib/server-provider-applications";
+import { isCloudEnabled } from "@/lib/supabase/client";
 import {
   KEYS,
   seedBookings,
   seedProviderRequests,
   seedProviders,
-  seedUsers,
   todayIso,
-  useSession,
   useStoredCollection,
 } from "@/lib/storage";
 import { seedProviderFor } from "@/lib/content";
-import { dashboardCounts, providerIdFor, workspaceAccess } from "@/lib/provider-workspace";
+import {
+  dashboardCounts,
+  providerIdFor,
+  workspaceAccess,
+  type ApplicationSource,
+} from "@/lib/provider-workspace";
 
 /**
  * The chrome shared by every provider screen: the access guard, the section
@@ -50,6 +57,7 @@ export const PROVIDER_SECTIONS = [
   { href: "/provider", key: "pws_dash", fallback: "Dashboard", icon: StethoscopeIcon },
   { href: "/provider/patients", key: "pws_care", fallback: "Patient Care", icon: UserIcon },
   { href: "/provider/practice", key: "pws_practice", fallback: "Practice", icon: ClockIcon },
+  { href: "/provider/consultations", key: "pws_consult", fallback: "Consultations", icon: CameraIcon },
   { href: "/provider/health", key: "pws_myhealth", fallback: "My Health", icon: UserIcon },
   { href: "/provider/community", key: "pws_community", fallback: "Community", icon: ChatIcon },
   { href: "/provider/rapid-response", key: "pws_rapid", fallback: "Rapid Response", icon: BellIcon },
@@ -60,16 +68,23 @@ export const PROVIDER_SECTIONS = [
 const MOBILE_TABS = 4;
 
 export function useProviderContext(): ProviderContext & { access: ReturnType<typeof workspaceAccess> } {
-  const [session] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const { user: me, pending } = useAccessIdentity();
   const [providers] = useStoredCollection(KEYS.providers, seedProviders);
   const [requests] = useStoredCollection(KEYS.providerRequests, seedProviderRequests);
   const [bookings] = useStoredCollection(KEYS.bookings, seedBookings);
-  const { forUser } = useProviderApplications();
+  const localApplications = useProviderApplications();
+  /* With cloud auth configured, only the server's application row can open a
+     workspace. The local draft is a form, never a decision, so it is not used
+     in that mode. Demo mode has no server and keeps its local records. */
+  const serverApplication = useServerApplication(isCloudEnabled ? me?.id ?? null : null);
 
-  const me = users.find((u) => u.id === session.userId);
-  const application = forUser(me?.id ?? null);
-  const access = workspaceAccess({ role: me?.role, application });
+  const application = isCloudEnabled
+    ? serverApplication.application
+    : localApplications.forUser(me?.id ?? null);
+  const source: ApplicationSource = isCloudEnabled ? serverApplication.phase : "local";
+  const access = pending
+    ? "pending"
+    : workspaceAccess({ role: me?.role, application, source });
 
   const providerId = providerIdFor({
     email: me?.email,
@@ -98,6 +113,15 @@ export function ProviderShell({ children }: { children: ReactNode }) {
   const t = useT();
   const ctx = useProviderContext();
 
+  /* The server application read is still in flight. Decide nothing yet. */
+  if (ctx.access === "pending") {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center" aria-hidden="true">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
+      </div>
+    );
+  }
+
   /* Not signed in, or signed in as a patient. */
   if (ctx.access === "not-a-provider") {
     return (
@@ -114,6 +138,36 @@ export function ProviderShell({ children }: { children: ReactNode }) {
             action={
               <Link href="/auth/sign-in" className="inline-block min-h-11">
                 <Button className="min-h-11">{t("a_signin", "Sign in")}</Button>
+              </Link>
+            }
+          />
+        </Card>
+      </Screen>
+    );
+  }
+
+  /* The verification read failed. Fail closed and say why, rather than
+     guessing from local state. */
+  if (ctx.access === "unavailable") {
+    return (
+      <Screen>
+        <SectionHeader
+          title={t("pv_title", "Provider")}
+          subtitle={t("pr_verify_unavailable", "Verification status unavailable")}
+        />
+        <Card className="mt-4">
+          <EmptyState
+            icon={<ClockIcon className="h-6 w-6" />}
+            title={t("pr_verify_unavailable", "Verification status unavailable")}
+            body={t(
+              "pr_verify_unavailable_d",
+              "CareNBuddi could not confirm your provider status, so the professional workspace stays closed. Check your connection and try again.",
+            )}
+            action={
+              <Link href="/provider/status" className="inline-block min-h-11">
+                <Button className="min-h-11">
+                  {t("pr_view_status", "View application status")}
+                </Button>
               </Link>
             }
           />

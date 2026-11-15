@@ -42,7 +42,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 </Link>
               ) : null}
               <Link href="/app" aria-label={t("auth_home", "CareNBuddi home")} className="tap shrink-0">
-                <LogoMark className="h-9 w-9 rounded-xl" />
+                <LogoMark className="h-9 w-9" />
               </Link>
               <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-tight text-slate-900">
                 {t("brand_name", "CareNBuddi")}

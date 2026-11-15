@@ -20,6 +20,15 @@ export const metadata: Metadata = {
   description:
     "Your Health, Your Buddi — Personal Health Navigation System: learn about your health, check your numbers, find appropriate care, connect with providers and stay on track.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/brand/icon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/brand/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/icon-48.png", type: "image/png", sizes: "48x48" },
+      { url: "/brand/apple-touch-icon.png", sizes: "180x180" },
+    ],
+    apple: "/brand/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

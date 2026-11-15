@@ -61,7 +61,7 @@ const SCREENS: Screen[] = [
     bullets: [
       {
         key: "onb_r1_b1",
-        fallback: "Find verified hospitals, clinics and pharmacies near you.",
+        fallback: "Find hospitals, clinics and pharmacies in the directory.",
       },
       {
         key: "onb_r1_b2",

@@ -12,10 +12,13 @@ import {
 /**
  * Marketing mockups of the real CareNBuddi app.
  *
- * Every label below is copied from the shipped app (components/nav.tsx,
- * lib/i18n.ts, lib/content.ts) and every provider is a real seed record from
- * lib/content.ts, so nothing here contradicts the product. No clinical values
- * are invented — the real numbers come from the signed-in user.
+ * Screen names and navigation labels match the shipped app (components/nav.tsx,
+ * lib/i18n.ts), and every provider is a real seed record from lib/content.ts.
+ * No clinical values are invented — the real numbers come from the signed-in
+ * user.
+ *
+ * The visit card deliberately shows a request, not a confirmed appointment:
+ * a request is stored in the app but is not confirmed by a provider yet.
  *
  * To use real device screenshots instead: drop PNGs into /public/screenshots/
  * and swap the <Screen> children for <img> tags of the same size.
@@ -100,7 +103,7 @@ function HomeScreen() {
       </div>
 
       <div className="mt-2.5 rounded-xl bg-brand-700 p-3 text-white">
-        <p className="text-[8px] text-brand-100">Next appointment</p>
+        <p className="text-[8px] text-brand-100">Upcoming visit request</p>
         <p className="mt-0.5 text-[11px] font-semibold leading-tight">
           Mainland General Hospital
         </p>
@@ -219,14 +222,14 @@ function AppointmentsScreen() {
           <p className="text-[9px] font-medium text-slate-900">Mainland General Hospital</p>
           <p className="mt-0.5 flex items-center gap-1 text-[8px] text-slate-500">
             <CalendarIcon className="h-2 w-2" />
-            Upcoming appointment
+            Visit request &middot; Requested
           </p>
           <div className="mt-1.5 flex gap-1.5">
             <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[7px] font-medium text-brand-800">
               View provider
             </span>
             <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[7px] font-medium text-slate-600">
-              Reschedule
+              Cancel
             </span>
           </div>
         </div>
@@ -256,7 +259,7 @@ function HealthScreen() {
         <p className="text-[9px] font-semibold text-slate-900">Vitals</p>
         <p className="text-[8px] text-slate-500">Your latest check-ins</p>
         <div className="mt-1.5 space-y-1.5">
-          {["Blood pressure", "Weight", "Blood sugar"].map((label) => (
+          {["Blood pressure", "Weight", "Heart rate"].map((label) => (
             <div
               key={label}
               className="flex items-center justify-between rounded-lg bg-white px-2.5 py-2 shadow-sm"

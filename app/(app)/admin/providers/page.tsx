@@ -13,7 +13,8 @@ import {
   type ProviderApplication,
   type ProviderApplicationStatus,
 } from "@/lib/provider-application";
-import { KEYS, seedUsers, useSession, useStoredCollection } from "@/lib/storage";
+import { useAccessIdentity } from "@/lib/access-identity";
+import { isCloudEnabled } from "@/lib/supabase/client";
 import { useProviderApplications } from "@/lib/use-provider-application";
 
 type Decision = Extract<
@@ -30,33 +31,60 @@ const DECISIONS: { value: Decision; label: string }[] = [
 ];
 
 /**
- * Reviewer console for provider applications.
+ * Local reviewer console for provider applications.
  *
- * This is the only surface that can move an application to "verified". It is
- * reachable only by an account whose role is admin or provider (enforced by
- * AppGuard on the /admin prefix), and it records who reviewed and when.
- *
- * Note for the record: with no backend configured these records live in this
- * browser's local storage, so the authorisation is client-side only. A real
- * deployment must enforce the same rule with database policies.
+ * This is demo tooling: it changes this browser's records only. It is
+ * administrator-only - a provider must never review applications, including
+ * their own - and it is replaced entirely by the server-backed console in
+ * /admin/provider-applications whenever cloud authentication is configured.
  */
 export default function AdminProvidersPage() {
   const t = useT();
-  const [session] = useSession();
-  const [users] = useStoredCollection(KEYS.users, seedUsers);
+  const cloudMode = isCloudEnabled;
+  const { user: me, pending } = useAccessIdentity();
   const { apps, upsert } = useProviderApplications();
-
-  const me = users.find((u) => u.id === session.userId);
-  const isReviewer = me?.role === "admin" || me?.role === "provider";
   const [openId, setOpenId] = useState<string | null>(null);
 
-  if (!session.userId || !isReviewer) {
+  if (pending) {
+    return (
+      <Screen>
+        <SectionHeader title={t("apr_title", "Provider applications")} subtitle="" />
+      </Screen>
+    );
+  }
+
+  if (me?.role !== "admin") {
     return (
       <Screen>
         <SectionHeader
           title={t("pv_title", "Provider")}
-          subtitle={t("pv_guard", "Sign in as a provider or admin to continue.")}
+          subtitle={t("apr_guard", "Sign in as an administrator to review provider applications.")}
         />
+      </Screen>
+    );
+  }
+
+  if (cloudMode) {
+    return (
+      <Screen>
+        <SectionHeader
+          title={t("apr_title", "Provider applications")}
+          subtitle={t(
+            "apr_d",
+            "Review submitted applications. Identity and professional credentials are assessed separately.",
+          )}
+        />
+        <Card className="mt-4">
+          <p className="text-sm leading-relaxed text-slate-600">
+            {t(
+              "apr_use_server",
+              "Applications are reviewed through CareNBuddi cloud, where the database records the decision. Local demo records are not used.",
+            )}
+          </p>
+          <Link href="/admin/provider-applications" className="mt-3 block min-h-11">
+            <Button full>{t("apr_open_server", "Open application review")}</Button>
+          </Link>
+        </Card>
       </Screen>
     );
   }

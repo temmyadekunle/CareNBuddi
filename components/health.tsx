@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   directionsUrl,
-  whatsappUrl,
   PROVIDER_CATEGORY_LABELS,
   HEALTH_CATEGORY_LABELS,
   providerCostTier,
@@ -167,16 +166,6 @@ export function ProviderCard({ provider }: { provider: Provider }) {
         {provider.city}, {provider.state} · {provider.lga}
       </p>
       <div className="mt-2 flex items-center gap-2">
-        {provider.verified && (
-          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">
-            ✓ {t("f_verified")}
-          </span>
-        )}
-        {provider.rating && (
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-            ★ {provider.rating.toFixed(1)}
-          </span>
-        )}
         {provider.emergency && (
           <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
             {t("f_open_24")}
@@ -193,25 +182,11 @@ export function ProviderCard({ provider }: { provider: Provider }) {
       </div>
       <p className="mt-3 text-xs text-slate-500">{provider.hours}</p>
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
-        <a
-          href={`tel:${provider.phone}`}
-          className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
-        >
-          {t("f_call")} {provider.phone}
-        </a>
-        <a
-          href={whatsappUrl(provider)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg border border-green-700 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100"
-        >
-          {t("f_whatsapp")}
-        </a>
         <Link
           href={`/find-care/${provider.id}`}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
         >
-          {t("f_request")} →{/* link to profile */}
+          {t("f_request")} →
         </Link>
       </div>
       <div className="mt-2 flex items-center gap-2">

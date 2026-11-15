@@ -194,10 +194,52 @@ test("the workspace is closed to unverified applicants", () => {
   );
 });
 
-test("no application record does not lock anyone out", () => {
-  // The seeded demonstration facility and admins never apply, so the workspace
-  // has to stay open for them.
-  assert.equal(workspaceAccess({ role: "provider", application: null }), "open");
+test("a provider with no application record is locked out", () => {
+  // A missing record is not permission. This is the localStorage-manipulation
+  // bypass: clearing the application store used to open the workspace.
+  assert.equal(workspaceAccess({ role: "provider", application: null }), "locked");
+  assert.equal(workspaceAccess({ role: "provider", application: undefined }), "locked");
+});
+
+test("verification that has not loaded yet does not open the workspace", () => {
+  assert.equal(
+    workspaceAccess({ role: "provider", application: null, source: "loading" }),
+    "pending",
+  );
+  assert.equal(
+    workspaceAccess({ role: "provider", application: { status: "verified" } as never, source: "loading" }),
+    "pending",
+  );
+});
+
+test("a failed verification read fails closed", () => {
+  for (const source of ["error", "offline"] as const) {
+    assert.equal(
+      workspaceAccess({ role: "provider", application: null, source }),
+      "unavailable",
+      source,
+    );
+    assert.equal(
+      workspaceAccess({ role: "provider", application: { status: "verified" } as never, source }),
+      "unavailable",
+      `${source} must not trust a cached verified record`,
+    );
+  }
+});
+
+test("only a verified application opens the workspace", () => {
+  for (const status of ["draft", "submitted", "under_review", "rejected"] as const) {
+    assert.equal(
+      workspaceAccess({ role: "provider", application: { status } as never }),
+      "locked",
+      status,
+    );
+  }
+});
+
+test("an administrator does not need an application", () => {
+  // Admins do not apply; their authority comes from the server role, not from
+  // an application record.
   assert.equal(workspaceAccess({ role: "admin", application: null }), "open");
 });
 
