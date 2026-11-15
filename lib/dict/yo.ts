@@ -530,6 +530,8 @@ a_sync_off: "Àkójọ ọ̀fẹ́ — ìwé rẹ ń gùn nínú ẹ̀rọ yìí
   prof_bookings_n: "Àwọn ìbéèrè ìwálẹ̀ẹ́",
   prof_bookings_d: "Tẹ̀lé ipò gbogbo àwọn ìbẹ̀wò tí o ti béèrè.",
   auth_phone_label: "Fóònù (àfikún)",
+  auth_show_password: "Bebẹ ara ẹ̀dá",
+  auth_hide_password: "Fifara ara ẹ̀dá",
   auth_phone_hint: "Àwọn olùpèsè máa lo ọ́ láti fìdí ìbẹ̀wò múlẹ̀",
   prof_phone_ph: "+234 ...",
   prof_email_fixed: "Kò lè yí ìmẹ̀lẹ̀ padà níbí",

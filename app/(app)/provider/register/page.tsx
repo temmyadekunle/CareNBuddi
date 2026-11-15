@@ -10,6 +10,7 @@ import {
   AuthIntro,
   AuthSubmit,
   AuthSwitch,
+  PasswordField,
   writeAuthPending,
 } from "@/components/auth-form";
 import { Button, Card, Field, Screen, SectionHeader, inputClass, useToast } from "@/components/app-ui";
@@ -452,10 +453,9 @@ export default function ProviderRegisterPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
-          <AuthField
+          <PasswordField
             id={FIELD_IDS.password}
             label={t("a_password", "Password")}
-            type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -463,10 +463,9 @@ export default function ProviderRegisterPage() {
             errorId={`${FIELD_IDS.password}-error`}
             hint={t("auth_password_hint", "At least 8 characters")}
           />
-          <AuthField
+          <PasswordField
             id={FIELD_IDS.confirm}
             label={t("auth_confirm_label", "Confirm password")}
-            type="password"
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}

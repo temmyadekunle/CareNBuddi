@@ -119,67 +119,88 @@ function joinRateLimited(ip: string): boolean {
 }
 
 const DAILY_WEBHOOK_MAX_AGE_MS = 5 * 60 * 1000;
+const DAILY_WEBHOOK_MAX_BYTES = 64 * 1024;
 
-async function decodeBase64Secret(secret: string): Promise<ArrayBuffer> {
+/* Daily documents the scheme as: decode the base64 secret, HMAC-SHA256
+   `${X-Webhook-Timestamp}.${request body}`, base64-encode the digest, compare
+   with X-Webhook-Signature. The signature covers the exact bytes Daily sent,
+   so only the raw body is verified; there is no canonicalised fallback. */
+function decodeBase64Secret(secret: string): Uint8Array<ArrayBuffer> | null {
   try {
     const binary = atob(secret);
     const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
   } catch {
-    throw new Error("invalid_base64_secret");
+    return null;
   }
 }
 
+function bytesToBase64(buffer: ArrayBuffer): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+async function hmacBase64(keyBytes: Uint8Array<ArrayBuffer>, content: string): Promise<string | null> {
+  try {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(content));
+    return bytesToBase64(signature);
+  } catch {
+    return null;
+  }
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 async function verifyDailyWebhookSignature(
-  body: string,
+  rawBody: string,
   signatureHeader: string | null,
   timestampHeader: string | null,
   secret: string,
 ): Promise<{ valid: boolean; timestamp?: number }> {
   if (!signatureHeader || !timestampHeader) return { valid: false };
   const signature = signatureHeader.trim();
-  const timestampStr = timestampHeader.trim();
-  if (!signature || !timestampStr) return { valid: false };
+  const timestampText = timestampHeader.trim();
+  if (!signature || !timestampText) return { valid: false };
 
-  const timestamp = Number.parseInt(timestampStr, 10);
+  const timestamp = Number.parseInt(timestampText, 10);
   if (!Number.isFinite(timestamp)) return { valid: false };
 
-  const now = Date.now();
-  if (now - timestamp > DAILY_WEBHOOK_MAX_AGE_MS) return { valid: false };
-
-  let keyData: ArrayBuffer;
-  try {
-    keyData = await decodeBase64Secret(secret);
-  } catch {
+  // Daily sends milliseconds. Tolerating seconds keeps the check correct if a
+  // sender emits epoch seconds, without weakening the freshness window.
+  const timestampMs = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+  if (Math.abs(Date.now() - timestampMs) > DAILY_WEBHOOK_MAX_AGE_MS) {
     return { valid: false };
   }
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  const keyBytes = decodeBase64Secret(secret);
+  if (!keyBytes) return { valid: false };
 
-  let parsedBody: unknown;
-  try {
-    parsedBody = JSON.parse(body);
-  } catch {
+  const expected = await hmacBase64(keyBytes, `${timestampText}.${rawBody}`);
+  if (!expected || !constantTimeEqual(expected, signature)) {
     return { valid: false };
   }
+  return { valid: true, timestamp };
+}
 
-  const signedContent = `${timestamp}.${JSON.stringify(parsedBody)}`;
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedContent));
-  const expectedBase64 = btoa(String.fromCharCode(...new Uint8Array(sig)));
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
-  if (signature.length !== expectedBase64.length) return { valid: false };
-  let diff = 0;
-  for (let i = 0; i < signature.length; i++) diff |= signature.charCodeAt(i) ^ expectedBase64.charCodeAt(i);
-  return { valid: diff === 0, timestamp };
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
 }
 
 function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
@@ -424,13 +445,15 @@ async function handleConsultationJoin(request: Request, env: Env): Promise<Respo
     );
   }
 
-  /* Room lifecycle (0015). The room exists at this point, so record it with
-     the service role; a failure is coarse-logged and the provider's own room
-     expiry remains the backstop. Never log the room name or the id. */
+  /* Room lifecycle (0015/0017). A join token was minted, and that is all this
+     records: join_token_issued, never participant_joined. Actual presence comes
+     only from an authenticated provider webhook. A write failure is coarse-
+     logged and the provider's own room expiry remains the backstop. Never log
+     the room name, the token or any participant identifier. */
   const serviceKey = env.SUPABASE_SERVICE_KEY?.trim() ?? "";
   if (serviceKey) {
     try {
-      const roomResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/record_room_opened`, {
+      const roomResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/record_join_token_issued`, {
         method: "POST",
         headers: {
           apikey: serviceKey,
@@ -440,14 +463,14 @@ async function handleConsultationJoin(request: Request, env: Env): Promise<Respo
         body: JSON.stringify({ p_id: consultationId, p_provider: "daily" }),
       });
       if (!roomResponse.ok) {
-        console.error(`consultations join room_record_failed status=${roomResponse.status}`);
+        console.error(`consultations join token_issue_record_failed status=${roomResponse.status}`);
       }
       roomResponse.body?.cancel();
     } catch {
-      console.error("consultations join room_record_failed network");
+      console.error("consultations join token_issue_record_failed network");
     }
   } else {
-    console.error("consultations join room_tracking_not_configured");
+    console.error("consultations join token_issue_tracking_not_configured");
   }
 
   /* Lifecycle audit is best effort: a logging failure must not block care. */
@@ -483,21 +506,30 @@ async function handleConsultationJoin(request: Request, env: Env): Promise<Respo
 /**
  * POST /api/daily/webhook
  *
- * Receives authenticated Daily webhook events for participant join/leave.
- * Verifies the HMAC-SHA256 signature per Daily's documented procedure:
- *   - Header: X-Webhook-Signature (hex-encoded HMAC-SHA256)
- *   - Header: X-Webhook-Timestamp (Unix milliseconds)
- *   - Secret: Base64-encoded, must be decoded before use
- *   - Signed content: timestamp + "." + raw_request_body
+ * Receives authenticated Daily webhook events for participant presence.
+ * Daily posts one event per request; this endpoint intentionally does not
+ * interpret a token issue as a connection.
  *
- * Enforces idempotency using Daily's recommended approach:
- *   - Key: (event_type, payload.session_id)
- *   - Stored in consultation_media_events with a unique constraint
- *   - Concurrent duplicate deliveries are serialized by the database
+ * Authenticity follows Daily's documented procedure:
+ *   - Headers: X-Webhook-Signature, X-Webhook-Timestamp
+ *   - Secret: base64, decoded before use
+ *   - Signed content: timestamp + "." + the exact raw request body
+ *     (no canonicalised or re-serialised fallback is accepted)
+ *   - Digest: HMAC-SHA256, base64 encoded
  *
- * Privacy: only the consultation id and event type are logged. Participant
- * names, emails, or session IDs from the webhook are never written to logs
- * or the database.
+ * Idempotency follows Daily's recommendation for participant events: the key
+ * is the event type plus payload.session_id. The session id is hashed with
+ * SHA-256 before it leaves the Worker, so duplicate deliveries (including a
+ * changed event id) are no-ops at the database without retaining the raw
+ * provider identifier.
+ *
+ * Privacy: logs carry an event label and HTTP status only. Room names, session
+ * ids, user ids, names and tokens are never logged or stored.
+ *
+ * Operational limitation: the webhook must be created for the Daily domain with
+ * an operator-supplied base64 hmac, and DAILY_WEBHOOK_SECRET must hold that
+ * same value. Without provider configuration this endpoint stays inert (503);
+ * no presence is ever inferred.
  */
 async function handleDailyWebhook(request: Request, env: Env): Promise<Response> {
   const secret = env.DAILY_WEBHOOK_SECRET?.trim() ?? "";
@@ -515,7 +547,7 @@ async function handleDailyWebhook(request: Request, env: Env): Promise<Response>
     return json({ ok: false, error: "invalid_request" }, 400);
   }
 
-  if (!bodyText || bodyText.length > 65536) {
+  if (!bodyText || bodyText.length > DAILY_WEBHOOK_MAX_BYTES) {
     return json({ ok: false, error: "payload_too_large" }, 413);
   }
 
@@ -525,114 +557,77 @@ async function handleDailyWebhook(request: Request, env: Env): Promise<Response>
     return json({ ok: false, error: "invalid_signature" }, 401);
   }
 
-  let payload: unknown;
+  let event: unknown;
   try {
-    payload = JSON.parse(bodyText);
+    event = JSON.parse(bodyText);
   } catch {
     return json({ ok: false, error: "invalid_json" }, 400);
   }
 
-  const events = (typeof payload === "object" && payload !== null
-    ? (payload as Record<string, unknown>).events
-    : undefined) as Array<Record<string, unknown>> | undefined;
-  if (!Array.isArray(events)) {
+  const record = asRecord(event);
+  const eventType = typeof record.type === "string" ? record.type : "";
+  let auditEvent: "participant_joined" | "participant_left" | null = null;
+  if (eventType === "participant.joined") auditEvent = "participant_joined";
+  else if (eventType === "participant.left") auditEvent = "participant_left";
+  // Daily also sends non-presence events and a {"test":"test"} probe. They are
+  // acknowledged so the webhook stays healthy, and nothing is recorded.
+  if (!auditEvent) return json({ ok: true, processed: 0, ignored: true });
+
+  const payload = asRecord(record.payload);
+  const roomName = typeof payload.room === "string" ? payload.room : "";
+  const sessionId = typeof payload.session_id === "string" ? payload.session_id : "";
+  if (!roomName || !sessionId) {
+    console.error(`daily webhook invalid_payload event=${auditEvent}`);
     return json({ ok: false, error: "invalid_payload" }, 400);
   }
 
-  const serviceKey = env.SUPABASE_SERVICE_KEY?.trim() ?? "";
   const supabaseUrl = env.SUPABASE_URL?.trim().replace(/\/+$/, "") ?? "";
+  const serviceKey = env.SUPABASE_SERVICE_KEY?.trim() ?? "";
   if (!supabaseUrl || !serviceKey) {
     console.error("daily webhook backend_not_configured");
     return json({ ok: false, error: "backend_not_configured" }, 503);
   }
 
-  let processed = 0;
+  const dedupeKey = await sha256Hex(`${eventType}:${sessionId}`);
 
-  for (const event of events) {
-    const eventType = typeof event.type === "string" ? event.type : "";
-    const roomName = typeof event.room_name === "string" ? event.room_name : "";
-    const payload = event.payload as Record<string, unknown> | undefined;
-    const sessionId = typeof payload?.session_id === "string" ? payload.session_id : "";
-
-    if (!eventType || !roomName || !sessionId) continue;
-
-    // Map Daily event types to our audit events
-    let auditEvent: string | null = null;
-    if (eventType === "participant-joined") auditEvent = "participant_joined";
-    else if (eventType === "participant-left") auditEvent = "participant_left";
-    else continue; // Ignore other event types
-
-    // Find the consultation by room_name (service role only)
-    let consultationResponse: Response;
-    try {
-      consultationResponse = await fetch(`${supabaseUrl}/rest/v1/consultations?room_name=eq.${encodeURIComponent(roomName)}&select=id`, {
-        headers: {
-          apikey: serviceKey,
-          authorization: `Bearer ${serviceKey}`,
-        },
-      });
-    } catch {
-      console.error("daily webhook consultation_lookup_failed");
-      continue;
-    }
-
-    if (!consultationResponse.ok) {
-      console.error(`daily webhook consultation_lookup_failed status=${consultationResponse.status}`);
-      consultationResponse.body?.cancel();
-      continue;
-    }
-
-    const consultations = (await consultationResponse.json().catch(() => [])) as Array<{ id: string }>;
-    consultationResponse.body?.cancel();
-    if (consultations.length !== 1) {
-      console.error(`daily webhook room_not_found_or_ambiguous room=${safeLogText(roomName)}`);
-      continue;
-    }
-
-    const consultationId = consultations[0].id;
-
-    // Record the event to consultation_media_events with idempotency key
-    // The unique constraint on (consultation_id, event, detail) where detail contains session_id
-    // ensures concurrent duplicate deliveries cannot create duplicates.
-    let logResponse: Response;
-    try {
-      logResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/log_consultation_media_event`, {
-        method: "POST",
-        headers: {
-          apikey: serviceKey,
-          authorization: `Bearer ${serviceKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          p_id: consultationId,
-          p_event: auditEvent,
-          p_provider: "daily",
-          p_detail: `session:${sessionId}`,
-        }),
-      });
-    } catch {
-      console.error("daily webhook log_failed network");
-      continue;
-    }
-
-    if (!logResponse.ok) {
-      // Check if it's a duplicate key violation (idempotent success)
-      const errorText = await logResponse.text().catch(() => "");
-      if (errorText.includes("duplicate") || errorText.includes("unique") || logResponse.status === 409) {
-        // Duplicate delivery - already processed, count as success
-        logResponse.body?.cancel();
-        processed += 1;
-        continue;
-      }
-      console.error(`daily webhook log_failed status=${logResponse.status} event=${auditEvent}`);
-      logResponse.body?.cancel();
-      continue;
-    }
-    logResponse.body?.cancel();
-    processed += 1;
+  let logResponse: Response;
+  try {
+    logResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/record_room_participant_event`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        authorization: `Bearer ${serviceKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        p_room_name: roomName,
+        p_event: auditEvent,
+        p_provider: "daily",
+        p_dedupe_key: dedupeKey,
+      }),
+    });
+  } catch {
+    console.error(`daily webhook record_failed network event=${auditEvent}`);
+    return json({ ok: false, error: "record_failed" }, 502);
   }
 
-  return json({ ok: true, processed });
+  if (!logResponse.ok) {
+    console.error(`daily webhook record_failed status=${logResponse.status} event=${auditEvent}`);
+    logResponse.body?.cancel();
+    return json({ ok: false, error: "record_failed" }, 502);
+  }
+
+  const result = await logResponse.json().catch(() => null);
+  if (result === "unknown_room") {
+    console.error(`daily webhook unknown_room event=${auditEvent}`);
+    return json({ ok: true, processed: 0 });
+  }
+  if (result !== "recorded" && result !== "duplicate") {
+    console.error(`daily webhook unexpected_result event=${auditEvent}`);
+    return json({ ok: false, error: "record_failed" }, 502);
+  }
+
+  return json({ ok: true, processed: 1 });
 }
 
 /** Minimal shapes for the cron entry point (no workers-types package here). */

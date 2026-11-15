@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, SocialLoginButtons } from "@/components/auth-form";
+import { AuthError, AuthField, AuthIntro, AuthSubmit, AuthSwitch, PasswordField, SocialLoginButtons } from "@/components/auth-form";
 import { AuthUnavailableNote } from "@/components/auth-unavailable";
 import { Card, useToast } from "@/components/app-ui";
 import { LockIcon } from "@/components/icons";
@@ -187,16 +187,15 @@ function SignInInner() {
             error={emailError}
           />
 
-          <AuthField
-            label={t("a_password", "Password")}
-            type="password"
-            autoComplete="current-password"
-            placeholder={t("auth_password_ph", "••••••••")}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            error={passwordError}
-            hint={t("auth_password_hint", "At least 8 characters")}
-          />
+<PasswordField
+  label={t("a_password", "Password")}
+  autoComplete="current-password"
+  placeholder={t("auth_password_ph", "••••••••")}
+  value={password}
+  onChange={(event) => setPassword(event.target.value)}
+  error={passwordError}
+  hint={t("auth_password_hint", "At least 8 characters")}
+/>
 
           <Link
             href="/auth/forgot-password"

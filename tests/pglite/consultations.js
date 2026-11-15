@@ -1,11 +1,11 @@
 /**
- * Telemedicine consultations (0011, hardened by 0013, 0014 and 0015),
- * executed against real PostgreSQL with
+ * Telemedicine consultations (0011, hardened by 0013, 0014, 0015, 0016 and
+ * 0017), executed against real PostgreSQL with
  * check_function_bodies = on, as anon / authenticated / service_role — never
  * as the database owner.
  *
  * What is verified here:
- *   1. the full migration sequence 0001..0015 applies strictly;
+ *   1. the full migration sequence 0001..0017 applies strictly;
  *   2. only verified providers appear in the directory and can receive a
  *      consultation request; pending/unverified providers cannot;
  *   3. a patient must be a consumer, must consent, and cannot book a slot the
@@ -19,13 +19,18 @@
  *   7. expired sessions are moved by a caller-scoped RPC and logged as
  *      'system'; the service-role job expires every account's stale rows;
  *   8. overlapping bookings are refused by interval, not only by exact start;
- *   9. the Worker audit hook records a 'joined' event;
+ *   9. the Worker audit hook records a 'join_token_issued' event;
  *  10. completion is provider-only, role-checked, audited once and replay-safe;
  *  11. suspension after booking blocks join authorization for BOTH participants;
- *  12. room closure is a separate, provider-confirmed fact with an append-only
- *      media trail, an idempotent service-role queue and reconciliation;
- *  13. the (provider_id, slot) primary key blocks overlapping bookings at the
- *      database level, and terminal states release their claims.
+ *  12. token issuance, confirmed presence and closure are separate events with
+ *      an append-only media trail, an idempotent service-role queue and
+ *      reconciliation;
+ *  13. provider webhook presence events are service-role only, resolve an
+ *      opaque room name, and dedupe on the supplied key;
+ *  14. the (provider_id, slot) primary key blocks overlapping bookings at the
+ *      database level, and terminal states release their claims;
+ *  15. the forward-only 0017 upgrade renames legacy media labels in place and
+ *      preserves every row written by 0001..0016.
  *
  * PGlite runs a single connection. The concurrency section proves the
  * constraint, the slot arithmetic and the release rules; it cannot interleave
@@ -53,6 +58,8 @@ const MIGRATIONS = [
   "0013_consultation_lifecycle.sql",
   "0014_consultation_authorization.sql",
   "0015_room_lifecycle.sql",
+  "0016_consultation_join_token.sql",
+  "0017_room_event_semantics.sql",
 ];
 
 const STORAGE_STUB = `
@@ -133,7 +140,7 @@ function gridFloor(value) {
   await db.exec(STORAGE_STUB);
 
   console.log("=".repeat(78));
-  console.log("CONSULTATIONS: full sequence 0001..0015, strict");
+  console.log("CONSULTATIONS: full sequence 0001..0017, strict");
   console.log("=".repeat(78));
   for (const f of MIGRATIONS) {
     const r = (await applyMigrations(db, [f]))[0];
@@ -255,7 +262,7 @@ function gridFloor(value) {
   const mediaEvents = (id) =>
     as(db, "service_role", null, () =>
       db.query(
-        "select event,provider,actor_role from public.consultation_media_events where consultation_id=$1 order by id",
+        "select event,provider,actor_role,dedupe_key from public.consultation_media_events where consultation_id=$1 order by id",
         [id],
       ),
     );
@@ -549,10 +556,11 @@ function gridFloor(value) {
   check("join event is recorded", logJoin.ok, logJoin.error);
   const liveEvents = await events("authenticated", U.provider, live.id);
   check(
-    "audit contains started and joined",
+    "audit contains started and join_token_issued, not a claimed connection",
     liveEvents.ok &&
       liveEvents.rows.some((r) => r.event === "started") &&
-      liveEvents.rows.some((r) => r.event === "joined"),
+      liveEvents.rows.some((r) => r.event === "join_token_issued") &&
+      !liveEvents.rows.some((r) => r.event === "joined" || r.event === "participant_joined"),
     JSON.stringify(liveEvents.rows),
   );
 
@@ -845,29 +853,30 @@ function gridFloor(value) {
     reason: "Room lifecycle",
   });
   await rpc("authenticated", U.provider, "start_consultation", [roomLive.id]);
-  const opened = await rpc("service_role", null, "record_room_opened", [roomLive.id, "daily"]);
+  const opened = await rpc("service_role", null, "record_join_token_issued", [roomLive.id, "daily"]);
   check(
-    "the service role records an opened room",
-    opened.ok && opened.rows?.[0]?.record_room_opened === true,
+    "the service role records token issuance",
+    opened.ok && opened.rows?.[0]?.record_join_token_issued === true,
     JSON.stringify(opened.rows ?? opened.error),
   );
-  const openedAgain = await rpc("service_role", null, "record_room_opened", [roomLive.id, "daily"]);
+  const openedAgain = await rpc("service_role", null, "record_join_token_issued", [roomLive.id, "daily"]);
   check(
-    "recording the room again is idempotent",
-    openedAgain.ok && openedAgain.rows?.[0]?.record_room_opened === false,
+    "recording token issuance again is idempotent",
+    openedAgain.ok && openedAgain.rows?.[0]?.record_join_token_issued === false,
     JSON.stringify(openedAgain.rows ?? openedAgain.error),
   );
   const openedMedia = await mediaEvents(roomLive.id);
   check(
-    "the room opening is appended once",
+    "token issuance is appended once and is not a connection",
     openedMedia.ok &&
-      openedMedia.rows.filter((r) => r.event === "room_opened").length === 1 &&
+      openedMedia.rows.filter((r) => r.event === "join_token_issued").length === 1 &&
+      openedMedia.rows.filter((r) => r.event === "participant_joined").length === 0 &&
       openedMedia.rows[0].provider === "daily",
     JSON.stringify(openedMedia.rows),
   );
-  const clientOpened = await rpc("authenticated", U.patientA, "record_room_opened", [roomLive.id, "daily"]);
+  const clientOpened = await rpc("authenticated", U.patientA, "record_join_token_issued", [roomLive.id, "daily"]);
   check("clients cannot record room lifecycle", !clientOpened.ok && /permission denied/i.test(clientOpened.error), clientOpened.error);
-  const anonOpened = await rpc("anon", null, "record_room_opened", [roomLive.id, "daily"]);
+  const anonOpened = await rpc("anon", null, "record_join_token_issued", [roomLive.id, "daily"]);
   check("anon cannot record room lifecycle", !anonOpened.ok, anonOpened.error);
 
   const completeRoom = await rpc("authenticated", U.provider, "complete_consultation", [roomLive.id, "Room done"]);
@@ -927,7 +936,7 @@ function gridFloor(value) {
   const closedMedia = await mediaEvents(roomLive.id);
   check(
     "closure is appended once",
-    closedMedia.ok && closedMedia.rows.filter((r) => r.event === "closure_confirmed").length === 1,
+    closedMedia.ok && closedMedia.rows.filter((r) => r.event === "room_closure_confirmed").length === 1,
     JSON.stringify(closedMedia.rows),
   );
 
@@ -939,7 +948,18 @@ function gridFloor(value) {
     reason: "Closure retry",
   });
   await rpc("authenticated", U.provider, "start_consultation", [roomRetry.id]);
-  await rpc("service_role", null, "record_room_opened", [roomRetry.id, "daily"]);
+  // 0015's record_room_opened is an alias kept for a rolling deploy; it must
+  // write the corrected label, never 'room_opened'.
+  const retryOpened = await rpc("service_role", null, "record_room_opened", [roomRetry.id, "daily"]);
+  check("the legacy record_room_opened alias still works", retryOpened.ok, retryOpened.error);
+  const retryOpenedMedia = await mediaEvents(roomRetry.id);
+  check(
+    "the alias writes join_token_issued, not room_opened",
+    retryOpenedMedia.ok &&
+      retryOpenedMedia.rows.some((r) => r.event === "join_token_issued") &&
+      !retryOpenedMedia.rows.some((r) => r.event === "room_opened"),
+    JSON.stringify(retryOpenedMedia.rows),
+  );
   await rpc("authenticated", U.provider, "complete_consultation", [roomRetry.id, "Retry room"]);
   const claimRetry = await rpc("service_role", null, "claim_room_closure_batch", [10]);
   check(
@@ -998,7 +1018,7 @@ function gridFloor(value) {
     status: "accepted",
     reason: "Legacy joined row",
   });
-  const openExpiredRoom = await rpc("service_role", null, "record_room_opened", [openedThenExpired.id, "daily"]);
+  const openExpiredRoom = await rpc("service_role", null, "record_join_token_issued", [openedThenExpired.id, "daily"]);
   check("the expired-room fixture records an opened room", openExpiredRoom.ok, openExpiredRoom.error);
   const expireRooms = await rpc("service_role", null, "expire_stale_consultations", []);
   check("the system expiry runs for the room fixtures", expireRooms.ok, expireRooms.error);
@@ -1056,6 +1076,38 @@ function gridFloor(value) {
     JSON.stringify(reconcileAgain.rows ?? reconcileAgain.error),
   );
 
+  const failedClosure = await rpc("service_role", null, "record_room_closure_result", [
+    legacyJoined.id,
+    false,
+    "provider_error",
+  ]);
+  check(
+    "a failed closure leaves the room retryable",
+    failedClosure.ok && failedClosure.rows?.[0]?.record_room_closure_result === "failed",
+    JSON.stringify(failedClosure.rows ?? failedClosure.error),
+  );
+  const reconcileRetry = await rpc("service_role", null, "reconcile_room_closures", []);
+  check(
+    "reconciliation after a failed closure does not fail on its earlier event",
+    reconcileRetry.ok && reconcileRetry.rows?.[0]?.reconcile_room_closures?.flagged === 0,
+    JSON.stringify(reconcileRetry.rows ?? reconcileRetry.error),
+  );
+  const retryMedia = await mediaEvents(legacyJoined.id);
+  const flagCount = retryMedia.ok
+    ? retryMedia.rows.filter((r) => r.event === "reconciliation_flagged").length
+    : 0;
+  check(
+    "a repeated reconciliation attempt appends no duplicate flag",
+    retryMedia.ok && flagCount === 1,
+    JSON.stringify(retryMedia.rows ?? retryMedia.error),
+  );
+  const retryRoom = await roomState(legacyJoined.id);
+  check(
+    "the failed room stays claimable after reconciliation",
+    retryRoom.rows?.[0]?.room_closure_state === "failed" && retryRoom.rows?.[0]?.room_closed_at == null,
+    JSON.stringify(retryRoom.rows),
+  );
+
   const anonReconcile = await rpc("anon", null, "reconcile_room_closures", []);
   check("anon cannot reconcile closures", !anonReconcile.ok && /permission denied/i.test(anonReconcile.error), anonReconcile.error);
   const userReconcile = await rpc("authenticated", U.patientA, "reconcile_room_closures", []);
@@ -1073,7 +1125,7 @@ function gridFloor(value) {
   check("an administrator reads the media trail", adminMedia.ok && adminMedia.rows.length >= 1, adminMedia.error);
   const clientMediaInsert = await as(db, "authenticated", U.patientA, () =>
     db.query(
-      "insert into public.consultation_media_events (consultation_id,actor_id,actor_role,event) values ($1,$2,'patient','closure_confirmed')",
+      "insert into public.consultation_media_events (consultation_id,actor_id,actor_role,event) values ($1,$2,'patient','room_closure_confirmed')",
       [roomLive.id, U.patientA],
     ),
   );
@@ -1087,7 +1139,116 @@ function gridFloor(value) {
   );
   check("even the service role cannot delete the media trail", !mediaDelete.ok && /append-only/i.test(mediaDelete.error), mediaDelete.error);
 
-  section("14. concurrent booking protection");
+  section("14. provider webhook participant events");
+  // The Worker verifies Daily's HMAC before calling this RPC and passes a
+  // SHA-256 dedupe key. The room name resolves the consultation server-side.
+  const webhookRoomOther = `cnb-${"c".repeat(32)}`;
+  const webinarConsult = await seedConsultation({
+    patient: U.patientB,
+    provider: U.providerOther,
+    scheduled: new Date(Date.now() - 11 * 86400000).toISOString(),
+    status: "accepted",
+    reason: "Webhook presence",
+  });
+  const webhookRoom = webinarConsult.room_name;
+  check(
+    "the webhook fixture has a generated private room name",
+    /^cnb-[a-f0-9]{32}$/.test(webhookRoom),
+    String(webhookRoom),
+  );
+
+  const notIssuedYet = await roomState(webinarConsult.id);
+  check("presence is unknown before any webhook", notIssuedYet.rows?.[0]?.room_opened_at == null, JSON.stringify(notIssuedYet.rows));
+
+  const anonPresence = await rpc("anon", null, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", "k1"]);
+  check("anon cannot record presence", !anonPresence.ok && /permission denied/i.test(anonPresence.error), anonPresence.error);
+  const clientPresence = await rpc("authenticated", U.patientB, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", "k1"]);
+  check("a signed-in participant cannot record presence", !clientPresence.ok && /permission denied/i.test(clientPresence.error), clientPresence.error);
+
+  const badEvent = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant.flying", "daily", "k1"]);
+  check("a non-presence webhook event is refused", !badEvent.ok && /invalid media event/i.test(badEvent.error), badEvent.error);
+  const noKey = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", ""]);
+  check("a presence event without a dedupe key is refused", !noKey.ok && /dedupe key required/i.test(noKey.error), noKey.error);
+  const unknownRoom = await rpc("service_role", null, "record_room_participant_event", [webhookRoomOther, "participant_joined", "daily", "k1"]);
+  check(
+    "an unknown room is reported without error",
+    unknownRoom.ok && unknownRoom.rows?.[0]?.record_room_participant_event === "unknown_room",
+    JSON.stringify(unknownRoom.rows ?? unknownRoom.error),
+  );
+  const malformedRoom = await rpc("service_role", null, "record_room_participant_event", ["not-a-room", "participant_joined", "daily", "k1"]);
+  check(
+    "a malformed room name is reported without error",
+    malformedRoom.ok && malformedRoom.rows?.[0]?.record_room_participant_event === "unknown_room",
+    JSON.stringify(malformedRoom.rows ?? malformedRoom.error),
+  );
+
+  const joined = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", "join-key"]);
+  check(
+    "a signed webhook records a confirmed connection",
+    joined.ok && joined.rows?.[0]?.record_room_participant_event === "recorded",
+    JSON.stringify(joined.rows ?? joined.error),
+  );
+  const afterJoined = await roomState(webinarConsult.id);
+  check(
+    "a confirmed connection marks the room as used but not closed",
+    afterJoined.rows?.[0]?.room_opened_at != null &&
+      afterJoined.rows?.[0]?.room_provider === "daily" &&
+      afterJoined.rows?.[0]?.room_closed_at == null,
+    JSON.stringify(afterJoined.rows),
+  );
+  const joinedMedia = await mediaEvents(webinarConsult.id);
+  check(
+    "the connection is appended once with the dedupe key",
+    joinedMedia.ok &&
+      joinedMedia.rows.filter((r) => r.event === "participant_joined").length === 1 &&
+      joinedMedia.rows.find((r) => r.event === "participant_joined").dedupe_key === "join-key",
+    JSON.stringify(joinedMedia.rows),
+  );
+  const duplicateJoin = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", "join-key"]);
+  check(
+    "a duplicate delivery is a no-op",
+    duplicateJoin.ok && duplicateJoin.rows?.[0]?.record_room_participant_event === "duplicate",
+    JSON.stringify(duplicateJoin.rows ?? duplicateJoin.error),
+  );
+  const joinedAgain = await mediaEvents(webinarConsult.id);
+  check(
+    "the duplicate does not append a second connection",
+    joinedAgain.ok && joinedAgain.rows.filter((r) => r.event === "participant_joined").length === 1,
+    JSON.stringify(joinedAgain.rows),
+  );
+  const secondParticipant = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant_joined", "daily", "join-key-2"]);
+  check(
+    "a second participant's connection is recorded in the same room",
+    secondParticipant.ok && secondParticipant.rows?.[0]?.record_room_participant_event === "recorded",
+    JSON.stringify(secondParticipant.rows ?? secondParticipant.error),
+  );
+  const left = await rpc("service_role", null, "record_room_participant_event", [webhookRoom, "participant_left", "daily", "left-key"]);
+  check(
+    "a disconnect is recorded separately from the connection",
+    left.ok && left.rows?.[0]?.record_room_participant_event === "recorded",
+    JSON.stringify(left.rows ?? left.error),
+  );
+  const leftMedia = await mediaEvents(webinarConsult.id);
+  check(
+    "only a connection is evidence of a room, not a disconnect",
+    leftMedia.ok &&
+      leftMedia.rows.some((r) => r.event === "participant_left") &&
+      leftMedia.rows.filter((r) => r.event === "participant_joined").length === 2,
+    JSON.stringify(leftMedia.rows),
+  );
+  const nullActorMedia = await as(db, "service_role", null, () =>
+    db.query(
+      "select count(*)::int as n from public.consultation_media_events where consultation_id=$1 and actor_id is null and actor_role='system'",
+      [webinarConsult.id],
+    ),
+  );
+  check(
+    "webhook events carry no participant identity",
+    nullActorMedia.ok && nullActorMedia.rows[0].n >= 2,
+    JSON.stringify(nullActorMedia.rows),
+  );
+
+  section("15. concurrent booking protection");
   // PGlite is single-connection, so this cannot interleave two transactions.
   // The guarantee is the (provider_id, slot) primary key: concurrent inserts
   // of the same slot serialise on that unique index and the loser aborts.
@@ -1159,6 +1320,218 @@ function gridFloor(value) {
     db.query("select slot from public.consultation_slot_claims"),
   );
   check("clients cannot read internal slot claims", !clientClaims.ok && /permission denied/i.test(clientClaims.error), clientClaims.error);
+
+  section("16. 0017 upgrade with existing media events");
+  // The database above is always built from scratch. This second database
+  // proves the forward-only upgrade path: real rows written by 0001..0016 are
+  // renamed in place by 0017, never deleted or recreated.
+  const upgradeDb = await PGlite.create();
+  try {
+    await upgradeDb.exec(AUTH_STUB);
+    await upgradeDb.exec(SUPABASE_DEFAULTS);
+    await upgradeDb.exec(STORAGE_STUB);
+
+    let preUpgradeApplied = true;
+    let preUpgradeError = "";
+    for (const f of MIGRATIONS) {
+      if (f === "0017_room_event_semantics.sql") break;
+      const r = (await applyMigrations(upgradeDb, [f]))[0];
+      if (!r.ok) {
+        preUpgradeApplied = false;
+        preUpgradeError = `${f}: ${r.error}`;
+        break;
+      }
+    }
+    check("0001..0016 apply before the upgrade", preUpgradeApplied, preUpgradeError);
+
+    if (preUpgradeApplied) {
+      const upgradePatient = "20000000-0000-4000-8000-000000000a01";
+      const upgradeProvider = "20000000-0000-4000-8000-000000000c01";
+      for (const [id, email, meta] of [
+        [upgradePatient, "upgradepatient@qa.test", { name: "Upgrade Patient", role: "consumer" }],
+        [upgradeProvider, "upgradeprovider@qa.test", { name: "Dr Upgrade", role: "provider" }],
+      ]) {
+        await upgradeDb.query(
+          "insert into auth.users (id,email,raw_user_meta_data) values ($1,$2,$3::jsonb)",
+          [id, email, JSON.stringify(meta)],
+        );
+      }
+
+      await upgradeDb.exec("set role service_role;");
+      await upgradeDb.exec(`set request.jwt.claims = '{"role":"service_role"}';`);
+      await upgradeDb.query(
+        `insert into public.provider_applications
+           (user_id,email,full_name,status,submitted_at,category,speciality,state,city,facility)
+         values ($1,$2,$3,'verified',now(),'doctor','General practice','Lagos','Ikeja','Upgrade Clinic')`,
+        [upgradeProvider, "upgradeprovider@qa.test", "Dr Upgrade"],
+      );
+
+      const seedLegacyConsultation = async (scheduled, reason) => {
+        const inserted = await upgradeDb.query(
+          `insert into public.consultations
+             (patient_id,provider_id,scheduled_for,duration_minutes,status,reason,patient_consent,
+              room_opened_at,room_provider)
+           values ($1,$2,$3,30,'requested',$4,true,now(),'daily')
+           returning id,room_name`,
+          [upgradePatient, upgradeProvider, gridFloor(scheduled), reason],
+        );
+        await upgradeDb.query("update public.consultations set status='accepted' where id=$1", [
+          inserted.rows[0].id,
+        ]);
+        return inserted.rows[0];
+      };
+
+      const failedRoom = await seedLegacyConsultation(slot(10, 9), "Upgrade closure failed");
+      const closedRoom = await seedLegacyConsultation(slot(10, 10), "Upgrade closure closed");
+
+      // One representative row per legacy label. The closure_requested row
+      // carries a provider actor so actor preservation is exercised, not only
+      // the null/system rows the Worker wrote.
+      const legacyRows = [
+        { room: failedRoom, actor: null, actorRole: "system", event: "room_opened", provider: "daily", detail: "", createdAt: "2025-01-01 10:00:00+00" },
+        { room: failedRoom, actor: upgradeProvider, actorRole: "provider", event: "closure_requested", provider: "daily", detail: "operator", createdAt: "2025-01-01 10:01:00+00" },
+        { room: failedRoom, actor: null, actorRole: "system", event: "closure_failed", provider: "daily", detail: "provider_error", createdAt: "2025-01-01 10:02:00+00" },
+        { room: closedRoom, actor: null, actorRole: "system", event: "room_opened", provider: "daily", detail: "", createdAt: "2025-01-01 11:00:00+00" },
+        { room: closedRoom, actor: null, actorRole: "system", event: "closure_confirmed", provider: "daily", detail: "closed", createdAt: "2025-01-01 11:01:00+00" },
+      ];
+      for (const row of legacyRows) {
+        await upgradeDb.query(
+          `insert into public.consultation_media_events
+             (consultation_id,actor_id,actor_role,event,provider,detail,created_at)
+           values ($1,$2,$3,$4,$5,$6,$7)`,
+          [row.room.id, row.actor, row.actorRole, row.event, row.provider, row.detail, row.createdAt],
+        );
+      }
+      await upgradeDb.exec("reset request.jwt.claims;");
+      await upgradeDb.exec("reset role;");
+
+      const snapshot = async () =>
+        (
+          await upgradeDb.query(
+            `select id::text as id, consultation_id, actor_id, actor_role, event, provider, detail,
+                    to_char(created_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
+               from public.consultation_media_events order by id`,
+          )
+        ).rows;
+      const triggerState = async () =>
+        (
+          await upgradeDb.query(
+            "select tgenabled from pg_trigger where tgname='consultation_media_events_immutable'",
+          )
+        ).rows[0]?.tgenabled;
+
+      const before = await snapshot();
+      check("five legacy media events are seeded", before.length === 5, String(before.length));
+      check(
+        "the four legacy labels are present before the upgrade",
+        ["room_opened", "closure_requested", "closure_confirmed", "closure_failed"].every((e) =>
+          before.some((row) => row.event === e),
+        ),
+        JSON.stringify(before.map((row) => row.event)),
+      );
+      check("the append-only trigger is enabled before the upgrade", (await triggerState()) === "O");
+      const preUpdate = await as(upgradeDb, "service_role", null, () =>
+        upgradeDb.query("update public.consultation_media_events set detail='rewritten' where event='room_opened'"),
+      );
+      check("legacy rows are append-only before the upgrade", !preUpdate.ok && /append-only/i.test(preUpdate.error), preUpdate.error);
+
+      const upgrade = (await applyMigrations(upgradeDb, ["0017_room_event_semantics.sql"]))[0];
+      check("0017 applies on top of 0016 with data present", upgrade.ok, upgrade.error);
+
+      const after = await snapshot();
+      const rename = {
+        room_opened: "join_token_issued",
+        closure_requested: "room_closure_requested",
+        closure_confirmed: "room_closure_confirmed",
+        closure_failed: "room_closure_failed",
+      };
+      const expected = before.map((row) => ({ ...row, event: rename[row.event] ?? row.event }));
+      check(
+        "no media event was deleted, duplicated or recreated",
+        after.length === before.length && after.every((row, i) => row.id === before[i].id),
+        JSON.stringify({ before: before.map((row) => row.id), after: after.map((row) => row.id) }),
+      );
+      check(
+        "ids, actors, providers, timestamps and details are preserved",
+        JSON.stringify(after) === JSON.stringify(expected),
+        JSON.stringify({ after, expected }),
+      );
+      check(
+        "all four legacy labels are renamed",
+        Object.values(rename).every((e) => after.some((row) => row.event === e)) &&
+          !after.some((row) => row.event in rename),
+        JSON.stringify(after.map((row) => row.event)),
+      );
+      check("the append-only trigger is enabled after the upgrade", (await triggerState()) === "O");
+
+      const retiredInsert = await as(upgradeDb, "service_role", null, () =>
+        upgradeDb.query(
+          `insert into public.consultation_media_events
+             (consultation_id,actor_id,actor_role,event,provider,detail)
+           values ($1,null,'system','room_opened','daily','')`,
+          [failedRoom.id],
+        ),
+      );
+      check(
+        "a retired event label is rejected after the upgrade",
+        !retiredInsert.ok && /event_check|check constraint/i.test(retiredInsert.error),
+        retiredInsert.error,
+      );
+      const postUpdate = await as(upgradeDb, "service_role", null, () =>
+        upgradeDb.query("update public.consultation_media_events set detail='rewritten' where event='join_token_issued'"),
+      );
+      const postDelete = await as(upgradeDb, "service_role", null, () =>
+        upgradeDb.query("delete from public.consultation_media_events where id=$1", [after[0].id]),
+      );
+      check(
+        "existing rows remain immutable after the upgrade",
+        !postUpdate.ok && /append-only/i.test(postUpdate.error) && !postDelete.ok && /append-only/i.test(postDelete.error),
+        `${postUpdate.error} | ${postDelete.error}`,
+      );
+
+      const upgradeRpc = (name, args) =>
+        as(upgradeDb, "service_role", null, () =>
+          upgradeDb.query(`select * from public.${name}(${args.map((_, i) => `$${i + 1}`).join(",")})`, args),
+        );
+      const firstJoin = await upgradeRpc("record_room_participant_event", [closedRoom.room_name, "participant_joined", "daily", "part-a"]);
+      check(
+        "a participant connection is recorded on the upgraded schema",
+        firstJoin.ok && firstJoin.rows?.[0]?.record_room_participant_event === "recorded",
+        JSON.stringify(firstJoin.rows ?? firstJoin.error),
+      );
+      const secondJoin = await upgradeRpc("record_room_participant_event", [closedRoom.room_name, "participant_joined", "daily", "part-b"]);
+      check(
+        "a second participant can be recorded in the same room",
+        secondJoin.ok && secondJoin.rows?.[0]?.record_room_participant_event === "recorded",
+        JSON.stringify(secondJoin.rows ?? secondJoin.error),
+      );
+      const duplicateJoin = await upgradeRpc("record_room_participant_event", [closedRoom.room_name, "participant_joined", "daily", "part-a"]);
+      check(
+        "a duplicate participant event is idempotent",
+        duplicateJoin.ok && duplicateJoin.rows?.[0]?.record_room_participant_event === "duplicate",
+        JSON.stringify(duplicateJoin.rows ?? duplicateJoin.error),
+      );
+      const participantCount = await as(upgradeDb, "service_role", null, () =>
+        upgradeDb.query(
+          "select count(*)::int as n from public.consultation_media_events where consultation_id=$1 and event='participant_joined'",
+          [closedRoom.id],
+        ),
+      );
+      check(
+        "the duplicate did not append a third connection",
+        participantCount.ok && participantCount.rows[0].n === 2,
+        JSON.stringify(participantCount.rows),
+      );
+      const unknownUpgradeRoom = await upgradeRpc("record_room_participant_event", [`cnb-${"d".repeat(32)}`, "participant_joined", "daily", "part-a"]);
+      check(
+        "an unknown room is reported without error after the upgrade",
+        unknownUpgradeRoom.ok && unknownUpgradeRoom.rows?.[0]?.record_room_participant_event === "unknown_room",
+        JSON.stringify(unknownUpgradeRoom.rows ?? unknownUpgradeRoom.error),
+      );
+    }
+  } finally {
+    await upgradeDb.close();
+  }
 
   const passed = checks.filter((c) => c.ok).length;
   console.log(`\nCONSULTATIONS RESULT: ${passed}/${checks.length} checks passed`);

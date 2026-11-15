@@ -535,6 +535,8 @@ a_sync_off: "Nlọọgụ offline — data gị nọrọ na ngwaọ a",
   prof_bookings_d: "Soro ọnọdụ nke nleta niile ị rịọrọ.",
 
   auth_phone_label: "Ekwentị (nhọrọ)",
+  auth_show_password: "Bia nyọọ paswọdọ",
+  auth_hide_password: "Fọlọ nyọọ paswọdọ",
   auth_phone_hint: "Ndị nye ọrụ na-eji ya iji kwado nleta",
   prof_phone_ph: "+234 ...",
   prof_email_fixed: "Enweghị ike ịgbanwe ozi-e ebe a",

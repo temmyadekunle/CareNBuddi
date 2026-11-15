@@ -4,13 +4,14 @@ import Link from "next/link";
 import {
   useEffect,
   useRef,
+  useState,
   type ClipboardEvent,
   type InputHTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
 import { Button, Field, inputClass } from "@/components/app-ui";
-import { AlertIcon, ShieldIcon, GoogleIcon, AppleIcon } from "@/components/icons";
+import { AlertIcon, ShieldIcon, GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from "@/components/icons";
 import { useHydrated } from "@/lib/hydration";
 import { useT } from "@/lib/i18n";
 import { readLocal, writeLocal } from "@/lib/storage";
@@ -322,5 +323,63 @@ export function OtpInput({
         />
       ))}
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------- password */
+
+/**
+ * Password input with an accessible visibility toggle.
+ *
+ * Passwords are hidden by default. Clicking the eye/eye-off button toggles
+ * between `text` and `password` input types and updates the accessible label.
+ * The button never submits the form and does not interfere with validation.
+ */
+export function PasswordField({
+  label,
+  error,
+  hint,
+  errorId,
+  className = "",
+  ...props
+}: {
+  label: string;
+  error?: string | null;
+  hint?: string;
+  errorId?: string;
+  className?: string;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className">) {
+  const t = useT();
+  const [visible, setVisible] = useState(false);
+
+  const toggle = (event: React.MouseEvent | React.KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setVisible((current) => !current);
+  };
+
+  return (
+    <Field label={label} error={error} hint={hint} errorId={errorId}>
+      <div className="relative">
+        <input
+          {...props}
+          type={visible ? "text" : "password"}
+          aria-invalid={props["aria-invalid"] ?? (error ? true : undefined)}
+          aria-describedby={props["aria-describedby"] ?? (error ? errorId : undefined)}
+          className={`${inputClass} min-h-11 pr-12 ${className}`}
+        />
+        <button
+          type="button"
+          onClick={toggle}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") toggle(event);
+          }}
+          aria-label={visible ? t("auth_hide_password", "Hide password") : t("auth_show_password", "Show password")}
+          className="absolute inset-y-0 right-0.5 px-2 py-1 text-slate-400 hover:text-brand-700 dark:hover:text-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-60"
+        >
+          {visible ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+        </button>
+      </div>
+    </Field>
   );
 }

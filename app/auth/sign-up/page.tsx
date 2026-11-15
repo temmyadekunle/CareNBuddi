@@ -8,6 +8,7 @@ import {
   AuthIntro,
   AuthSubmit,
   AuthSwitch,
+  PasswordField,
   SocialLoginButtons,
   writeAuthPending,
 } from "@/components/auth-form";
@@ -245,9 +246,8 @@ function SignUpInner() {
             </div>
           </div>
 
-          <AuthField
+          <PasswordField
             label={t("a_password", "Password")}
-            type="password"
             autoComplete="new-password"
             placeholder={t("auth_password_ph", "••••••••")}
             value={password}
@@ -256,9 +256,8 @@ function SignUpInner() {
             hint={t("auth_password_hint", "At least 8 characters")}
           />
 
-          <AuthField
+          <PasswordField
             label={t("auth_confirm_label", "Confirm password")}
-            type="password"
             autoComplete="new-password"
             placeholder={t("auth_password_ph", "••••••••")}
             value={confirm}
