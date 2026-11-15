@@ -17,10 +17,11 @@
  *   5. cancelling and completing a consultation release its claims, so the
  *      slot can be booked again.
  *
- * STATUS IN THIS CHECKOUT: NOT EXECUTED. No PostgreSQL server, role or client
- * is installed here (no psql/initdb/pg_ctl, Docker daemon not running, `pg`
- * not installed), and no infrastructure was provisioned without approval.
- * This script is the outstanding verification.
+ * STATUS: executed against a disposable PostgreSQL 17.11 container. The
+ * 30-minute probe occupies exactly two 15-minute slots, so the first real run
+ * exposed an incorrect expected count of three; the expectation was corrected
+ * (and tightened to assert the two covered slots) without changing the
+ * migration or removing any concurrency check.
  *
  * PREREQUISITES (all operator-supplied; nothing here installs a server)
  *   1. A disposable database on a local PostgreSQL instance:
@@ -278,10 +279,17 @@ async function main() {
     check("exactly one of the conflicting bookings exists", holder.rows[0].n === 1, String(holder.rows[0].n));
 
     const claims = await admin.client.query(
-      "select count(*)::int as n from public.consultation_slot_claims where consultation_id = $1",
+      "select slot from public.consultation_slot_claims where consultation_id = $1 order by slot",
       [winnerId],
     );
-    check("the winner owns three 15-minute claims", claims.rows[0].n === 3, String(claims.rows[0].n));
+    const slots = claims.rows.map((row) => new Date(row.slot).getTime());
+    check(
+      "the winner owns the two 15-minute slots its 30-minute booking covers",
+      slots.length === 2 &&
+        slots[0] === new Date(BASE).getTime() &&
+        slots[1] === new Date(at(15)).getTime(),
+      slots.map((time) => new Date(time).toISOString()).join(","),
+    );
 
     // 2. Adjacent bookings both succeed.
     const adjacent = await admin.client.query(INSERT, [
